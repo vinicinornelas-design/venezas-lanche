@@ -13,6 +13,7 @@ import {
   LogOut
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 import {
   Sidebar,
@@ -121,8 +122,31 @@ export function AppSidebar() {
 
   const isCollapsed = state === "collapsed";
 
-  const handleLogout = () => {
-    navigate('/auth');
+  const handleLogout = async () => {
+    try {
+      console.log('Fazendo logout...');
+      
+      // Fazer logout no Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Erro ao fazer logout:', error);
+        // Mesmo com erro, redirecionar para auth
+        navigate('/auth');
+      } else {
+        console.log('Logout realizado com sucesso');
+        // Limpar dados locais se necessário
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Redirecionar para página de login
+        navigate('/auth');
+      }
+    } catch (err) {
+      console.error('Erro inesperado no logout:', err);
+      // Em caso de erro, ainda assim redirecionar
+      navigate('/auth');
+    }
   };
 
   const filteredItems = navigationItems.filter(item => 

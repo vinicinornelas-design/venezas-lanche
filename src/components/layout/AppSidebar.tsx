@@ -120,7 +120,7 @@ const navigationItems: NavigationItem[] = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const navigate = useNavigate();
-  const userRole: UserRole = 'FUNCIONARIO';
+  const userRole: UserRole = 'ADMIN';
   const userName = 'Usuário';
   
   // Estados para contadores dinâmicos

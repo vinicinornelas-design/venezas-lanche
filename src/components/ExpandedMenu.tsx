@@ -35,6 +35,7 @@ export default function ExpandedMenu() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
     preco: 0,
@@ -191,6 +192,7 @@ export default function ExpandedMenu() {
       ativo: true
     });
     setSelectedItem(null);
+    setIsDialogOpen(false);
   };
 
   const editItem = (item: MenuItem) => {
@@ -203,6 +205,7 @@ export default function ExpandedMenu() {
       categoria_id: item.categoria_id,
       ativo: item.ativo
     });
+    setIsDialogOpen(true);
   };
 
   const formatCurrency = (value: number) => {
@@ -236,7 +239,7 @@ export default function ExpandedMenu() {
           </p>
         </div>
         
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm} className="gradient-primary">
               <Plus className="h-4 w-4 mr-2" />

@@ -49,6 +49,7 @@ export default function PainelColaborador() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [observacao, setObservacao] = useState("");
   const [selectedPedido, setSelectedPedido] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -60,16 +61,22 @@ export default function PainelColaborador() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('user_id', user.id)
           .single();
         
-        setUserProfile(profile);
+        if (profileError) {
+          console.error('Error fetching user profile:', profileError);
+          setError('Erro ao carregar perfil do usuário');
+        } else {
+          setUserProfile(profile);
+        }
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      setError('Erro ao carregar perfil do usuário');
     }
   };
 
@@ -89,8 +96,10 @@ export default function PainelColaborador() {
 
       if (error) throw error;
       setPedidos(data || []);
+      setError(null);
     } catch (error) {
       console.error('Error fetching pedidos:', error);
+      setError('Erro ao carregar pedidos');
       toast({
         title: "Erro",
         description: "Erro ao carregar pedidos",
@@ -210,6 +219,41 @@ export default function PainelColaborador() {
             </Card>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold">Painel do Colaborador</h1>
+          <p className="text-muted-foreground">Erro ao carregar dados</p>
+        </div>
+        <Card className="border-destructive/20 bg-destructive/5">
+          <CardContent className="p-6 text-center">
+            <div className="space-y-4">
+              <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
+                <XCircle className="h-6 w-6 text-destructive" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-destructive mb-2">Erro ao Carregar</h3>
+                <p className="text-muted-foreground mb-4">{error}</p>
+                <Button 
+                  onClick={() => {
+                    setError(null);
+                    setLoading(true);
+                    fetchUserProfile();
+                    fetchPedidos();
+                  }}
+                  variant="outline"
+                >
+                  Tentar Novamente
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

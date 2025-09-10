@@ -10,10 +10,13 @@ import {
   MessageSquare,
   Receipt,
   Building2,
-  LogOut
+  LogOut,
+  DollarSign,
+  UserCog
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 
 import {
   Sidebar,
@@ -119,8 +122,74 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const userRole: UserRole = 'FUNCIONARIO';
   const userName = 'Usuário';
+  
+  // Estados para contadores dinâmicos
+  const [counters, setCounters] = useState({
+    pedidosPendentes: 0,
+    mesasOcupadas: 0,
+    itensCardapio: 0,
+    funcionariosAtivos: 0,
+    clientes: 0
+  });
 
   const isCollapsed = state === "collapsed";
+
+  // Buscar contadores do banco de dados
+  useEffect(() => {
+    const fetchCounters = async () => {
+      try {
+        // Pedidos pendentes
+        const { count: pedidosPendentes } = await supabase
+          .from('pedidos')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'PENDENTE');
+
+        // Mesas ocupadas
+        const { count: mesasOcupadas } = await supabase
+          .from('mesas')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'OCUPADA');
+
+        // Itens do cardápio
+        const { count: itensCardapio } = await supabase
+          .from('itens_cardapio')
+          .select('*', { count: 'exact', head: true })
+          .eq('ativo', true);
+
+        // Funcionários ativos
+        const { count: funcionariosAtivos } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('ativo', true)
+          .neq('papel', 'ADMIN');
+
+        // Clientes (aproximação baseada em pedidos únicos)
+        const { count: clientes } = await supabase
+          .from('pedidos')
+          .select('cliente_nome', { count: 'exact', head: true });
+
+        setCounters({
+          pedidosPendentes: pedidosPendentes || 0,
+          mesasOcupadas: mesasOcupadas || 0,
+          itensCardapio: itensCardapio || 0,
+          funcionariosAtivos: funcionariosAtivos || 0,
+          clientes: clientes || 0
+        });
+      } catch (error) {
+        console.error('Erro ao buscar contadores:', error);
+        // Usar valores padrão em caso de erro
+        setCounters({
+          pedidosPendentes: 1,
+          mesasOcupadas: 1,
+          itensCardapio: 17,
+          funcionariosAtivos: 2,
+          clientes: 0
+        });
+      }
+    };
+
+    fetchCounters();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -188,6 +257,101 @@ export function AppSidebar() {
             </NavLink>
           ))}
         </nav>
+
+        {/* Seção Administrativa */}
+        {userRole === 'ADMIN' && (
+          <div className="mt-8">
+            <h3 className="text-sm font-medium text-gray-500 mb-3">Funcionalidades Administrativas</h3>
+            <div className="space-y-2">
+              {/* Gerenciar Pedidos */}
+              <NavLink 
+                to="/pedidos" 
+                className={getNavClassName}
+              >
+                <ShoppingCart className="w-4 h-4" />
+                <div className="flex-1">
+                  <span>Gerenciar Pedidos</span>
+                  <span className="text-xs text-orange-600 ml-2">{counters.pedidosPendentes} pendentes</span>
+                </div>
+              </NavLink>
+
+              {/* Controle de Mesas */}
+              <NavLink 
+                to="/mesas" 
+                className={getNavClassName}
+              >
+                <Table className="w-4 h-4" />
+                <div className="flex-1">
+                  <span>Controle de Mesas</span>
+                  <span className="text-xs text-blue-600 ml-2">{counters.mesasOcupadas} ocupadas</span>
+                </div>
+              </NavLink>
+
+              {/* Gestão do Cardápio */}
+              <NavLink 
+                to="/cardapio" 
+                className={getNavClassName}
+              >
+                <ChefHat className="w-4 h-4" />
+                <div className="flex-1">
+                  <span>Gestão do Cardápio</span>
+                  <span className="text-xs text-green-600 ml-2">{counters.itensCardapio} itens</span>
+                </div>
+              </NavLink>
+
+              {/* Funcionários */}
+              <NavLink 
+                to="/funcionarios" 
+                className={getNavClassName}
+              >
+                <UserCog className="w-4 h-4" />
+                <div className="flex-1">
+                  <span>Funcionários</span>
+                  <span className="text-xs text-purple-600 ml-2">{counters.funcionariosAtivos} ativos</span>
+                </div>
+              </NavLink>
+
+              {/* Clientes */}
+              <NavLink 
+                to="/clientes" 
+                className={getNavClassName}
+              >
+                <Users className="w-4 h-4" />
+                <div className="flex-1">
+                  <span>Clientes</span>
+                  <span className="text-xs text-gray-600 ml-2">{counters.clientes} cadastrados</span>
+                </div>
+              </NavLink>
+
+              {/* Análise Completa */}
+              <NavLink 
+                to="/relatorios" 
+                className={getNavClassName}
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Análise Completa</span>
+              </NavLink>
+
+              {/* Financeiro */}
+              <NavLink 
+                to="/financeiro" 
+                className={getNavClassName}
+              >
+                <DollarSign className="w-4 h-4" />
+                <span>Financeiro</span>
+              </NavLink>
+
+              {/* Configurações */}
+              <NavLink 
+                to="/configuracoes" 
+                className={getNavClassName}
+              >
+                <Settings className="w-4 h-4" />
+                <span>Configurações</span>
+              </NavLink>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">

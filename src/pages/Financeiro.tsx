@@ -82,22 +82,25 @@ export default function Financeiro() {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const { data: orders, error } = await supabase
-        .from('pedidos')
-        .select('total, metodo_pagamento')
+        .from('pedidos_unificados')
+        .select('total, metodo_pagamento, pago, status')
         .gte('created_at', thirtyDaysAgo.toISOString())
         .not('status', 'eq', 'CANCELADO');
 
       if (error) throw error;
 
       if (orders) {
-        const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+        // Filtrar apenas pedidos pagos para o faturamento
+        const paidOrders = orders.filter(order => order.pago === true);
+        
+        const totalRevenue = paidOrders.reduce((sum, order) => sum + (order.total || 0), 0);
         const totalOrders = orders.length;
         const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
         // Payment methods breakdown
         const paymentMethodsBreakdown: { [key: string]: { total: number; count: number } } = {};
         
-        orders.forEach(order => {
+        paidOrders.forEach(order => {
           const method = order.metodo_pagamento || 'Não informado';
           if (!paymentMethodsBreakdown[method]) {
             paymentMethodsBreakdown[method] = { total: 0, count: 0 };

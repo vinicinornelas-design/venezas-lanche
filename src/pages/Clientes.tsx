@@ -22,17 +22,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  address: string;
+  cliente_nome: string;
+  cliente_telefone: string;
+  cliente_endereco?: string;
+  cliente_bairro?: string;
   total_orders: number;
   total_spent: number;
   last_order_at: string;
-  loyalty_points: number;
-  whatsapp_opt_in: boolean;
-  created_at: string;
+  first_order_at: string;
+  average_order_value: number;
 }
 
 export default function Clientes() {
@@ -48,13 +46,60 @@ export default function Clientes() {
 
   const fetchCustomers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
+      // Buscar todos os pedidos da tabela unificada
+      const { data: pedidos, error } = await supabase
+        .from('pedidos_unificados')
+        .select('cliente_nome, cliente_telefone, cliente_endereco, cliente_bairro, total, created_at')
+        .not('cliente_nome', 'is', null)
+        .not('cliente_telefone', 'is', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      if (data) setCustomers(data);
+
+      if (pedidos) {
+        // Agrupar pedidos por cliente (nome + telefone)
+        const customerMap = new Map<string, Customer>();
+
+        pedidos.forEach(pedido => {
+          const customerKey = `${pedido.cliente_nome}-${pedido.cliente_telefone}`;
+          
+          if (!customerMap.has(customerKey)) {
+            customerMap.set(customerKey, {
+              cliente_nome: pedido.cliente_nome,
+              cliente_telefone: pedido.cliente_telefone,
+              cliente_endereco: pedido.cliente_endereco,
+              cliente_bairro: pedido.cliente_bairro,
+              total_orders: 0,
+              total_spent: 0,
+              last_order_at: pedido.created_at,
+              first_order_at: pedido.created_at,
+              average_order_value: 0
+            });
+          }
+
+          const customer = customerMap.get(customerKey)!;
+          customer.total_orders += 1;
+          customer.total_spent += pedido.total || 0;
+          
+          // Atualizar último pedido (mais recente)
+          if (new Date(pedido.created_at) > new Date(customer.last_order_at)) {
+            customer.last_order_at = pedido.created_at;
+          }
+          
+          // Atualizar primeiro pedido (mais antigo)
+          if (new Date(pedido.created_at) < new Date(customer.first_order_at)) {
+            customer.first_order_at = pedido.created_at;
+          }
+        });
+
+        // Calcular valor médio do pedido e converter para array
+        const customersArray = Array.from(customerMap.values()).map(customer => ({
+          ...customer,
+          average_order_value: customer.total_orders > 0 ? customer.total_spent / customer.total_orders : 0
+        }));
+
+        setCustomers(customersArray);
+      }
     } catch (error) {
       console.error('Error fetching customers:', error);
       toast({
@@ -94,9 +139,9 @@ export default function Clientes() {
   };
 
   const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.phone.includes(searchTerm) ||
-                         (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = customer.cliente_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         customer.cliente_telefone.includes(searchTerm) ||
+                         (customer.cliente_endereco && customer.cliente_endereco.toLowerCase().includes(searchTerm.toLowerCase()));
     
     if (filterStatus === "all") return matchesSearch;
     return matchesSearch && getCustomerStatus(customer).toLowerCase() === filterStatus;
@@ -231,19 +276,19 @@ export default function Clientes() {
 
       {/* Customer List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCustomers.map((customer) => {
+        {filteredCustomers.map((customer, index) => {
           const status = getCustomerStatus(customer);
           const daysInactive = getDaysInactive(customer.last_order_at);
           
           return (
-            <Card key={customer.id} className="hover:shadow-md transition-shadow">
+            <Card key={`${customer.cliente_nome}-${customer.cliente_telefone}-${index}`} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-lg">{customer.name}</CardTitle>
+                    <CardTitle className="text-lg">{customer.cliente_nome}</CardTitle>
                     <CardDescription className="flex items-center gap-1">
                       <Phone className="h-3 w-3" />
-                      {customer.phone}
+                      {customer.cliente_telefone}
                     </CardDescription>
                   </div>
                   <Badge className={getStatusColor(status)}>
@@ -253,16 +298,10 @@ export default function Clientes() {
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-3">
-                  {customer.email && (
-                    <div className="text-sm text-muted-foreground">
-                      📧 {customer.email}
-                    </div>
-                  )}
-                  
-                  {customer.address && (
+                  {customer.cliente_endereco && (
                     <div className="flex items-start gap-2 text-sm text-muted-foreground">
                       <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                      <span>{customer.address}</span>
+                      <span>{customer.cliente_endereco}{customer.cliente_bairro && ` - ${customer.cliente_bairro}`}</span>
                     </div>
                   )}
 
@@ -279,12 +318,10 @@ export default function Clientes() {
                     </div>
                   </div>
 
-                  {customer.loyalty_points > 0 && (
-                    <div className="text-sm">
-                      <p className="text-muted-foreground">Pontos de Fidelidade</p>
-                      <p className="font-semibold text-accent">{customer.loyalty_points} pontos</p>
-                    </div>
-                  )}
+                  <div className="text-sm">
+                    <p className="text-muted-foreground">Ticket Médio</p>
+                    <p className="font-semibold text-accent">{formatCurrency(customer.average_order_value)}</p>
+                  </div>
 
                   {customer.last_order_at && (
                     <div className="text-sm">
@@ -302,7 +339,7 @@ export default function Clientes() {
 
                   <div className="text-sm">
                     <p className="text-muted-foreground">Cliente desde</p>
-                    <p className="font-semibold">{formatDate(customer.created_at)}</p>
+                    <p className="font-semibold">{formatDate(customer.first_order_at)}</p>
                   </div>
 
                   {status === "Inativo" && (
@@ -315,13 +352,13 @@ export default function Clientes() {
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Remarketing para {customer.name}</DialogTitle>
+                          <DialogTitle>Remarketing para {customer.cliente_nome}</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4">
                           <div>
                             <Label>Mensagem de Remarketing</Label>
                             <Textarea 
-                              placeholder={`Olá ${customer.name}! Sentimos sua falta... Que tal experimentar nossos novos sabores? Temos uma promoção especial esperando por você! 🍔`}
+                              placeholder={`Olá ${customer.cliente_nome}! Sentimos sua falta... Que tal experimentar nossos novos sabores? Temos uma promoção especial esperando por você! 🍔`}
                               className="mt-2"
                             />
                           </div>

@@ -14,8 +14,6 @@ import {
   UserCog
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
 
 import {
   Sidebar,
@@ -120,73 +118,9 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const userRole: UserRole = 'ADMIN';
   
-  // Estados para contadores dinâmicos
-  const [counters, setCounters] = useState({
-    pedidosPendentes: 0,
-    mesasOcupadas: 0,
-    itensCardapio: 0,
-    funcionariosAtivos: 0,
-    clientes: 0
-  });
 
   const isCollapsed = state === "collapsed";
 
-  // Buscar contadores do banco de dados
-  useEffect(() => {
-    const fetchCounters = async () => {
-      try {
-        // Pedidos pendentes
-        const { count: pedidosPendentes } = await supabase
-          .from('pedidos')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'PENDENTE');
-
-        // Mesas ocupadas
-        const { count: mesasOcupadas } = await supabase
-          .from('mesas')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'OCUPADA');
-
-        // Itens do cardápio
-        const { count: itensCardapio } = await supabase
-          .from('itens_cardapio')
-          .select('*', { count: 'exact', head: true })
-          .eq('ativo', true);
-
-        // Funcionários ativos
-        const { count: funcionariosAtivos } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('ativo', true)
-          .neq('papel', 'ADMIN');
-
-        // Clientes (aproximação baseada em pedidos únicos)
-        const { count: clientes } = await supabase
-          .from('pedidos')
-          .select('cliente_nome', { count: 'exact', head: true });
-
-        setCounters({
-          pedidosPendentes: pedidosPendentes || 0,
-          mesasOcupadas: mesasOcupadas || 0,
-          itensCardapio: itensCardapio || 0,
-          funcionariosAtivos: funcionariosAtivos || 0,
-          clientes: clientes || 0
-        });
-      } catch (error) {
-        console.error('Erro ao buscar contadores:', error);
-        // Usar valores padrão em caso de erro
-        setCounters({
-          pedidosPendentes: 1,
-          mesasOcupadas: 1,
-          itensCardapio: 17,
-          funcionariosAtivos: 2,
-          clientes: 0
-        });
-      }
-    };
-
-    fetchCounters();
-  }, []);
 
 
   const filteredItems = navigationItems.filter(item => 
@@ -200,22 +134,6 @@ export function AppSidebar() {
         : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
     }`;
 
-  const getCounterForItem = (title: string) => {
-    switch (title) {
-      case "Gerenciar Pedidos":
-        return { count: counters.pedidosPendentes, color: "text-orange-600", label: "pendentes" };
-      case "Controle de Mesas":
-        return { count: counters.mesasOcupadas, color: "text-blue-600", label: "ocupadas" };
-      case "Gestão do Cardápio":
-        return { count: counters.itensCardapio, color: "text-green-600", label: "itens" };
-      case "Funcionários":
-        return { count: counters.funcionariosAtivos, color: "text-purple-600", label: "ativos" };
-      case "Clientes":
-        return { count: counters.clientes, color: "text-gray-600", label: "cadastrados" };
-      default:
-        return null;
-    }
-  };
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 shadow-md h-full">
@@ -234,26 +152,16 @@ export function AppSidebar() {
       <div className="p-4">
         <h3 className="text-sm font-medium text-gray-500 mb-3">Navegação</h3>
         <nav className="space-y-1">
-          {filteredItems.map((item) => {
-            const counter = getCounterForItem(item.title);
-            return (
-              <NavLink 
-                key={item.title} 
-                to={item.url} 
-                className={getNavClassName}
-              >
-                <item.icon className="w-4 h-4" />
-                <div className="flex-1 flex items-center justify-between">
-                  <span>{item.title}</span>
-                  {counter && (
-                    <span className={`text-xs ${counter.color} ml-2`}>
-                      {counter.count} {counter.label}
-                    </span>
-                  )}
-                </div>
-              </NavLink>
-            );
-          })}
+          {filteredItems.map((item) => (
+            <NavLink 
+              key={item.title} 
+              to={item.url} 
+              className={getNavClassName}
+            >
+              <item.icon className="w-4 h-4" />
+              <span>{item.title}</span>
+            </NavLink>
+          ))}
         </nav>
       </div>
 

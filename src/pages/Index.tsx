@@ -26,47 +26,38 @@ const Index = () => {
 
   const fetchRestaurantConfig = async () => {
     try {
-      console.log('=== INÍCIO: Buscando configurações do restaurante ===');
-      console.log('Supabase client:', supabase);
+      console.log('🔍 Index: Buscando configurações...');
       
       const { data, error } = await supabase
         .from('restaurant_config')
         .select('*')
         .single();
 
-      console.log('Resultado da consulta:', { data, error });
+      console.log('📊 Index: Resultado:', { data, error });
 
       if (error) {
-        console.error('❌ Erro ao buscar configurações do restaurante:', error);
-        console.log('Tentando buscar sem .single()...');
+        console.error('❌ Index: Erro:', error);
         
-        // Tentar buscar sem .single() para ver se há dados
+        // Tentar sem .single()
         const { data: allData, error: allError } = await supabase
           .from('restaurant_config')
           .select('*');
         
-        console.log('Resultado da consulta sem single:', { allData, allError });
+        console.log('🔄 Index: Tentativa sem single:', { allData, allError });
         
         if (allError) {
-          console.error('❌ Erro ao buscar todas as configurações:', allError);
-        } else {
-          console.log('✅ Dados encontrados (sem single):', allData);
-          if (allData && allData.length > 0) {
-            console.log('✅ Definindo configuração com primeiro item:', allData[0]);
-            setRestaurantConfig(allData[0]);
-          } else {
-            console.log('⚠️ Nenhum dado encontrado na tabela');
-          }
+          console.error('❌ Index: Erro sem single:', allError);
+        } else if (allData && allData.length > 0) {
+          console.log('✅ Index: Usando primeiro item:', allData[0]);
+          setRestaurantConfig(allData[0]);
         }
       } else {
-        console.log('✅ Configurações carregadas com sucesso:', data);
-        console.log('✅ Definindo configuração:', data);
+        console.log('✅ Index: Sucesso!', data);
         setRestaurantConfig(data);
       }
-    } catch (error) {
-      console.error('❌ Erro inesperado:', error);
+    } catch (err) {
+      console.error('💥 Index: Erro inesperado:', err);
     } finally {
-      console.log('=== FIM: Finalizando carregamento ===');
       setLoading(false);
     }
   };
@@ -85,23 +76,23 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
-      {/* Debug Info - Remove em produção */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 m-4 rounded">
-          <strong>Debug:</strong> Config carregada: {restaurantConfig ? 'Sim' : 'Não'}
+      {/* Debug Info - Sempre visível */}
+      <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 m-4 rounded">
+        <strong>🔧 DEBUG Index:</strong>
+        <div className="mt-2 text-sm">
+          <div>Loading: {loading ? 'Sim' : 'Não'}</div>
+          <div>Config carregada: {restaurantConfig ? 'Sim' : 'Não'}</div>
           {restaurantConfig && (
-            <div className="mt-2 text-sm">
+            <>
               <div>Nome: {restaurantConfig.nome_restaurante}</div>
               <div>Slogan: {restaurantConfig.slogan}</div>
               <div>Logo URL: {restaurantConfig.logo_url}</div>
-              <div>Banner URL: {restaurantConfig.banner_url}</div>
               <div>Endereço: {restaurantConfig.endereco}</div>
               <div>Telefone: {restaurantConfig.telefone}</div>
-              <div>Horário: {JSON.stringify(restaurantConfig.horario_funcionamento)}</div>
-            </div>
+            </>
           )}
         </div>
-      )}
+      </div>
       
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">

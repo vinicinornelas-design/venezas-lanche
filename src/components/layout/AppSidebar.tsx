@@ -56,19 +56,19 @@ const navigationItems: NavigationItem[] = [
     roles: ['FUNCIONARIO', 'CAIXA', 'CHAPEIRO', 'ATENDENTE', 'COZINHEIRA']
   },
   {
-    title: "Pedidos",
+    title: "Gerenciar Pedidos",
     url: "/pedidos",
     icon: ShoppingCart,
     roles: ['ADMIN', 'FUNCIONARIO', 'CAIXA', 'CHAPEIRO', 'ATENDENTE', 'COZINHEIRA']
   },
   {
-    title: "Mesas",
+    title: "Controle de Mesas",
     url: "/mesas",
     icon: Table,
     roles: ['ADMIN', 'FUNCIONARIO', 'ATENDENTE']
   },
   {
-    title: "Cardápio",
+    title: "Gestão do Cardápio",
     url: "/cardapio",
     icon: ChefHat,
     roles: ['ADMIN']
@@ -76,7 +76,7 @@ const navigationItems: NavigationItem[] = [
   {
     title: "Funcionários",
     url: "/funcionarios",
-    icon: UserCheck,
+    icon: UserCog,
     roles: ['ADMIN']
   },
   {
@@ -86,13 +86,7 @@ const navigationItems: NavigationItem[] = [
     roles: ['ADMIN']
   },
   {
-    title: "Remarketing",
-    url: "/remarketing",
-    icon: MessageSquare,
-    roles: ['ADMIN']
-  },
-  {
-    title: "Relatórios",
+    title: "Análise Completa",
     url: "/relatorios",
     icon: BarChart3,
     roles: ['ADMIN']
@@ -100,13 +94,19 @@ const navigationItems: NavigationItem[] = [
   {
     title: "Financeiro",
     url: "/financeiro",
-    icon: Receipt,
+    icon: DollarSign,
     roles: ['ADMIN']
   },
   {
     title: "Configurações",
     url: "/configuracoes",
     icon: Settings,
+    roles: ['ADMIN']
+  },
+  {
+    title: "Remarketing",
+    url: "/remarketing",
+    icon: MessageSquare,
     roles: ['ADMIN']
   },
   {
@@ -229,6 +229,23 @@ export function AppSidebar() {
         : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
     }`;
 
+  const getCounterForItem = (title: string) => {
+    switch (title) {
+      case "Gerenciar Pedidos":
+        return { count: counters.pedidosPendentes, color: "text-orange-600", label: "pendentes" };
+      case "Controle de Mesas":
+        return { count: counters.mesasOcupadas, color: "text-blue-600", label: "ocupadas" };
+      case "Gestão do Cardápio":
+        return { count: counters.itensCardapio, color: "text-green-600", label: "itens" };
+      case "Funcionários":
+        return { count: counters.funcionariosAtivos, color: "text-purple-600", label: "ativos" };
+      case "Clientes":
+        return { count: counters.clientes, color: "text-gray-600", label: "cadastrados" };
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="w-64 bg-white border-r border-gray-200 shadow-md h-full">
       <div className="p-4 border-b border-gray-200">
@@ -246,112 +263,27 @@ export function AppSidebar() {
       <div className="p-4">
         <h3 className="text-sm font-medium text-gray-500 mb-3">Navegação</h3>
         <nav className="space-y-1">
-          {filteredItems.map((item) => (
-            <NavLink 
-              key={item.title} 
-              to={item.url} 
-              className={getNavClassName}
-            >
-              <item.icon className="w-4 h-4" />
-              <span>{item.title}</span>
-            </NavLink>
-          ))}
+          {filteredItems.map((item) => {
+            const counter = getCounterForItem(item.title);
+            return (
+              <NavLink 
+                key={item.title} 
+                to={item.url} 
+                className={getNavClassName}
+              >
+                <item.icon className="w-4 h-4" />
+                <div className="flex-1 flex items-center justify-between">
+                  <span>{item.title}</span>
+                  {counter && (
+                    <span className={`text-xs ${counter.color} ml-2`}>
+                      {counter.count} {counter.label}
+                    </span>
+                  )}
+                </div>
+              </NavLink>
+            );
+          })}
         </nav>
-
-        {/* Seção Administrativa */}
-        {userRole === 'ADMIN' && (
-          <div className="mt-8">
-            <h3 className="text-sm font-medium text-gray-500 mb-3">Funcionalidades Administrativas</h3>
-            <div className="space-y-2">
-              {/* Gerenciar Pedidos */}
-              <NavLink 
-                to="/pedidos" 
-                className={getNavClassName}
-              >
-                <ShoppingCart className="w-4 h-4" />
-                <div className="flex-1">
-                  <span>Gerenciar Pedidos</span>
-                  <span className="text-xs text-orange-600 ml-2">{counters.pedidosPendentes} pendentes</span>
-                </div>
-              </NavLink>
-
-              {/* Controle de Mesas */}
-              <NavLink 
-                to="/mesas" 
-                className={getNavClassName}
-              >
-                <Table className="w-4 h-4" />
-                <div className="flex-1">
-                  <span>Controle de Mesas</span>
-                  <span className="text-xs text-blue-600 ml-2">{counters.mesasOcupadas} ocupadas</span>
-                </div>
-              </NavLink>
-
-              {/* Gestão do Cardápio */}
-              <NavLink 
-                to="/cardapio" 
-                className={getNavClassName}
-              >
-                <ChefHat className="w-4 h-4" />
-                <div className="flex-1">
-                  <span>Gestão do Cardápio</span>
-                  <span className="text-xs text-green-600 ml-2">{counters.itensCardapio} itens</span>
-                </div>
-              </NavLink>
-
-              {/* Funcionários */}
-              <NavLink 
-                to="/funcionarios" 
-                className={getNavClassName}
-              >
-                <UserCog className="w-4 h-4" />
-                <div className="flex-1">
-                  <span>Funcionários</span>
-                  <span className="text-xs text-purple-600 ml-2">{counters.funcionariosAtivos} ativos</span>
-                </div>
-              </NavLink>
-
-              {/* Clientes */}
-              <NavLink 
-                to="/clientes" 
-                className={getNavClassName}
-              >
-                <Users className="w-4 h-4" />
-                <div className="flex-1">
-                  <span>Clientes</span>
-                  <span className="text-xs text-gray-600 ml-2">{counters.clientes} cadastrados</span>
-                </div>
-              </NavLink>
-
-              {/* Análise Completa */}
-              <NavLink 
-                to="/relatorios" 
-                className={getNavClassName}
-              >
-                <BarChart3 className="w-4 h-4" />
-                <span>Análise Completa</span>
-              </NavLink>
-
-              {/* Financeiro */}
-              <NavLink 
-                to="/financeiro" 
-                className={getNavClassName}
-              >
-                <DollarSign className="w-4 h-4" />
-                <span>Financeiro</span>
-              </NavLink>
-
-              {/* Configurações */}
-              <NavLink 
-                to="/configuracoes" 
-                className={getNavClassName}
-              >
-                <Settings className="w-4 h-4" />
-                <span>Configurações</span>
-              </NavLink>
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">

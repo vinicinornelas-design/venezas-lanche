@@ -100,21 +100,21 @@ export default function WelcomePage() {
           <div className="text-center space-y-8">
             {/* Logo and Brand */}
             <div className="space-y-4">
-              <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center shadow-2xl">
+              <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center shadow-2xl animate-logo-float animate-logo-glow hover:animate-logo-rotate transition-all duration-500 hover:scale-110 cursor-pointer group">
                 {restaurantConfig?.logo_url ? (
                   <img 
                     src={restaurantConfig.logo_url} 
                     alt={restaurantConfig.nome_restaurante || "Logo do restaurante"} 
-                    className="w-24 h-24 object-contain"
+                    className="w-24 h-24 object-contain animate-logo-pulse group-hover:animate-none"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                       const fallback = document.createElement('div');
-                      fallback.innerHTML = '<svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M10.2 3.2c-.8-.8-2-.8-2.8 0L3.2 7.4c-.8.8-.8 2 0 2.8l4.2 4.2c.8.8 2 .8 2.8 0l4.2-4.2c.8-.8.8-2 0-2.8L10.2 3.2z"/><path d="M8 6h4v2H8V6zM8 10h4v2H8v-2z"/></svg>';
+                      fallback.innerHTML = '<svg class="w-16 h-16 text-white animate-logo-pulse" fill="currentColor" viewBox="0 0 20 20"><path d="M10.2 3.2c-.8-.8-2-.8-2.8 0L3.2 7.4c-.8.8-.8 2 0 2.8l4.2 4.2c.8.8 2 .8 2.8 0l4.2-4.2c.8-.8.8-2 0-2.8L10.2 3.2z"/><path d="M8 6h4v2H8V6zM8 10h4v2H8v-2z"/></svg>';
                       e.currentTarget.parentElement?.appendChild(fallback);
                     }}
                   />
                 ) : (
-                  <ChefHat className="w-16 h-16 text-white" />
+                  <ChefHat className="w-16 h-16 text-white animate-logo-pulse group-hover:animate-none" />
                 )}
               </div>
               

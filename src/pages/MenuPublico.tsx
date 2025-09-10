@@ -45,6 +45,7 @@ interface RestaurantConfig {
   telefone: string;
   endereco: string;
   horario_funcionamento: any;
+  slogan: string | null;
 }
 
 export default function MenuPublico() {
@@ -557,6 +558,7 @@ export default function MenuPublico() {
           {restaurantConfig && (
             <div className="mt-2 text-sm">
               <div>Nome: {restaurantConfig.nome_restaurante}</div>
+              <div>Slogan: {restaurantConfig.slogan}</div>
               <div>Endereço: {restaurantConfig.endereco}</div>
               <div>Telefone: {restaurantConfig.telefone}</div>
               <div>Logo URL: {restaurantConfig.logo_url}</div>

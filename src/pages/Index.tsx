@@ -13,6 +13,7 @@ interface RestaurantConfig {
   horario_funcionamento: any;
   logo_url: string | null;
   banner_url: string | null;
+  slogan: string | null;
 }
 
 const Index = () => {
@@ -78,6 +79,9 @@ const Index = () => {
           {restaurantConfig && (
             <div className="mt-2 text-sm">
               <div>Nome: {restaurantConfig.nome_restaurante}</div>
+              <div>Slogan: {restaurantConfig.slogan}</div>
+              <div>Logo URL: {restaurantConfig.logo_url}</div>
+              <div>Banner URL: {restaurantConfig.banner_url}</div>
               <div>Endereço: {restaurantConfig.endereco}</div>
               <div>Telefone: {restaurantConfig.telefone}</div>
               <div>Horário: {JSON.stringify(restaurantConfig.horario_funcionamento)}</div>
@@ -90,14 +94,27 @@ const Index = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="text-center space-y-8">
           <div className="space-y-4">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center mx-auto shadow-lg animate-bounce">
-              <ChefHat className="w-10 h-10 text-white" />
-            </div>
+            {/* Logo do restaurante ou ícone padrão */}
+            {restaurantConfig?.logo_url ? (
+              <div className="w-20 h-20 rounded-3xl overflow-hidden mx-auto shadow-lg animate-bounce">
+                <img 
+                  src={restaurantConfig.logo_url} 
+                  alt="Logo do restaurante" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center mx-auto shadow-lg animate-bounce">
+                <ChefHat className="w-10 h-10 text-white" />
+              </div>
+            )}
+            
             <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-4">
               {restaurantConfig?.nome_restaurante || 'LancheFlow'}
             </h1>
+            
             <p className="text-xl text-muted-foreground mb-8">
-              Sistema completo de gestão para hamburgueria
+              {restaurantConfig?.slogan || 'Sistema completo de gestão para hamburgueria'}
             </p>
           </div>
           

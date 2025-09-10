@@ -10,11 +10,10 @@ import {
   MessageSquare,
   Receipt,
   Building2,
-  LogOut,
   DollarSign,
   UserCog
 } from "lucide-react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 
@@ -119,9 +118,7 @@ const navigationItems: NavigationItem[] = [
 
 export function AppSidebar() {
   const { state } = useSidebar();
-  const navigate = useNavigate();
   const userRole: UserRole = 'ADMIN';
-  const userName = 'Usuário';
   
   // Estados para contadores dinâmicos
   const [counters, setCounters] = useState({
@@ -191,32 +188,6 @@ export function AppSidebar() {
     fetchCounters();
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      console.log('Fazendo logout...');
-      
-      // Limpar dados locais primeiro
-      localStorage.clear();
-      sessionStorage.clear();
-      
-      // Fazer logout no Supabase
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('Erro ao fazer logout:', error);
-      } else {
-        console.log('Logout realizado com sucesso');
-      }
-      
-      // Forçar redirecionamento com window.location para garantir
-      window.location.href = '/auth';
-      
-    } catch (err) {
-      console.error('Erro inesperado no logout:', err);
-      // Em caso de erro, forçar redirecionamento
-      window.location.href = '/auth';
-    }
-  };
 
   const filteredItems = navigationItems.filter(item => 
     item.roles.includes(userRole)
@@ -286,21 +257,6 @@ export function AppSidebar() {
         </nav>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
-        <div className="space-y-2">
-          <div className="text-sm">
-            <p className="font-medium text-gray-900">{userName}</p>
-            <p className="text-xs text-gray-500 capitalize">{userRole.toLowerCase()}</p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 text-sm text-red-600 hover:bg-red-50 px-2 py-1 rounded-md transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Sair
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

@@ -137,47 +137,37 @@ export default function MenuPublico() {
 
   const fetchRestaurantConfig = async () => {
     try {
-      console.log('=== MENUPUBLICO: INÍCIO - Buscando configurações do restaurante ===');
-      console.log('MenuPublico - Supabase client:', supabase);
+      console.log('🔍 MenuPublico: Buscando configurações...');
       
       const { data, error } = await supabase
         .from('restaurant_config')
         .select('*')
         .single();
 
-      console.log('MenuPublico - Resultado da consulta:', { data, error });
+      console.log('📊 MenuPublico: Resultado:', { data, error });
 
       if (error) {
-        console.error('❌ MenuPublico: Erro ao buscar configurações do restaurante:', error);
-        console.log('MenuPublico: Tentando buscar sem .single()...');
+        console.error('❌ MenuPublico: Erro:', error);
         
-        // Tentar buscar sem .single() para ver se há dados
+        // Tentar sem .single()
         const { data: allData, error: allError } = await supabase
           .from('restaurant_config')
           .select('*');
         
-        console.log('MenuPublico - Resultado da consulta sem single:', { allData, allError });
+        console.log('🔄 MenuPublico: Tentativa sem single:', { allData, allError });
         
         if (allError) {
-          console.error('❌ MenuPublico: Erro ao buscar todas as configurações:', allError);
-        } else {
-          console.log('✅ MenuPublico: Dados encontrados (sem single):', allData);
-          if (allData && allData.length > 0) {
-            console.log('✅ MenuPublico: Definindo configuração com primeiro item:', allData[0]);
-            setRestaurantConfig(allData[0]);
-          } else {
-            console.log('⚠️ MenuPublico: Nenhum dado encontrado na tabela');
-          }
+          console.error('❌ MenuPublico: Erro sem single:', allError);
+        } else if (allData && allData.length > 0) {
+          console.log('✅ MenuPublico: Usando primeiro item:', allData[0]);
+          setRestaurantConfig(allData[0]);
         }
       } else {
-        console.log('✅ MenuPublico: Configurações carregadas com sucesso:', data);
-        console.log('✅ MenuPublico: Definindo configuração:', data);
+        console.log('✅ MenuPublico: Sucesso!', data);
         setRestaurantConfig(data);
       }
-    } catch (error) {
-      console.error('❌ MenuPublico: Erro inesperado:', error);
-    } finally {
-      console.log('=== MENUPUBLICO: FIM - Finalizando carregamento ===');
+    } catch (err) {
+      console.error('💥 MenuPublico: Erro inesperado:', err);
     }
   };
 
@@ -565,22 +555,24 @@ export default function MenuPublico() {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
-      {/* Debug Info - Remove em produção */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 m-4 rounded">
-          <strong>Debug MenuPublico:</strong> Config carregada: {restaurantConfig ? 'Sim' : 'Não'}
+      {/* Debug Info - Sempre visível */}
+      <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 m-4 rounded">
+        <strong>🔧 DEBUG MenuPublico:</strong>
+        <div className="mt-2 text-sm">
+          <div>Loading: {loading ? 'Sim' : 'Não'}</div>
+          <div>Config carregada: {restaurantConfig ? 'Sim' : 'Não'}</div>
           {restaurantConfig && (
-            <div className="mt-2 text-sm">
+            <>
               <div>Nome: {restaurantConfig.nome_restaurante}</div>
               <div>Slogan: {restaurantConfig.slogan}</div>
               <div>Endereço: {restaurantConfig.endereco}</div>
               <div>Telefone: {restaurantConfig.telefone}</div>
               <div>Logo URL: {restaurantConfig.logo_url}</div>
               <div>Banner URL: {restaurantConfig.banner_url}</div>
-            </div>
+            </>
           )}
         </div>
-      )}
+      </div>
       
       {/* Header with Restaurant Info */}
       <div className="bg-white shadow-sm">

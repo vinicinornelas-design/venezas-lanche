@@ -19,6 +19,7 @@ import {
   Star
 } from "lucide-react";
 import RatingSystem from "@/components/RatingSystem";
+import { CriarPedidoUnificado, PedidoItem } from "@/types/pedidos-unificados";
 
 interface MenuItem {
   id: string;
@@ -255,42 +256,39 @@ export default function MenuPublico() {
     try {
       // Get the payment method name
       const selectedPaymentMethod = paymentMethods.find(m => m.id === customerData.metodo_pagamento_id);
+      const selectedBairro = bairros.find(b => b.id === customerData.bairro_id);
       
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from('pedidos')
-        .insert({
-          cliente_nome: customerData.nome,
-          cliente_telefone: customerData.telefone,
-          endereco_json: {
-            endereco: customerData.endereco,
-            bairro_id: customerData.bairro_id
-          },
-          metodo_pagamento: selectedPaymentMethod?.nome || 'Dinheiro',
-          observacoes_cliente: customerData.observacoes,
-          total: getFinalTotal(),
-          origem: 'DELIVERY',
-          status: 'PENDENTE'
-        })
+      // Prepare items for unified table
+      const itensPedido: PedidoItem[] = cart.map(item => ({
+        nome: item.nome,
+        preco_unitario: item.preco,
+        quantidade: item.quantidade,
+        observacoes: item.observacoes || undefined,
+        categoria: item.categoria_nome || undefined,
+        adicionais: [] // No additional items for now
+      }));
+
+      // Create unified pedido
+      const pedidoData: CriarPedidoUnificado = {
+        cliente_nome: customerData.nome,
+        cliente_telefone: customerData.telefone,
+        cliente_endereco: customerData.endereco,
+        cliente_bairro: selectedBairro?.nome,
+        origem: 'DELIVERY',
+        itens: itensPedido,
+        taxa_entrega: getTaxaEntrega(),
+        metodo_pagamento: selectedPaymentMethod?.nome || 'Dinheiro',
+        observacoes: customerData.observacoes || undefined,
+        status: 'PENDENTE'
+      };
+
+      const { data: pedidoUnificado, error: orderError } = await supabase
+        .from('pedidos_unificados')
+        .insert(pedidoData)
         .select()
         .single();
 
       if (orderError) throw orderError;
-
-      // Create order items
-      const orderItems = cart.map(item => ({
-        pedido_id: order.id,
-        item_cardapio_id: item.id,
-        preco_unitario: item.preco,
-        quantidade: item.quantidade,
-        observacoes: item.observacoes
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('pedidos_itens')
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
 
       // Clear cart and form
       setCart([]);
@@ -306,7 +304,7 @@ export default function MenuPublico() {
 
       toast({
         title: "Pedido realizado!",
-        description: "Seu pedido foi enviado com sucesso. Aguarde o contato do restaurante.",
+        description: `Pedido #${pedidoUnificado.numero_pedido} foi enviado com sucesso. Aguarde o contato do restaurante.`,
       });
 
     } catch (error) {

@@ -18,6 +18,7 @@ import {
   User,
   ChefHat
 } from "lucide-react";
+import { CriarPedidoUnificado, PedidoItem } from "@/types/pedidos-unificados";
 
 interface Item {
   id: string;
@@ -191,42 +192,42 @@ export default function LancarPedido() {
         .eq('profile_id', userProfile?.id)
         .single();
 
-      // Create pedido
-      const { data: pedidoData, error: pedidoError } = await supabase
-        .from('pedidos')
-        .insert({
-          cliente_nome: clienteNome,
-          cliente_telefone: clienteTelefone || null,
-          total: calcularTotal(),
-          status: 'PENDENTE',
-          origem: 'MESA',
-          mesa_id: mesaSelecionada,
-          observacoes: observacoesPedido || null,
-          funcionario_id: funcionarioData?.id,
-          funcionario_nome: funcionarioData?.nome || userProfile?.nome,
-        })
+      // Get mesa info
+      const mesa = mesas.find(m => m.id === mesaSelecionada);
+
+      // Prepare items for unified table
+      const itensPedido: PedidoItem[] = carrinho.map(item => ({
+        nome: item.item.nome,
+        preco_unitario: item.item.preco,
+        quantidade: item.quantidade,
+        observacoes: item.observacoes || undefined,
+        categoria: item.item.categorias?.nome || undefined,
+        adicionais: [] // No additional items for now
+      }));
+
+      // Create unified pedido
+      const pedidoData: CriarPedidoUnificado = {
+        cliente_nome: clienteNome,
+        cliente_telefone: clienteTelefone || undefined,
+        mesa_numero: mesa?.numero,
+        mesa_etiqueta: mesa?.numero?.toString(),
+        origem: 'MESA',
+        funcionario_id: funcionarioData?.id,
+        funcionario_nome: funcionarioData?.nome || userProfile?.nome,
+        itens: itensPedido,
+        observacoes: observacoesPedido || undefined,
+        status: 'PENDENTE'
+      };
+
+      const { data: pedidoUnificado, error: pedidoError } = await supabase
+        .from('pedidos_unificados')
+        .insert(pedidoData)
         .select()
         .single();
 
       if (pedidoError) throw pedidoError;
 
-      // Create pedido items
-      const pedidoItens = carrinho.map(item => ({
-        pedido_id: pedidoData.id,
-        item_cardapio_id: item.item.id,
-        quantidade: item.quantidade,
-        preco_unitario: item.item.preco,
-        observacoes_item: item.observacoes || null
-      }));
-
-      const { error: itensError } = await supabase
-        .from('pedidos_itens')
-        .insert(pedidoItens);
-
-      if (itensError) throw itensError;
-
       // Update mesa status to OCUPADA if it was LIVRE
-      const mesa = mesas.find(m => m.id === mesaSelecionada);
       if (mesa?.status === 'LIVRE') {
         await supabase
           .from('mesas')
@@ -247,7 +248,7 @@ export default function LancarPedido() {
 
       toast({
         title: "Sucesso",
-        description: "Pedido lançado com sucesso!",
+        description: `Pedido #${pedidoUnificado.numero_pedido} lançado com sucesso!`,
       });
 
     } catch (error) {

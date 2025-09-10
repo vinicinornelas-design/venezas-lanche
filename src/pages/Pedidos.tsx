@@ -30,7 +30,28 @@ export default function Pedidos() {
         throw error;
       }
 
-      setPedidos(data || []);
+      // Ordenação personalizada: PENDENTE > PREPARANDO > PRONTO > ENTREGUE > CANCELADO
+      const sortedPedidos = (data || []).sort((a, b) => {
+        const statusOrder = {
+          'PENDENTE': 1,
+          'PREPARANDO': 2,
+          'PRONTO': 3,
+          'ENTREGUE': 4,
+          'CANCELADO': 5
+        };
+        
+        const aOrder = statusOrder[a.status as keyof typeof statusOrder] || 6;
+        const bOrder = statusOrder[b.status as keyof typeof statusOrder] || 6;
+        
+        // Se o status for igual, ordenar por data de criação (mais recente primeiro)
+        if (aOrder === bOrder) {
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+        
+        return aOrder - bOrder;
+      });
+
+      setPedidos(sortedPedidos);
     } catch (err) {
       console.error('Erro ao buscar pedidos:', err);
       setError('Erro ao carregar pedidos');
@@ -68,14 +89,8 @@ export default function Pedidos() {
         throw error;
       }
 
-      // Atualizar estado local
-      setPedidos(prev => 
-        prev.map(pedido => 
-          pedido.id === pedidoId 
-            ? { ...pedido, ...updateData }
-            : pedido
-        )
-      );
+      // Recarregar pedidos para aplicar nova ordenação
+      await fetchPedidos();
       
       console.log(`Pedido ${pedidoId} atualizado para ${newStatus}`);
     } catch (error) {
@@ -236,103 +251,94 @@ export default function Pedidos() {
           <div className="grid gap-4">
             {pedidos.map((pedido) => (
               <Card key={pedido.id} className="border-l-4" style={{borderLeftColor: getStatusColor(pedido.status || 'PENDENTE').replace('bg-', '#')}}>
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">
-                        Pedido #{pedido.numero_pedido}
-                      </CardTitle>
-                      {pedido.cliente_nome && (
-                        <p className="text-sm text-muted-foreground">
-                          Cliente: {pedido.cliente_nome}
-                        </p>
-                      )}
-                      {pedido.cliente_telefone && (
-                        <p className="text-sm text-muted-foreground">
-                          Telefone: {pedido.cliente_telefone}
-                        </p>
-                      )}
-                      {pedido.mesa_numero && (
-                        <p className="text-sm text-muted-foreground">
-                          Mesa: {pedido.mesa_numero} ({pedido.mesa_etiqueta})
-                        </p>
-                      )}
-                      {pedido.funcionario_nome && (
-                        <p className="text-sm text-muted-foreground">
-                          Atendente: {pedido.funcionario_nome}
-                        </p>
-                      )}
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-base">
+                          Pedido #{pedido.numero_pedido}
+                        </h3>
+                        <Badge className={getStatusColor(pedido.status || 'PENDENTE')} variant="secondary">
+                          {formatarStatusPedido(pedido.status || 'PENDENTE')}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        {pedido.cliente_nome && (
+                          <p><strong>Cliente:</strong> {pedido.cliente_nome}</p>
+                        )}
+                        {pedido.cliente_telefone && (
+                          <p><strong>Telefone:</strong> {pedido.cliente_telefone}</p>
+                        )}
+                        {pedido.mesa_numero && (
+                          <p><strong>Mesa:</strong> {pedido.mesa_numero}</p>
+                        )}
+                        <p><strong>Origem:</strong> {formatarOrigemPedido(pedido.origem)}</p>
+                      </div>
                     </div>
+                    
                     <div className="text-right">
-                      <Badge className={getStatusColor(pedido.status || 'PENDENTE')}>
-                        {formatarStatusPedido(pedido.status || 'PENDENTE')}
-                      </Badge>
-                      <p className="text-lg font-bold mt-1">
+                      <p className="text-lg font-bold text-primary">
                         R$ {pedido.total.toFixed(2)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(pedido.created_at).toLocaleString('pt-BR')}
                       </p>
                     </div>
                   </div>
-                </CardHeader>
-                
-                <CardContent className="pt-2">
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Origem: {formatarOrigemPedido(pedido.origem)}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Criado em: {new Date(pedido.created_at).toLocaleString('pt-BR')}
-                      </p>
-                    </div>
 
-                    {/* Itens do pedido */}
-                    <div>
-                      <p className="text-sm font-medium">Itens:</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatarItens(pedido.itens)}
-                      </p>
+                  {/* Itens do pedido - mais compacto */}
+                  <div className="mb-3">
+                    <p className="text-xs font-medium mb-1">Itens:</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {formatarItens(pedido.itens)}
+                    </p>
+                  </div>
+                  
+                  {/* Observações - mais compacto */}
+                  {(pedido.observacoes || pedido.observacoes_cozinha) && (
+                    <div className="mb-3">
+                      {pedido.observacoes && (
+                        <p className="text-xs text-muted-foreground">
+                          <strong>Obs:</strong> {pedido.observacoes}
+                        </p>
+                      )}
+                      {pedido.observacoes_cozinha && (
+                        <p className="text-xs text-muted-foreground">
+                          <strong>Cozinha:</strong> {pedido.observacoes_cozinha}
+                        </p>
+                      )}
                     </div>
-                    
-                    {pedido.observacoes && (
-                      <div>
-                        <p className="text-sm font-medium">Observações:</p>
-                        <p className="text-sm text-muted-foreground">{pedido.observacoes}</p>
-                      </div>
-                    )}
-
-                    {pedido.observacoes_cozinha && (
-                      <div>
-                        <p className="text-sm font-medium">Obs. Cozinha:</p>
-                        <p className="text-sm text-muted-foreground">{pedido.observacoes_cozinha}</p>
-                      </div>
-                    )}
-                    
-                    <div className="flex gap-2 pt-2">
-                      {pedido.status !== 'ENTREGUE' && pedido.status !== 'CANCELADO' && (
-                        <Button 
-                          onClick={() => updatePedidoStatus(pedido.id, getNextStatus(pedido.status || 'PENDENTE'))}
-                          disabled={updating[pedido.id]}
-                          size="sm"
-                        >
-                          {updating[pedido.id] ? 'Atualizando...' : getStatusButtonText(pedido.status || 'PENDENTE')}
-                        </Button>
-                      )}
-                      
-                      {pedido.status !== 'CANCELADO' && pedido.status !== 'ENTREGUE' && (
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => updatePedidoStatus(pedido.id, 'CANCELADO')}
-                          disabled={updating[pedido.id]}
-                        >
-                          Cancelar Pedido
-                        </Button>
-                      )}
-                      
-                      <Button variant="outline" size="sm">
-                        Ver Detalhes
+                  )}
+                  
+                  {/* Botões de ação - mais compactos */}
+                  <div className="flex gap-2 pt-2 border-t">
+                    {pedido.status !== 'ENTREGUE' && pedido.status !== 'CANCELADO' && (
+                      <Button 
+                        onClick={() => updatePedidoStatus(pedido.id, getNextStatus(pedido.status || 'PENDENTE'))}
+                        disabled={updating[pedido.id]}
+                        size="sm"
+                        className="h-7 text-xs"
+                      >
+                        {updating[pedido.id] ? 'Atualizando...' : getStatusButtonText(pedido.status || 'PENDENTE')}
                       </Button>
-                    </div>
+                    )}
+                    
+                    {pedido.status !== 'CANCELADO' && pedido.status !== 'ENTREGUE' && (
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => updatePedidoStatus(pedido.id, 'CANCELADO')}
+                        disabled={updating[pedido.id]}
+                        className="h-7 text-xs"
+                      >
+                        Cancelar
+                      </Button>
+                    )}
+                    
+                    <Button variant="outline" size="sm" className="h-7 text-xs">
+                      Detalhes
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

@@ -2,8 +2,45 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChefHat, ShoppingCart, Users, Clock, MapPin, BarChart3, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface RestaurantConfig {
+  id: string;
+  nome_restaurante: string | null;
+  endereco: string | null;
+  telefone: string | null;
+  horario_funcionamento: any;
+  logo_url: string | null;
+  banner_url: string | null;
+}
 
 const Index = () => {
+  const [restaurantConfig, setRestaurantConfig] = useState<RestaurantConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchRestaurantConfig();
+  }, []);
+
+  const fetchRestaurantConfig = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('restaurant_config')
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Erro ao buscar configurações do restaurante:', error);
+      } else {
+        setRestaurantConfig(data);
+      }
+    } catch (error) {
+      console.error('Erro inesperado:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-gradient-subtle">
       {/* Hero Section */}
@@ -14,7 +51,7 @@ const Index = () => {
               <ChefHat className="w-10 h-10 text-white" />
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-4">
-              LancheFlow
+              {restaurantConfig?.nome_restaurante || 'LancheFlow'}
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
               Sistema completo de gestão para hamburgueria
@@ -85,9 +122,25 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center text-blue-700">
-                Segunda a Quinta: 17h às 23h<br/>
-                Sexta e Sábado: 17h à 00h<br/>
-                Domingo: 17h às 23h
+                {restaurantConfig?.horario_funcionamento ? (
+                  <div>
+                    {typeof restaurantConfig.horario_funcionamento === 'object' ? (
+                      Object.entries(restaurantConfig.horario_funcionamento).map(([dia, horario]) => (
+                        <div key={dia}>
+                          {dia}: {horario as string}
+                        </div>
+                      ))
+                    ) : (
+                      restaurantConfig.horario_funcionamento
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    Segunda a Quinta: 17h às 23h<br/>
+                    Sexta e Sábado: 17h à 00h<br/>
+                    Domingo: 17h às 23h
+                  </>
+                )}
               </CardDescription>
             </CardContent>
           </Card>
@@ -101,9 +154,9 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center text-green-700">
-                Rua das Palmeiras, 456 - Centro<br/>
+                {restaurantConfig?.endereco || 'Rua das Palmeiras, 456 - Centro'}<br/>
                 Entregamos nos principais bairros da cidade<br/>
-                Tel: (31) 99999-0000
+                Tel: {restaurantConfig?.telefone || '(31) 99999-0000'}
               </CardDescription>
             </CardContent>
           </Card>
@@ -114,7 +167,7 @@ const Index = () => {
       <footer className="border-t bg-gradient-to-r from-orange-500/10 to-red-500/10 mt-16">
         <div className="container mx-auto px-4 py-8 text-center">
           <p className="text-lg font-semibold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-            LancheFlow - Sistema de Gestão para Hamburgueria
+            {restaurantConfig?.nome_restaurante || 'LancheFlow'} - Sistema de Gestão para Hamburgueria
           </p>
           <p className="text-sm mt-2 text-muted-foreground">
             Controle total do seu negócio em uma plataforma completa

@@ -1,7 +1,4 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -38,21 +35,19 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center">
-                <AlertTriangle className="h-6 w-6 text-destructive" />
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+          <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
+            <div className="text-center">
+              <div className="mx-auto mb-4 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <div className="w-6 h-6 bg-red-500 rounded-sm"></div>
               </div>
-              <CardTitle className="text-xl">Algo deu errado</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground text-center">
+              <h2 className="text-xl font-semibold mb-2">Algo deu errado</h2>
+              <p className="text-gray-600 mb-6">
                 Ocorreu um erro inesperado. Tente recarregar a página.
               </p>
               
               {process.env.NODE_ENV === 'development' && this.state.error && (
-                <details className="text-xs bg-muted p-3 rounded">
+                <details className="text-xs bg-gray-100 p-3 rounded mb-4">
                   <summary className="cursor-pointer font-medium mb-2">
                     Detalhes do erro (desenvolvimento)
                   </summary>
@@ -64,20 +59,21 @@ export class ErrorBoundary extends Component<Props, State> {
               )}
               
               <div className="flex gap-2">
-                <Button onClick={this.handleReload} className="flex-1">
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                <button 
+                  onClick={this.handleReload} 
+                  className="flex-1 bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition-colors"
+                >
                   Recarregar Página
-                </Button>
-                <Button 
-                  variant="outline" 
+                </button>
+                <button 
                   onClick={() => window.location.href = '/'}
-                  className="flex-1"
+                  className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-50 transition-colors"
                 >
                   Ir para Início
-                </Button>
+                </button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       );
     }

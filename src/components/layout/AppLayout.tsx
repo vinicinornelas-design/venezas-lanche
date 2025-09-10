@@ -5,8 +5,6 @@ import { User, Session } from "@supabase/supabase-js";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { useToast } from "@/hooks/use-toast";
-import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { DebugInfo } from "@/components/DebugInfo";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -18,7 +16,6 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { isOnline } = useNetworkStatus();
 
   useEffect(() => {
     let mounted = true;
@@ -118,18 +115,10 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div className="min-h-screen flex w-full bg-gradient-subtle">
         <AppSidebar />
         <main className="flex-1 overflow-auto">
-          {!isOnline && (
-            <div className="bg-warning/10 border-b border-warning/20 p-2 text-center">
-              <p className="text-sm text-warning">
-                ⚠️ Você está offline. Algumas funcionalidades podem não estar disponíveis.
-              </p>
-            </div>
-          )}
           <div className="p-6">
             {children}
           </div>
         </main>
-        <DebugInfo />
       </div>
     </SidebarProvider>
   );

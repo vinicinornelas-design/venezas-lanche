@@ -13,10 +13,14 @@ export function DebugInfo() {
 
   useEffect(() => {
     const getDebugInfo = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data: { user } } = await supabase.auth.getUser();
-      setSession(session);
-      setUser(user);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { user } } = await supabase.auth.getUser();
+        setSession(session);
+        setUser(user);
+      } catch (error) {
+        console.error('Error getting debug info:', error);
+      }
     };
 
     getDebugInfo();

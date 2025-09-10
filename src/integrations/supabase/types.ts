@@ -735,6 +735,125 @@ export type Database = {
           },
         ]
       }
+      pedidos_unificados: {
+        Row: {
+          avaliacao_comentario: string | null
+          avaliacao_em: string | null
+          avaliacao_nota: number | null
+          cliente_bairro: string | null
+          cliente_endereco: string | null
+          cliente_nome: string | null
+          cliente_telefone: string | null
+          created_at: string
+          desconto: number | null
+          entregue_em: string | null
+          finalizado_preparo_em: string | null
+          funcionario_id: string | null
+          funcionario_nome: string | null
+          id: string
+          iniciado_preparo_em: string | null
+          itens: Json
+          mesa_etiqueta: string | null
+          mesa_numero: number | null
+          metodo_pagamento: string | null
+          numero_pedido: number
+          observacoes: string | null
+          observacoes_cozinha: string | null
+          observacoes_entrega: string | null
+          origem: string | null
+          pago: boolean | null
+          status: string | null
+          subtotal: number | null
+          taxa_entrega: number | null
+          tempo_entrega_estimado: number | null
+          tempo_preparo_estimado: number | null
+          total: number
+          troco_para: number | null
+          updated_at: string
+          valor_pago: number | null
+        }
+        Insert: {
+          avaliacao_comentario?: string | null
+          avaliacao_em?: string | null
+          avaliacao_nota?: number | null
+          cliente_bairro?: string | null
+          cliente_endereco?: string | null
+          cliente_nome?: string | null
+          cliente_telefone?: string | null
+          created_at?: string
+          desconto?: number | null
+          entregue_em?: string | null
+          finalizado_preparo_em?: string | null
+          funcionario_id?: string | null
+          funcionario_nome?: string | null
+          id?: string
+          iniciado_preparo_em?: string | null
+          itens?: Json
+          mesa_etiqueta?: string | null
+          mesa_numero?: number | null
+          metodo_pagamento?: string | null
+          numero_pedido?: never
+          observacoes?: string | null
+          observacoes_cozinha?: string | null
+          observacoes_entrega?: string | null
+          origem?: string | null
+          pago?: boolean | null
+          status?: string | null
+          subtotal?: number | null
+          taxa_entrega?: number | null
+          tempo_entrega_estimado?: number | null
+          tempo_preparo_estimado?: number | null
+          total?: number
+          troco_para?: number | null
+          updated_at?: string
+          valor_pago?: number | null
+        }
+        Update: {
+          avaliacao_comentario?: string | null
+          avaliacao_em?: string | null
+          avaliacao_nota?: number | null
+          cliente_bairro?: string | null
+          cliente_endereco?: string | null
+          cliente_nome?: string | null
+          cliente_telefone?: string | null
+          created_at?: string
+          desconto?: number | null
+          entregue_em?: string | null
+          finalizado_preparo_em?: string | null
+          funcionario_id?: string | null
+          funcionario_nome?: string | null
+          id?: string
+          iniciado_preparo_em?: string | null
+          itens?: Json
+          mesa_etiqueta?: string | null
+          mesa_numero?: number | null
+          metodo_pagamento?: string | null
+          numero_pedido?: never
+          observacoes?: string | null
+          observacoes_cozinha?: string | null
+          observacoes_entrega?: string | null
+          origem?: string | null
+          pago?: boolean | null
+          status?: string | null
+          subtotal?: number | null
+          taxa_entrega?: number | null
+          tempo_entrega_estimado?: number | null
+          tempo_preparo_estimado?: number | null
+          total?: number
+          troco_para?: number | null
+          updated_at?: string
+          valor_pago?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_unificados_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedidos_itens: {
         Row: {
           id: string

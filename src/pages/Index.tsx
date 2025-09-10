@@ -25,6 +25,7 @@ const Index = () => {
 
   const fetchRestaurantConfig = async () => {
     try {
+      console.log('Buscando configurações do restaurante...');
       const { data, error } = await supabase
         .from('restaurant_config')
         .select('*')
@@ -32,7 +33,21 @@ const Index = () => {
 
       if (error) {
         console.error('Erro ao buscar configurações do restaurante:', error);
+        // Tentar buscar sem .single() para ver se há dados
+        const { data: allData, error: allError } = await supabase
+          .from('restaurant_config')
+          .select('*');
+        
+        if (allError) {
+          console.error('Erro ao buscar todas as configurações:', allError);
+        } else {
+          console.log('Dados encontrados (sem single):', allData);
+          if (allData && allData.length > 0) {
+            setRestaurantConfig(allData[0]);
+          }
+        }
       } else {
+        console.log('Configurações carregadas com sucesso:', data);
         setRestaurantConfig(data);
       }
     } catch (error) {
@@ -41,8 +56,36 @@ const Index = () => {
       setLoading(false);
     }
   };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center mx-auto shadow-lg animate-bounce mb-4">
+            <ChefHat className="w-10 h-10 text-white" />
+          </div>
+          <p className="text-lg text-muted-foreground">Carregando informações do restaurante...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      {/* Debug Info - Remove em produção */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 m-4 rounded">
+          <strong>Debug:</strong> Config carregada: {restaurantConfig ? 'Sim' : 'Não'}
+          {restaurantConfig && (
+            <div className="mt-2 text-sm">
+              <div>Nome: {restaurantConfig.nome_restaurante}</div>
+              <div>Endereço: {restaurantConfig.endereco}</div>
+              <div>Telefone: {restaurantConfig.telefone}</div>
+              <div>Horário: {JSON.stringify(restaurantConfig.horario_funcionamento)}</div>
+            </div>
+          )}
+        </div>
+      )}
+      
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center space-y-8">

@@ -1,4 +1,4 @@
--- Promove o primeiro usuário cadastrado a ADMIN. Demais entram como ATENDENTE/FUNCIONARIO
+-- Cria perfil do usuário respeitando o papel escolhido no cadastro
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -7,22 +7,31 @@ AS $$
 DECLARE
   exists_admin BOOLEAN;
   new_user_name TEXT;
+  user_papel TEXT;
 BEGIN
   -- Verifica se já existe algum perfil ADMIN
   SELECT EXISTS (SELECT 1 FROM public.profiles WHERE papel = 'ADMIN') INTO exists_admin;
 
   new_user_name := COALESCE(NEW.raw_user_meta_data->>'nome', 'Novo Usuário');
+  user_papel := COALESCE(NEW.raw_user_meta_data->>'papel', 'FUNCIONARIO');
 
-  IF NOT exists_admin THEN
-    -- Primeiro usuário: ADMIN
+  -- Se não existe admin e o usuário escolheu ADMIN, permitir
+  -- Se já existe admin, só permitir ADMIN se explicitamente escolhido
+  IF user_papel = 'ADMIN' AND NOT exists_admin THEN
+    -- Primeiro usuário pode ser ADMIN
     INSERT INTO public.profiles (user_id, nome, papel, ativo)
     VALUES (NEW.id, new_user_name, 'ADMIN', true)
     ON CONFLICT (user_id) DO UPDATE SET nome = EXCLUDED.nome, papel = 'ADMIN', ativo = true;
-  ELSE
-    -- Demais usuários: ATENDENTE
+  ELSIF user_papel = 'ADMIN' AND exists_admin THEN
+    -- Se já existe admin, criar como FUNCIONARIO mesmo se escolheu ADMIN
     INSERT INTO public.profiles (user_id, nome, papel, ativo)
-    VALUES (NEW.id, new_user_name, 'ATENDENTE', true)
-    ON CONFLICT (user_id) DO UPDATE SET nome = EXCLUDED.nome, ativo = true;
+    VALUES (NEW.id, new_user_name, 'FUNCIONARIO', true)
+    ON CONFLICT (user_id) DO UPDATE SET nome = EXCLUDED.nome, papel = 'FUNCIONARIO', ativo = true;
+  ELSE
+    -- Usuário escolheu FUNCIONARIO ou outro papel
+    INSERT INTO public.profiles (user_id, nome, papel, ativo)
+    VALUES (NEW.id, new_user_name, user_papel, true)
+    ON CONFLICT (user_id) DO UPDATE SET nome = EXCLUDED.nome, papel = EXCLUDED.papel, ativo = true;
   END IF;
 
   RETURN NEW;

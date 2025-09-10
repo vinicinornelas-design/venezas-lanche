@@ -77,14 +77,16 @@ export default function Financeiro() {
 
   const fetchFinancialSummary = async () => {
     try {
-      // Get orders from last 30 days
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      // Get orders from current month
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
       const { data: orders, error } = await supabase
         .from('pedidos_unificados')
         .select('total, metodo_pagamento, pago, status')
-        .gte('created_at', thirtyDaysAgo.toISOString())
+        .gte('created_at', startOfMonth.toISOString())
+        .lte('created_at', endOfMonth.toISOString())
         .not('status', 'eq', 'CANCELADO');
 
       if (error) throw error;
@@ -337,7 +339,7 @@ export default function Financeiro() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Faturamento (30 dias)</p>
+                  <p className="text-sm font-medium text-muted-foreground">Faturamento (Mês Atual)</p>
                   <p className="text-2xl font-bold">{formatCurrency(financialSummary.totalRevenue)}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-primary" />

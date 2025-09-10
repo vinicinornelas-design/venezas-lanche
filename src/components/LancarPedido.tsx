@@ -55,12 +55,15 @@ export default function LancarPedido() {
   const [clienteNome, setClienteNome] = useState("");
   const [clienteTelefone, setClienteTelefone] = useState("");
   const [observacoesPedido, setObservacoesPedido] = useState("");
+  const [metodoPagamento, setMetodoPagamento] = useState<string>("");
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchData();
     fetchUserProfile();
+    fetchPaymentMethods();
   }, []);
 
   const fetchUserProfile = async () => {
@@ -76,6 +79,21 @@ export default function LancarPedido() {
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const fetchPaymentMethods = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      if (data) setPaymentMethods(data);
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
     }
   };
 
@@ -153,7 +171,31 @@ export default function LancarPedido() {
   };
 
   const calcularTotal = () => {
-    return carrinho.reduce((total, item) => total + (item.item.preco * item.quantidade), 0);
+    const subtotal = carrinho.reduce((total, item) => total + (item.item.preco * item.quantidade), 0);
+    
+    // Calcular taxa se for cartão
+    if (metodoPagamento) {
+      const selectedMethod = paymentMethods.find(method => method.nome === metodoPagamento);
+      if (selectedMethod && selectedMethod.fee_type === 'percentage') {
+        const taxa = (subtotal * selectedMethod.fee_value) / 100;
+        return subtotal + taxa;
+      }
+    }
+    
+    return subtotal;
+  };
+
+  const calcularTaxa = () => {
+    const subtotal = carrinho.reduce((total, item) => total + (item.item.preco * item.quantidade), 0);
+    
+    if (metodoPagamento) {
+      const selectedMethod = paymentMethods.find(method => method.nome === metodoPagamento);
+      if (selectedMethod && selectedMethod.fee_type === 'percentage') {
+        return (subtotal * selectedMethod.fee_value) / 100;
+      }
+    }
+    
+    return 0;
   };
 
   const finalizarPedido = async () => {
@@ -179,6 +221,15 @@ export default function LancarPedido() {
       toast({
         title: "Erro", 
         description: "Digite o nome do cliente",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!metodoPagamento) {
+      toast({
+        title: "Erro", 
+        description: "Selecione um método de pagamento",
         variant: "destructive",
       });
       return;
@@ -216,6 +267,7 @@ export default function LancarPedido() {
         funcionario_nome: funcionarioData?.nome || userProfile?.nome,
         itens: itensPedido,
         observacoes: observacoesPedido || undefined,
+        metodo_pagamento: metodoPagamento,
         status: 'PENDENTE'
       };
 
@@ -245,6 +297,7 @@ export default function LancarPedido() {
       setClienteNome("");
       setClienteTelefone("");
       setObservacoesPedido("");
+      setMetodoPagamento("");
 
       toast({
         title: "Sucesso",
@@ -400,8 +453,18 @@ export default function LancarPedido() {
                     </div>
                   ))}
                   
-                  <div className="border-t pt-4">
+                  <div className="border-t pt-4 space-y-2">
                     <div className="flex justify-between items-center">
+                      <span>Subtotal:</span>
+                      <span>{formatCurrency(carrinho.reduce((total, item) => total + (item.item.preco * item.quantidade), 0))}</span>
+                    </div>
+                    {calcularTaxa() > 0 && (
+                      <div className="flex justify-between items-center text-sm text-muted-foreground">
+                        <span>Taxa ({metodoPagamento}):</span>
+                        <span>{formatCurrency(calcularTaxa())}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center border-t pt-2">
                       <span className="font-bold">Total:</span>
                       <span className="text-xl font-bold text-primary">
                         {formatCurrency(calcularTotal())}
@@ -460,6 +523,27 @@ export default function LancarPedido() {
                   onChange={(e) => setClienteTelefone(e.target.value)}
                   placeholder="(11) 99999-9999"
                 />
+              </div>
+
+              <div>
+                <Label>Forma de Pagamento *</Label>
+                <Select value={metodoPagamento} onValueChange={setMetodoPagamento}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o pagamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.id} value={method.nome}>
+                        {method.nome}
+                        {method.fee_type === 'percentage' && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            (+{method.fee_value}%)
+                          </span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

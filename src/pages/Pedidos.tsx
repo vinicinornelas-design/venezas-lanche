@@ -4,6 +4,7 @@ export default function Pedidos() {
   const [loading, setLoading] = useState(true);
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('Pedidos page mounted');
@@ -104,6 +105,54 @@ export default function Pedidos() {
     }
   };
 
+  const updatePedidoStatus = async (pedidoId: string, newStatus: string) => {
+    setUpdating(pedidoId);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update local state
+      setPedidos(prev => prev.map(pedido => 
+        pedido.id === pedidoId 
+          ? { ...pedido, status: newStatus }
+          : pedido
+      ));
+      
+      console.log(`Pedido ${pedidoId} atualizado para ${newStatus}`);
+    } catch (err) {
+      console.error('Erro ao atualizar pedido:', err);
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const getNextStatus = (currentStatus: string) => {
+    switch (currentStatus) {
+      case 'PENDENTE':
+        return 'PREPARANDO';
+      case 'PREPARANDO':
+        return 'PRONTO';
+      case 'PRONTO':
+        return 'ENTREGUE';
+      default:
+        return null;
+    }
+  };
+
+  const getStatusButtonText = (currentStatus: string) => {
+    switch (currentStatus) {
+      case 'PENDENTE':
+        return 'Iniciar Preparo';
+      case 'PREPARANDO':
+        return 'Marcar Pronto';
+      case 'PRONTO':
+        return 'Marcar Entregue';
+      default:
+        return null;
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -175,6 +224,45 @@ export default function Pedidos() {
                 <p className="text-sm text-blue-700">{pedido.observacoes}</p>
               </div>
             )}
+
+            {/* Botões de Ação */}
+            <div className="mt-4 flex gap-2 flex-wrap">
+              {getNextStatus(pedido.status) && (
+                <button
+                  onClick={() => updatePedidoStatus(pedido.id, getNextStatus(pedido.status)!)}
+                  disabled={updating === pedido.id}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    updating === pedido.id
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                >
+                  {updating === pedido.id ? 'Atualizando...' : getStatusButtonText(pedido.status)}
+                </button>
+              )}
+              
+              <button
+                onClick={() => updatePedidoStatus(pedido.id, 'CANCELADO')}
+                disabled={updating === pedido.id || pedido.status === 'CANCELADO' || pedido.status === 'ENTREGUE'}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  updating === pedido.id || pedido.status === 'CANCELADO' || pedido.status === 'ENTREGUE'
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-red-500 text-white hover:bg-red-600'
+                }`}
+              >
+                Cancelar Pedido
+              </button>
+
+              <button
+                onClick={() => {
+                  // Função para visualizar detalhes (pode ser expandida)
+                  alert(`Detalhes do Pedido #${pedido.id}\nCliente: ${pedido.cliente_nome}\nStatus: ${pedido.status}\nTotal: ${formatCurrency(pedido.total)}`);
+                }}
+                className="px-4 py-2 rounded-md text-sm font-medium bg-gray-500 text-white hover:bg-gray-600 transition-colors"
+              >
+                Ver Detalhes
+              </button>
+            </div>
           </div>
         ))}
         

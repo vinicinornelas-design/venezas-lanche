@@ -136,14 +136,33 @@ export default function MenuPublico() {
 
   const fetchRestaurantConfig = async () => {
     try {
-      const { data } = await supabase
+      console.log('MenuPublico: Buscando configurações do restaurante...');
+      const { data, error } = await supabase
         .from('restaurant_config')
         .select('*')
         .single();
 
-      if (data) setRestaurantConfig(data);
+      if (error) {
+        console.error('MenuPublico: Erro ao buscar configurações do restaurante:', error);
+        // Tentar buscar sem .single() para ver se há dados
+        const { data: allData, error: allError } = await supabase
+          .from('restaurant_config')
+          .select('*');
+        
+        if (allError) {
+          console.error('MenuPublico: Erro ao buscar todas as configurações:', allError);
+        } else {
+          console.log('MenuPublico: Dados encontrados (sem single):', allData);
+          if (allData && allData.length > 0) {
+            setRestaurantConfig(allData[0]);
+          }
+        }
+      } else {
+        console.log('MenuPublico: Configurações carregadas com sucesso:', data);
+        setRestaurantConfig(data);
+      }
     } catch (error) {
-      console.error('Error fetching restaurant config:', error);
+      console.error('MenuPublico: Erro inesperado:', error);
     }
   };
 
@@ -531,6 +550,22 @@ export default function MenuPublico() {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      {/* Debug Info - Remove em produção */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 m-4 rounded">
+          <strong>Debug MenuPublico:</strong> Config carregada: {restaurantConfig ? 'Sim' : 'Não'}
+          {restaurantConfig && (
+            <div className="mt-2 text-sm">
+              <div>Nome: {restaurantConfig.nome_restaurante}</div>
+              <div>Endereço: {restaurantConfig.endereco}</div>
+              <div>Telefone: {restaurantConfig.telefone}</div>
+              <div>Logo URL: {restaurantConfig.logo_url}</div>
+              <div>Banner URL: {restaurantConfig.banner_url}</div>
+            </div>
+          )}
+        </div>
+      )}
+      
       {/* Header with Restaurant Info */}
       <div className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-6">

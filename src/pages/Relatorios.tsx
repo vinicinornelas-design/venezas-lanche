@@ -76,31 +76,31 @@ export default function Relatorios() {
         });
       }
 
-      // Buscar produtos mais vendidos
-      const { data: productsData } = await supabase
-        .from('pedidos_itens')
-        .select(`
-          quantidade,
-          preco_unitario,
-          itens_cardapio (nome),
-          pedido_id
-        `)
-        .gte('created_at', thirtyDaysAgo.toISOString());
+      // Buscar produtos mais vendidos da tabela unificada
+      const { data: ordersData } = await supabase
+        .from('pedidos_unificados')
+        .select('itens, total, created_at')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .not('status', 'eq', 'CANCELADO');
 
-      if (productsData) {
+      if (ordersData) {
         const productMap = new Map<string, ProductStats>();
         
-        productsData.forEach(item => {
-          const productName = item.itens_cardapio?.nome || 'Produto sem nome';
-          const existing = productMap.get(productName) || {
-            nome: productName,
-            quantidade_vendida: 0,
-            receita_total: 0
-          };
-          
-          existing.quantidade_vendida += item.quantidade;
-          existing.receita_total += item.quantidade * item.preco_unitario;
-          productMap.set(productName, existing);
+        ordersData.forEach(order => {
+          if (order.itens && Array.isArray(order.itens)) {
+            order.itens.forEach((item: any) => {
+              const productName = item.nome || 'Produto sem nome';
+              const existing = productMap.get(productName) || {
+                nome: productName,
+                quantidade_vendida: 0,
+                receita_total: 0
+              };
+              
+              existing.quantidade_vendida += item.quantidade || 0;
+              existing.receita_total += (item.quantidade || 0) * (item.preco_unitario || 0);
+              productMap.set(productName, existing);
+            });
+          }
         });
 
         const sortedProducts = Array.from(productMap.values())

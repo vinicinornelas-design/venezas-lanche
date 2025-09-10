@@ -22,15 +22,20 @@ import {
 } from "lucide-react";
 
 interface RemarketingCustomer {
-  id: string;
-  customer_name: string;
-  customer_phone: string;
+  cliente_nome: string;
+  cliente_telefone: string;
+  cliente_endereco?: string;
+  cliente_bairro?: string;
+  total_orders: number;
+  total_spent: number;
+  last_order_at: string;
+  days_inactive: number;
   status: string;
   priority: string;
   campaign_type: string;
   remarketing_message: string;
-  last_contact_date: string;
-  scheduled_date: string;
+  last_contact_date?: string;
+  scheduled_date?: string;
   response_received: boolean;
   created_at: string;
 }
@@ -55,18 +60,74 @@ export default function Remarketing() {
 
   const fetchRemarketingCustomers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('customer_remarketing')
-        .select('*')
+      // Buscar clientes inativos da tabela unificada (último pedido há mais de 30 dias)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { data: pedidos, error } = await supabase
+        .from('pedidos_unificados')
+        .select('cliente_nome, cliente_telefone, cliente_endereco, cliente_bairro, total, created_at')
+        .not('cliente_nome', 'is', null)
+        .not('cliente_telefone', 'is', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCustomers(data || []);
+
+      if (pedidos) {
+        // Agrupar pedidos por cliente e identificar inativos
+        const customerMap = new Map<string, RemarketingCustomer>();
+
+        pedidos.forEach(pedido => {
+          const customerKey = `${pedido.cliente_nome}-${pedido.cliente_telefone}`;
+          
+          if (!customerMap.has(customerKey)) {
+            const lastOrderDate = new Date(pedido.created_at);
+            const daysInactive = Math.ceil((new Date().getTime() - lastOrderDate.getTime()) / (1000 * 60 * 60 * 24));
+            
+            customerMap.set(customerKey, {
+              cliente_nome: pedido.cliente_nome,
+              cliente_telefone: pedido.cliente_telefone,
+              cliente_endereco: pedido.cliente_endereco,
+              cliente_bairro: pedido.cliente_bairro,
+              total_orders: 0,
+              total_spent: 0,
+              last_order_at: pedido.created_at,
+              days_inactive: daysInactive,
+              status: daysInactive > 30 ? 'INATIVO' : 'ATIVO',
+              priority: daysInactive > 60 ? 'ALTA' : daysInactive > 30 ? 'NORMAL' : 'BAIXA',
+              campaign_type: 'GENERAL',
+              remarketing_message: '',
+              response_received: false,
+              created_at: pedido.created_at
+            });
+          }
+
+          const customer = customerMap.get(customerKey)!;
+          customer.total_orders += 1;
+          customer.total_spent += pedido.total || 0;
+          
+          // Atualizar último pedido (mais recente)
+          if (new Date(pedido.created_at) > new Date(customer.last_order_at)) {
+            customer.last_order_at = pedido.created_at;
+            const lastOrderDate = new Date(pedido.created_at);
+            customer.days_inactive = Math.ceil((new Date().getTime() - lastOrderDate.getTime()) / (1000 * 60 * 60 * 24));
+            customer.status = customer.days_inactive > 30 ? 'INATIVO' : 'ATIVO';
+            customer.priority = customer.days_inactive > 60 ? 'ALTA' : customer.days_inactive > 30 ? 'NORMAL' : 'BAIXA';
+          }
+        });
+
+        // Filtrar apenas clientes inativos para remarketing
+        const inactiveCustomers = Array.from(customerMap.values())
+          .filter(customer => customer.days_inactive > 30)
+          .sort((a, b) => b.days_inactive - a.days_inactive);
+
+        setCustomers(inactiveCustomers);
+      }
     } catch (error) {
       console.error('Error fetching remarketing customers:', error);
       toast({
         title: "Erro",
-        description: "Erro ao carregar campanhas de remarketing",
+        description: "Erro ao carregar clientes para remarketing",
         variant: "destructive",
       });
     } finally {
@@ -160,8 +221,8 @@ export default function Remarketing() {
   };
 
   const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = customer.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.customer_phone.includes(searchTerm);
+    const matchesSearch = customer.cliente_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         customer.cliente_telefone.includes(searchTerm);
     const matchesStatus = statusFilter === "all" || customer.status.toLowerCase() === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -370,15 +431,15 @@ export default function Remarketing() {
 
       {/* Campaigns Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCustomers.map((customer) => (
-          <Card key={customer.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-orange-500">
+        {filteredCustomers.map((customer, index) => (
+          <Card key={`${customer.cliente_nome}-${customer.cliente_telefone}-${index}`} className="hover:shadow-lg transition-shadow border-l-4 border-l-orange-500">
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-lg">{customer.customer_name}</CardTitle>
+                  <CardTitle className="text-lg">{customer.cliente_nome}</CardTitle>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Phone className="h-3 w-3" />
-                    {customer.customer_phone}
+                    {customer.cliente_telefone}
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
@@ -392,42 +453,42 @@ export default function Remarketing() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="bg-muted/50 p-3 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">Mensagem:</p>
-                <p className="text-sm">{customer.remarketing_message}</p>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Pedidos</p>
+                  <p className="font-semibold">{customer.total_orders}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Total Gasto</p>
+                  <p className="font-semibold">R$ {customer.total_spent.toFixed(2)}</p>
+                </div>
               </div>
               
               <div className="text-xs text-muted-foreground">
                 <div className="flex items-center gap-1 mb-1">
                   <Calendar className="h-3 w-3" />
-                  Criado em {new Date(customer.created_at).toLocaleDateString('pt-BR')}
+                  Último pedido: {new Date(customer.last_order_at).toLocaleDateString('pt-BR')}
                 </div>
-                {customer.last_contact_date && (
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    Último contato: {new Date(customer.last_contact_date).toLocaleDateString('pt-BR')}
-                  </div>
-                )}
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  Inativo há {customer.days_inactive} dias
+                </div>
               </div>
 
               <div className="flex gap-2 pt-2">
-                {customer.status === 'ATIVO' && (
-                  <Button 
-                    size="sm" 
-                    onClick={() => updateCampaignStatus(customer.id, 'ENVIADO')}
-                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
-                  >
-                    <Send className="h-3 w-3 mr-1" />
-                    Enviar
-                  </Button>
-                )}
+                <Button 
+                  size="sm" 
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                >
+                  <Send className="h-3 w-3 mr-1" />
+                  Enviar Mensagem
+                </Button>
                 <Button 
                   size="sm" 
                   variant="outline"
-                  onClick={() => updateCampaignStatus(customer.id, customer.status === 'PAUSADO' ? 'ATIVO' : 'PAUSADO')}
                   className="flex-1"
                 >
-                  {customer.status === 'PAUSADO' ? 'Reativar' : 'Pausar'}
+                  Ver Histórico
                 </Button>
               </div>
             </CardContent>

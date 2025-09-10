@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,10 +13,66 @@ import {
   ArrowRight,
   Shield
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface RestaurantConfig {
+  id: string;
+  nome_restaurante: string | null;
+  endereco: string | null;
+  telefone: string | null;
+  horario_funcionamento: any;
+  logo_url: string | null;
+  banner_url: string | null;
+  slogan: string | null;
+}
 
 export default function WelcomePage() {
   const navigate = useNavigate();
   const [showAdminButton, setShowAdminButton] = useState(false);
+  const [restaurantConfig, setRestaurantConfig] = useState<RestaurantConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchRestaurantConfig();
+  }, []);
+
+  const fetchRestaurantConfig = async () => {
+    try {
+      console.log('🔍 WelcomePage: Buscando configurações...');
+      
+      const { data, error } = await supabase
+        .from('restaurant_config')
+        .select('*')
+        .single();
+
+      console.log('📊 WelcomePage: Resultado:', { data, error });
+
+      if (error) {
+        console.error('❌ WelcomePage: Erro:', error);
+        
+        // Tentar sem .single()
+        const { data: allData, error: allError } = await supabase
+          .from('restaurant_config')
+          .select('*');
+        
+        console.log('🔄 WelcomePage: Tentativa sem single:', { allData, allError });
+        
+        if (allError) {
+          console.error('❌ WelcomePage: Erro sem single:', allError);
+        } else if (allData && allData.length > 0) {
+          console.log('✅ WelcomePage: Usando primeiro item:', allData[0]);
+          setRestaurantConfig(allData[0]);
+        }
+      } else {
+        console.log('✅ WelcomePage: Sucesso!', data);
+        setRestaurantConfig(data);
+      }
+    } catch (err) {
+      console.error('💥 WelcomePage: Erro inesperado:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleMenuClick = () => {
     navigate('/menu-publico');
@@ -30,8 +86,39 @@ export default function WelcomePage() {
     setShowAdminButton(!showAdminButton);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-32 h-32 rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center mx-auto shadow-2xl mb-4">
+            <ChefHat className="w-16 h-16 text-white" />
+          </div>
+          <p className="text-lg text-muted-foreground">Carregando informações do restaurante...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      {/* Debug Info - Sempre visível */}
+      <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 m-4 rounded">
+        <strong>🔧 DEBUG WelcomePage:</strong>
+        <div className="mt-2 text-sm">
+          <div>Loading: {loading ? 'Sim' : 'Não'}</div>
+          <div>Config carregada: {restaurantConfig ? 'Sim' : 'Não'}</div>
+          {restaurantConfig && (
+            <>
+              <div>Nome: {restaurantConfig.nome_restaurante}</div>
+              <div>Slogan: {restaurantConfig.slogan}</div>
+              <div>Logo URL: {restaurantConfig.logo_url}</div>
+              <div>Endereço: {restaurantConfig.endereco}</div>
+              <div>Telefone: {restaurantConfig.telefone}</div>
+            </>
+          )}
+        </div>
+      </div>
+
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20" />
@@ -41,25 +128,29 @@ export default function WelcomePage() {
             {/* Logo and Brand */}
             <div className="space-y-4">
               <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center shadow-2xl">
-                <img 
-                  src="/lovable-uploads/venezas-logo.png" 
-                  alt="Veneza's Lanches" 
-                  className="w-24 h-24 object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    const fallback = document.createElement('div');
-                    fallback.innerHTML = '<svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M10.2 3.2c-.8-.8-2-.8-2.8 0L3.2 7.4c-.8.8-.8 2 0 2.8l4.2 4.2c.8.8 2 .8 2.8 0l4.2-4.2c.8-.8.8-2 0-2.8L10.2 3.2z"/><path d="M8 6h4v2H8V6zM8 10h4v2H8v-2z"/></svg>';
-                    e.currentTarget.parentElement?.appendChild(fallback);
-                  }}
-                />
+                {restaurantConfig?.logo_url ? (
+                  <img 
+                    src={restaurantConfig.logo_url} 
+                    alt={restaurantConfig.nome_restaurante || "Logo do restaurante"} 
+                    className="w-24 h-24 object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const fallback = document.createElement('div');
+                      fallback.innerHTML = '<svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M10.2 3.2c-.8-.8-2-.8-2.8 0L3.2 7.4c-.8.8-.8 2 0 2.8l4.2 4.2c.8.8 2 .8 2.8 0l4.2-4.2c.8-.8.8-2 0-2.8L10.2 3.2z"/><path d="M8 6h4v2H8V6zM8 10h4v2H8v-2z"/></svg>';
+                      e.currentTarget.parentElement?.appendChild(fallback);
+                    }}
+                  />
+                ) : (
+                  <ChefHat className="w-16 h-16 text-white" />
+                )}
               </div>
               
               <div>
                 <h1 className="text-6xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-2">
-                  Veneza's Lanches
+                  {restaurantConfig?.nome_restaurante || "Veneza's Lanches"}
                 </h1>
                 <p className="text-xl text-muted-foreground">
-                  Sabores únicos que conquistam o seu paladar
+                  {restaurantConfig?.slogan || "Sabores únicos que conquistam o seu paladar"}
                 </p>
               </div>
             </div>
@@ -88,7 +179,9 @@ export default function WelcomePage() {
                     <MapPin className="h-5 w-5 text-orange-500" />
                     <div className="text-left">
                       <p className="font-semibold">Endereço</p>
-                      <p className="text-sm text-muted-foreground">Rua das Delícias, 123</p>
+                      <p className="text-sm text-muted-foreground">
+                        {restaurantConfig?.endereco || "Rua das Delícias, 123"}
+                      </p>
                     </div>
                   </div>
                   
@@ -96,7 +189,9 @@ export default function WelcomePage() {
                     <Phone className="h-5 w-5 text-orange-500" />
                     <div className="text-left">
                       <p className="font-semibold">Telefone</p>
-                      <p className="text-sm text-muted-foreground">(31) 99999-9999</p>
+                      <p className="text-sm text-muted-foreground">
+                        {restaurantConfig?.telefone || "(31) 99999-9999"}
+                      </p>
                     </div>
                   </div>
                   
@@ -104,7 +199,19 @@ export default function WelcomePage() {
                     <Clock className="h-5 w-5 text-orange-500" />
                     <div className="text-left">
                       <p className="font-semibold">Horário</p>
-                      <p className="text-sm text-muted-foreground">18:00 - 23:00</p>
+                      <p className="text-sm text-muted-foreground">
+                        {restaurantConfig?.horario_funcionamento ? (
+                          typeof restaurantConfig.horario_funcionamento === 'object' ? (
+                            Object.entries(restaurantConfig.horario_funcionamento).map(([dia, horario]) => (
+                              <span key={dia} className="block capitalize">{dia}: {horario as string}</span>
+                            ))
+                          ) : (
+                            restaurantConfig.horario_funcionamento
+                          )
+                        ) : (
+                          "18:00 - 23:00"
+                        )}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -274,7 +381,7 @@ export default function WelcomePage() {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4">
             <p className="text-muted-foreground">
-              © 2024 Veneza's Lanches. Todos os direitos reservados.
+              © 2024 {restaurantConfig?.nome_restaurante || "Veneza's Lanches"}. Todos os direitos reservados.
             </p>
             
             {/* Hidden Admin Access */}

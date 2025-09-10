@@ -66,19 +66,17 @@ export default function AdminDashboard() {
 
   const fetchDashboardStats = async () => {
     try {
-      // Fetch orders stats
+      // Fetch orders stats from pedidos_unificados
       const today = new Date().toISOString().split('T')[0];
       
       const [
         { data: pedidos },
         { data: mesas },
-        { data: customers },
         { data: funcionarios },
         { data: itens }
       ] = await Promise.all([
-        supabase.from('pedidos').select('status, total, created_at, pago').gte('created_at', today),
+        supabase.from('pedidos_unificados').select('status, total, created_at, pago, cliente_nome, cliente_telefone').gte('created_at', today),
         supabase.from('mesas').select('status, numero'),
-        supabase.from('customers').select('id'),
         supabase.from('funcionarios').select('id, ativo').eq('ativo', true),
         supabase.from('itens_cardapio').select('id, ativo').eq('ativo', true)
       ]);
@@ -91,6 +89,14 @@ export default function AdminDashboard() {
           .filter(p => p.pago)
           .reduce((sum, p) => sum + (p.total || 0), 0);
 
+        // Contar clientes únicos (nome + telefone)
+        const clientesUnicos = new Set();
+        pedidos.forEach(p => {
+          if (p.cliente_nome && p.cliente_telefone) {
+            clientesUnicos.add(`${p.cliente_nome}-${p.cliente_telefone}`);
+          }
+        });
+
         setStats(prev => ({
           ...prev,
           totalPedidos: pedidos.length,
@@ -98,6 +104,7 @@ export default function AdminDashboard() {
           pedidosConcluidos: concluidos,
           pedidosCancelados: cancelados,
           faturamentoHoje: faturamento,
+          clientesAtivos: clientesUnicos.size,
         }));
       }
 
@@ -113,9 +120,6 @@ export default function AdminDashboard() {
         }));
       }
 
-      if (customers) {
-        setStats(prev => ({ ...prev, clientesAtivos: customers.length }));
-      }
 
       if (funcionarios) {
         setStats(prev => ({ ...prev, funcionariosAtivos: funcionarios.length }));
@@ -135,7 +139,7 @@ export default function AdminDashboard() {
   const fetchRecentOrders = async () => {
     try {
       const { data } = await supabase
-        .from('pedidos')
+        .from('pedidos_unificados')
         .select('id, cliente_nome, status, total, created_at, origem, pago')
         .order('created_at', { ascending: false })
         .limit(5);

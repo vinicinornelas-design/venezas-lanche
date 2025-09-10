@@ -13,7 +13,7 @@ import {
   DollarSign,
   UserCog
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 import {
   Sidebar,
@@ -116,10 +116,15 @@ const navigationItems: NavigationItem[] = [
 
 export function AppSidebar() {
   const { state } = useSidebar();
+  const navigate = useNavigate();
   const userRole: UserRole = 'ADMIN';
   
 
   const isCollapsed = state === "collapsed";
+
+  const handleLogoClick = () => {
+    navigate('/');
+  };
 
 
 
@@ -139,9 +144,13 @@ export function AppSidebar() {
     <div className="w-64 bg-white border-r border-gray-200 shadow-md h-full">
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+          <button 
+            onClick={handleLogoClick}
+            className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center hover:bg-orange-600 transition-colors cursor-pointer"
+            title="Ir para página inicial"
+          >
             <ChefHat className="w-4 h-4 text-white" />
-          </div>
+          </button>
           <div>
             <h2 className="font-semibold text-gray-900">LancheFlow</h2>
             <p className="text-xs text-gray-500">Sistema de Gestão</p>

@@ -38,37 +38,25 @@ export default function WelcomePage() {
 
   const fetchRestaurantConfig = async () => {
     try {
-      console.log('🔍 WelcomePage: Buscando configurações...');
-      
       const { data, error } = await supabase
         .from('restaurant_config')
         .select('*')
         .single();
 
-      console.log('📊 WelcomePage: Resultado:', { data, error });
-
       if (error) {
-        console.error('❌ WelcomePage: Erro:', error);
-        
         // Tentar sem .single()
         const { data: allData, error: allError } = await supabase
           .from('restaurant_config')
           .select('*');
         
-        console.log('🔄 WelcomePage: Tentativa sem single:', { allData, allError });
-        
-        if (allError) {
-          console.error('❌ WelcomePage: Erro sem single:', allError);
-        } else if (allData && allData.length > 0) {
-          console.log('✅ WelcomePage: Usando primeiro item:', allData[0]);
+        if (!allError && allData && allData.length > 0) {
           setRestaurantConfig(allData[0]);
         }
       } else {
-        console.log('✅ WelcomePage: Sucesso!', data);
         setRestaurantConfig(data);
       }
     } catch (err) {
-      console.error('💥 WelcomePage: Erro inesperado:', err);
+      console.error('Erro ao carregar configurações do restaurante:', err);
     } finally {
       setLoading(false);
     }
@@ -89,11 +77,14 @@ export default function WelcomePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-32 h-32 rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center mx-auto shadow-2xl mb-4">
+        <div className="text-center space-y-6">
+          <div className="w-32 h-32 rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center mx-auto shadow-2xl animate-pulse">
             <ChefHat className="w-16 h-16 text-white" />
           </div>
-          <p className="text-lg text-muted-foreground">Carregando informações do restaurante...</p>
+          <div className="space-y-2">
+            <p className="text-xl font-semibold text-foreground">Carregando...</p>
+            <p className="text-muted-foreground">Preparando as melhores informações para você</p>
+          </div>
         </div>
       </div>
     );
@@ -101,24 +92,6 @@ export default function WelcomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
-      {/* Debug Info - Sempre visível */}
-      <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 m-4 rounded">
-        <strong>🔧 DEBUG WelcomePage:</strong>
-        <div className="mt-2 text-sm">
-          <div>Loading: {loading ? 'Sim' : 'Não'}</div>
-          <div>Config carregada: {restaurantConfig ? 'Sim' : 'Não'}</div>
-          {restaurantConfig && (
-            <>
-              <div>Nome: {restaurantConfig.nome_restaurante}</div>
-              <div>Slogan: {restaurantConfig.slogan}</div>
-              <div>Logo URL: {restaurantConfig.logo_url}</div>
-              <div>Endereço: {restaurantConfig.endereco}</div>
-              <div>Telefone: {restaurantConfig.telefone}</div>
-            </>
-          )}
-        </div>
-      </div>
-
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20" />
@@ -172,9 +145,9 @@ export default function WelcomePage() {
             </div>
 
             {/* Restaurant Info */}
-            <Card className="max-w-2xl mx-auto border-border shadow-elegant animate-fade-in">
-              <CardContent className="p-8 space-y-6">
-                <div className="grid md:grid-cols-3 gap-6">
+            <Card className="max-w-4xl mx-auto border-border shadow-elegant animate-fade-in">
+              <CardContent className="p-6 md:p-8 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="flex items-center gap-3">
                     <MapPin className="h-5 w-5 text-orange-500" />
                     <div className="text-left">
@@ -199,19 +172,24 @@ export default function WelcomePage() {
                     <Clock className="h-5 w-5 text-orange-500" />
                     <div className="text-left">
                       <p className="font-semibold">Horário</p>
-                      <p className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground">
                         {restaurantConfig?.horario_funcionamento ? (
                           typeof restaurantConfig.horario_funcionamento === 'object' ? (
-                            Object.entries(restaurantConfig.horario_funcionamento).map(([dia, horario]) => (
-                              <span key={dia} className="block capitalize">{dia}: {horario as string}</span>
-                            ))
+                            <div className="space-y-1">
+                              {Object.entries(restaurantConfig.horario_funcionamento).map(([dia, horario]) => (
+                                <div key={dia} className="flex justify-between">
+                                  <span className="capitalize font-medium">{dia}:</span>
+                                  <span>{horario as string}</span>
+                                </div>
+                              ))}
+                            </div>
                           ) : (
                             restaurantConfig.horario_funcionamento
                           )
                         ) : (
                           "18:00 - 23:00"
                         )}
-                      </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -224,9 +202,14 @@ export default function WelcomePage() {
       {/* Highlights Section */}
       <section className="py-16 bg-background/50">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-            Por que escolher o Veneza's?
-          </h2>
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+              Por que escolher o {restaurantConfig?.nome_restaurante || "Veneza's"}?
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Descubra o que nos torna especiais e por que nossos clientes sempre voltam
+            </p>
+          </div>
           
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="text-center hover:shadow-lg transition-shadow">
@@ -269,8 +252,8 @@ export default function WelcomePage() {
             <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
               Nossos Favoritos
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Os lanches mais pedidos pelos nossos clientes
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Os lanches mais pedidos pelos nossos clientes e que você não pode deixar de experimentar
             </p>
           </div>
 

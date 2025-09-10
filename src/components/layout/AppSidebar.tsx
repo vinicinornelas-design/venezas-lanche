@@ -126,26 +126,26 @@ export function AppSidebar() {
     try {
       console.log('Fazendo logout...');
       
+      // Limpar dados locais primeiro
+      localStorage.clear();
+      sessionStorage.clear();
+      
       // Fazer logout no Supabase
       const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error('Erro ao fazer logout:', error);
-        // Mesmo com erro, redirecionar para auth
-        navigate('/auth');
       } else {
         console.log('Logout realizado com sucesso');
-        // Limpar dados locais se necessário
-        localStorage.clear();
-        sessionStorage.clear();
-        
-        // Redirecionar para página de login
-        navigate('/auth');
       }
+      
+      // Forçar redirecionamento com window.location para garantir
+      window.location.href = '/auth';
+      
     } catch (err) {
       console.error('Erro inesperado no logout:', err);
-      // Em caso de erro, ainda assim redirecionar
-      navigate('/auth');
+      // Em caso de erro, forçar redirecionamento
+      window.location.href = '/auth';
     }
   };
 

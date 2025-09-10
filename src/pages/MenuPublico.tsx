@@ -137,33 +137,47 @@ export default function MenuPublico() {
 
   const fetchRestaurantConfig = async () => {
     try {
-      console.log('MenuPublico: Buscando configurações do restaurante...');
+      console.log('=== MENUPUBLICO: INÍCIO - Buscando configurações do restaurante ===');
+      console.log('MenuPublico - Supabase client:', supabase);
+      
       const { data, error } = await supabase
         .from('restaurant_config')
         .select('*')
         .single();
 
+      console.log('MenuPublico - Resultado da consulta:', { data, error });
+
       if (error) {
-        console.error('MenuPublico: Erro ao buscar configurações do restaurante:', error);
+        console.error('❌ MenuPublico: Erro ao buscar configurações do restaurante:', error);
+        console.log('MenuPublico: Tentando buscar sem .single()...');
+        
         // Tentar buscar sem .single() para ver se há dados
         const { data: allData, error: allError } = await supabase
           .from('restaurant_config')
           .select('*');
         
+        console.log('MenuPublico - Resultado da consulta sem single:', { allData, allError });
+        
         if (allError) {
-          console.error('MenuPublico: Erro ao buscar todas as configurações:', allError);
+          console.error('❌ MenuPublico: Erro ao buscar todas as configurações:', allError);
         } else {
-          console.log('MenuPublico: Dados encontrados (sem single):', allData);
+          console.log('✅ MenuPublico: Dados encontrados (sem single):', allData);
           if (allData && allData.length > 0) {
+            console.log('✅ MenuPublico: Definindo configuração com primeiro item:', allData[0]);
             setRestaurantConfig(allData[0]);
+          } else {
+            console.log('⚠️ MenuPublico: Nenhum dado encontrado na tabela');
           }
         }
       } else {
-        console.log('MenuPublico: Configurações carregadas com sucesso:', data);
+        console.log('✅ MenuPublico: Configurações carregadas com sucesso:', data);
+        console.log('✅ MenuPublico: Definindo configuração:', data);
         setRestaurantConfig(data);
       }
     } catch (error) {
-      console.error('MenuPublico: Erro inesperado:', error);
+      console.error('❌ MenuPublico: Erro inesperado:', error);
+    } finally {
+      console.log('=== MENUPUBLICO: FIM - Finalizando carregamento ===');
     }
   };
 

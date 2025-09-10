@@ -26,34 +26,47 @@ const Index = () => {
 
   const fetchRestaurantConfig = async () => {
     try {
-      console.log('Buscando configurações do restaurante...');
+      console.log('=== INÍCIO: Buscando configurações do restaurante ===');
+      console.log('Supabase client:', supabase);
+      
       const { data, error } = await supabase
         .from('restaurant_config')
         .select('*')
         .single();
 
+      console.log('Resultado da consulta:', { data, error });
+
       if (error) {
-        console.error('Erro ao buscar configurações do restaurante:', error);
+        console.error('❌ Erro ao buscar configurações do restaurante:', error);
+        console.log('Tentando buscar sem .single()...');
+        
         // Tentar buscar sem .single() para ver se há dados
         const { data: allData, error: allError } = await supabase
           .from('restaurant_config')
           .select('*');
         
+        console.log('Resultado da consulta sem single:', { allData, allError });
+        
         if (allError) {
-          console.error('Erro ao buscar todas as configurações:', allError);
+          console.error('❌ Erro ao buscar todas as configurações:', allError);
         } else {
-          console.log('Dados encontrados (sem single):', allData);
+          console.log('✅ Dados encontrados (sem single):', allData);
           if (allData && allData.length > 0) {
+            console.log('✅ Definindo configuração com primeiro item:', allData[0]);
             setRestaurantConfig(allData[0]);
+          } else {
+            console.log('⚠️ Nenhum dado encontrado na tabela');
           }
         }
       } else {
-        console.log('Configurações carregadas com sucesso:', data);
+        console.log('✅ Configurações carregadas com sucesso:', data);
+        console.log('✅ Definindo configuração:', data);
         setRestaurantConfig(data);
       }
     } catch (error) {
-      console.error('Erro inesperado:', error);
+      console.error('❌ Erro inesperado:', error);
     } finally {
+      console.log('=== FIM: Finalizando carregamento ===');
       setLoading(false);
     }
   };

@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { 
   Home, 
   ShoppingCart, 
@@ -14,8 +13,6 @@ import {
   LogOut
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 import {
   Sidebar,
@@ -117,61 +114,15 @@ const navigationItems: NavigationItem[] = [
 ];
 
 export function AppSidebar() {
-  const { state, open, setOpen } = useSidebar();
+  const { state } = useSidebar();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [userRole, setUserRole] = useState<UserRole>('FUNCIONARIO');
-  const [userName, setUserName] = useState<string>('');
+  const userRole: UserRole = 'FUNCIONARIO';
+  const userName = 'Usuário';
 
   const isCollapsed = state === "collapsed";
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      // Verificar login hardcoded primeiro  
-      const adminLoggedIn = localStorage.getItem('admin_logged_in');
-      const userRole = localStorage.getItem('user_role');
-      const userName = localStorage.getItem('user_name');
-      
-      if (adminLoggedIn === 'true' && userRole === 'ADMIN') {
-        setUserName(userName || 'Administrador');
-        setUserRole('ADMIN' as UserRole);
-        return;
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('nome, papel')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (profile) {
-          setUserName(profile.nome);
-          setUserRole(profile.papel as UserRole);
-        }
-      }
-    };
-
-    fetchUserProfile();
-  }, []);
-
-  const handleLogout = async () => {
-    // Limpar login hardcoded se existir
-    localStorage.removeItem('admin_logged_in');
-    localStorage.removeItem('user_role');
-    localStorage.removeItem('user_name');
-    
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao fazer logout",
-        variant: "destructive",
-      });
-    } else {
-      navigate('/auth');
-    }
+  const handleLogout = () => {
+    navigate('/auth');
   };
 
   const filteredItems = navigationItems.filter(item => 
@@ -179,85 +130,57 @@ export function AppSidebar() {
   );
 
   const getNavClassName = ({ isActive }: { isActive: boolean }) =>
-    `w-full justify-start transition-all duration-200 ${
+    `w-full justify-start transition-all duration-200 flex items-center gap-2 px-3 py-2 rounded-md ${
       isActive 
-        ? "bg-primary text-primary-foreground shadow-warm" 
-        : "hover:bg-accent hover:text-accent-foreground"
+        ? "bg-orange-500 text-white" 
+        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
     }`;
 
   return (
-    <Sidebar
-      className={`${isCollapsed ? "w-14" : "w-64"} transition-all duration-300 border-r border-border bg-card shadow-md`}
-      collapsible="icon"
-    >
-      <SidebarHeader className="border-b border-border p-4 bg-card">
-        {!isCollapsed && (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-              <ChefHat className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-foreground">LancheFlow</h2>
-              <p className="text-xs text-muted-foreground">Sistema de Gestão</p>
-            </div>
-          </div>
-        )}
-        {isCollapsed && (
-          <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center mx-auto">
+    <div className="w-64 bg-white border-r border-gray-200 shadow-md h-full">
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
             <ChefHat className="w-4 h-4 text-white" />
           </div>
-        )}
-      </SidebarHeader>
-
-      <SidebarContent className="bg-card">
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground">
-            {!isCollapsed && "Navegação"}
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} className={getNavClassName}>
-                      <item.icon className="w-4 h-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-
-      <SidebarFooter className="border-t border-border p-4 bg-card">
-        {!isCollapsed && (
-          <div className="space-y-2">
-            <div className="text-sm">
-              <p className="font-medium text-foreground">{userName}</p>
-              <p className="text-xs text-muted-foreground capitalize">{userRole.toLowerCase()}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-2 text-sm text-destructive hover:bg-destructive/10 px-2 py-1 rounded-md transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Sair
-            </button>
+          <div>
+            <h2 className="font-semibold text-gray-900">LancheFlow</h2>
+            <p className="text-xs text-gray-500">Sistema de Gestão</p>
           </div>
-        )}
-        {isCollapsed && (
+        </div>
+      </div>
+
+      <div className="p-4">
+        <h3 className="text-sm font-medium text-gray-500 mb-3">Navegação</h3>
+        <nav className="space-y-1">
+          {filteredItems.map((item) => (
+            <NavLink 
+              key={item.title} 
+              to={item.url} 
+              className={getNavClassName}
+            >
+              <item.icon className="w-4 h-4" />
+              <span>{item.title}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
+        <div className="space-y-2">
+          <div className="text-sm">
+            <p className="font-medium text-gray-900">{userName}</p>
+            <p className="text-xs text-gray-500 capitalize">{userRole.toLowerCase()}</p>
+          </div>
           <button
             onClick={handleLogout}
-            className="w-8 h-8 rounded-md flex items-center justify-center text-destructive hover:bg-destructive/10 transition-colors mx-auto"
+            className="w-full flex items-center gap-2 text-sm text-red-600 hover:bg-red-50 px-2 py-1 rounded-md transition-colors"
           >
             <LogOut className="w-4 h-4" />
+            Sair
           </button>
-        )}
-      </SidebarFooter>
-
-      <SidebarTrigger className="absolute -right-3 top-6 bg-background border border-border rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:shadow-lg transition-shadow" />
-    </Sidebar>
+        </div>
+      </div>
+    </div>
   );
 }

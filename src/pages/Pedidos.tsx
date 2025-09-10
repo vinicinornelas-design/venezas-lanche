@@ -64,6 +64,12 @@ export default function Pedidos() {
     try {
       setUpdating(prev => ({ ...prev, [pedidoId]: true }));
       
+      // Buscar dados atuais do pedido para obter o valor total
+      const pedidoAtual = pedidos.find(p => p.id === pedidoId);
+      if (!pedidoAtual) {
+        throw new Error('Pedido não encontrado');
+      }
+      
       const updateData: any = { status: newStatus };
       
       // Adicionar timestamps específicos baseado no status
@@ -77,6 +83,9 @@ export default function Pedidos() {
           break;
         case 'ENTREGUE':
           updateData.entregue_em = now;
+          // Quando entregue, considerar pagamento realizado
+          updateData.pago = true;
+          updateData.valor_pago = pedidoAtual.total; // Usar o valor total do pedido atual
           break;
       }
 
@@ -92,7 +101,7 @@ export default function Pedidos() {
       // Recarregar pedidos para aplicar nova ordenação
       await fetchPedidos();
       
-      console.log(`Pedido ${pedidoId} atualizado para ${newStatus}`);
+      console.log(`Pedido ${pedidoId} atualizado para ${newStatus}${newStatus === 'ENTREGUE' ? ' e marcado como pago' : ''}`);
     } catch (error) {
       console.error('Erro ao atualizar pedido:', error);
       setError('Erro ao atualizar pedido');

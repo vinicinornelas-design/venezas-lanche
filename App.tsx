@@ -23,7 +23,6 @@ import ConfiguracaoRestaurante from "@/pages/ConfiguracaoRestaurante";
 import IndexSimple from "@/pages/IndexSimple";
 import Remarketing from "@/pages/Remarketing";
 import PainelColaborador from "@/pages/PainelColaborador";
-import AtendimentoMesas from "@/pages/AtendimentoMesas";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,7 +45,6 @@ const App = () => (
             <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
             <Route path="/admin-dashboard" element={<AppLayout><AdminDashboard /></AppLayout>} />
             <Route path="/painel-colaborador" element={<AppLayout><PainelColaborador /></AppLayout>} />
-            <Route path="/atendimento-mesas" element={<AppLayout><AtendimentoMesas /></AppLayout>} />
               <Route path="/pedidos" element={<AppLayout><Pedidos /></AppLayout>} />
               <Route path="/mesas" element={<AppLayout><Mesas /></AppLayout>} />
               <Route path="/clientes" element={<AppLayout><Clientes /></AppLayout>} />

@@ -111,7 +111,7 @@ BEGIN
 END $$;
 
 -- 3. VERIFICAR TUDO CRIADO
-SELECT 'AUTH USER' as tabela, id, email, created_at FROM auth.users WHERE email = 'teste.completo@exemplo.com'
+SELECT 'AUTH USER' as tabela, id::text as id, email, created_at FROM auth.users WHERE email = 'teste.completo@exemplo.com'
 UNION ALL
 SELECT 'PROFILE' as tabela, user_id::text as id, nome as email, created_at FROM public.profiles WHERE nome = 'Funcionário Teste'
 UNION ALL

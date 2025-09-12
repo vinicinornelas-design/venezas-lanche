@@ -11,16 +11,35 @@ export function AppHeader() {
 
   useEffect(() => {
     loadUserData();
+    
+    // Listener para mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('🔄 AppHeader: Mudança de auth detectada:', { event, session: !!session });
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          loadUserData();
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadUserData = async () => {
     try {
+      console.log('🔍 AppHeader: Carregando dados do usuário...');
+      
       // Verificar login hardcoded do admin
       const adminLoggedIn = localStorage.getItem('admin_logged_in');
       const storedUserRole = localStorage.getItem('user_role');
       const storedUserName = localStorage.getItem('user_name');
       
+      console.log('🔍 AppHeader: Dados locais:', { adminLoggedIn, storedUserRole, storedUserName });
+      
       if (adminLoggedIn === 'true' && storedUserRole === 'ADMIN') {
+        console.log('✅ AppHeader: Usuário admin detectado');
         setUserRole('ADMIN');
         setUserName(storedUserName || 'Administrador');
         setLoading(false);
@@ -28,9 +47,12 @@ export function AppHeader() {
       }
 
       // Verificar autenticação normal do Supabase
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      console.log('🔍 AppHeader: Usuário Supabase:', { user: user?.id, email: user?.email, error: userError });
       
       if (!user) {
+        console.log('❌ AppHeader: Nenhum usuário autenticado');
         setUserRole('FUNCIONARIO');
         setUserName('Usuário');
         setLoading(false);
@@ -38,21 +60,25 @@ export function AppHeader() {
       }
 
       // Buscar dados do perfil no Supabase
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('nome, papel')
         .eq('user_id', user.id)
         .single();
 
+      console.log('🔍 AppHeader: Perfil encontrado:', { profile, error: profileError });
+
       if (profile) {
+        console.log('✅ AppHeader: Perfil carregado:', { nome: profile.nome, papel: profile.papel });
         setUserName(profile.nome || 'Usuário');
         setUserRole(profile.papel as UserRole || 'FUNCIONARIO');
       } else {
+        console.log('⚠️ AppHeader: Perfil não encontrado, usando padrão');
         setUserName('Usuário');
         setUserRole('FUNCIONARIO');
       }
     } catch (error) {
-      console.error('Erro ao carregar dados do usuário:', error);
+      console.error('❌ AppHeader: Erro ao carregar dados do usuário:', error);
       setUserName('Usuário');
       setUserRole('FUNCIONARIO');
     } finally {

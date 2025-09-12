@@ -121,6 +121,10 @@ export default function Funcionarios() {
           // Gerar senha temporária
           const senhaTemporaria = Math.random().toString(36).slice(-8) + '123!';
           
+          console.log('🔍 Tentando criar usuário no auth...');
+          console.log('Email:', formData.email);
+          console.log('Senha temporária:', senhaTemporaria);
+          
           // Usar signUp como na tela de Auth
           const { data: authData, error: authError } = await supabase.auth.signUp({
             email: formData.email,
@@ -134,17 +138,32 @@ export default function Funcionarios() {
             }
           });
 
+          console.log('📊 Resultado do signUp:');
+          console.log('AuthData:', authData);
+          console.log('AuthError:', authError);
+
           if (authError) {
-            console.warn('Erro ao criar usuário no auth:', authError);
-            // Continuar mesmo se der erro no auth
+            console.error('❌ Erro ao criar usuário no auth:', authError);
+            toast({
+              title: "Aviso",
+              description: `Funcionário cadastrado, mas erro ao criar usuário: ${authError.message}`,
+              variant: "destructive",
+            });
           } else if (authData.user) {
+            console.log('✅ Usuário criado no auth com sucesso!');
+            console.log('User ID:', authData.user.id);
+            
             // Atualizar funcionário com o profile_id
-            await supabase
+            const { error: updateError } = await supabase
               .from('funcionarios')
               .update({ profile_id: authData.user.id })
               .eq('id', funcionarioId);
 
-            console.log('Usuário criado no auth com sucesso. Senha temporária:', senhaTemporaria);
+            if (updateError) {
+              console.error('❌ Erro ao atualizar funcionário com profile_id:', updateError);
+            } else {
+              console.log('✅ Funcionário atualizado com profile_id');
+            }
             
             // Mostrar modal com senha temporária
             setSenhaModal({
@@ -153,10 +172,16 @@ export default function Funcionarios() {
               funcionarioEmail: formData.email,
               senhaTemporaria: senhaTemporaria
             });
+          } else {
+            console.warn('⚠️ AuthData.user é null/undefined');
           }
         } catch (authError) {
-          console.warn('Erro ao criar usuário no sistema de auth:', authError);
-          // Continuar mesmo se der erro no auth
+          console.error('❌ Erro inesperado ao criar usuário:', authError);
+          toast({
+            title: "Aviso",
+            description: `Funcionário cadastrado, mas erro inesperado: ${authError.message}`,
+            variant: "destructive",
+          });
         }
       }
 

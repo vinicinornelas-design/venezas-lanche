@@ -5,25 +5,26 @@
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'is_admin') THEN
-    -- Criar função is_admin se não existir
-    CREATE OR REPLACE FUNCTION public.is_admin()
-    RETURNS boolean
-    LANGUAGE plpgsql
-    SECURITY DEFINER
-    AS $$
-    BEGIN
-      RETURN EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE user_id = auth.uid() 
-        AND papel = 'ADMIN'
-      );
-    END;
-    $$;
-    RAISE NOTICE '✅ Função is_admin criada';
+    RAISE NOTICE 'Criando função is_admin...';
   ELSE
-    RAISE NOTICE '✅ Função is_admin já existe';
+    RAISE NOTICE 'Função is_admin já existe';
   END IF;
 END $$;
+
+-- Criar função is_admin se não existir
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE user_id = auth.uid() 
+    AND papel = 'ADMIN'
+  );
+END;
+$$;
 
 -- 2. CRIAR FUNÇÃO PARA CRIAR USUÁRIO COMPLETO
 CREATE OR REPLACE FUNCTION public.criar_funcionario_completo(

@@ -11,7 +11,8 @@ O sistema está detectando o usuário logado, mas **não encontra o perfil** na 
 1. **Acesse** o [Dashboard do Supabase](https://supabase.com/dashboard)
 2. **Vá** para o projeto do restaurante
 3. **Clique** em "SQL Editor" no menu lateral
-4. **Cole** o código do arquivo `criar_perfil_usuario_faltante.sql`
+4. **Cole** o código do arquivo `garantir_trigger_perfil.sql` (RECOMENDADO)
+   - **OU** use `criar_perfil_usuario_faltante.sql` (alternativa)
 5. **Execute** o script clicando em "Run"
 
 ### **2. Verificar se Funcionou**
@@ -36,6 +37,14 @@ Após executar o SQL:
 
 ## 🔍 **O QUE O SCRIPT FAZ**
 
+### **Script `garantir_trigger_perfil.sql` (RECOMENDADO):**
+1. **Verifica** se o trigger existe
+2. **Recria** o trigger `handle_new_user()` de forma robusta
+3. **Cria perfis** para usuários existentes sem perfil
+4. **Garante** que novos usuários tenham perfil criado automaticamente
+5. **Mostra** relatório completo de usuários e perfis
+
+### **Script `criar_perfil_usuario_faltante.sql` (ALTERNATIVA):**
 1. **Identifica** usuários sem perfil
 2. **Cria perfis** automaticamente para usuários sem perfil
 3. **Adiciona funções** para garantir que perfis sempre existam

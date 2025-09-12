@@ -15,7 +15,6 @@ import {
   Upload, 
   Download, 
   Search, 
-  Filter, 
   SortAsc, 
   List,
   X

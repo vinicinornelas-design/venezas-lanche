@@ -121,37 +121,24 @@ export default function Funcionarios() {
           // Gerar senha temporária
           const senhaTemporaria = Math.random().toString(36).slice(-8) + '123!';
           
-          // Criar usuário no auth
-          const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-            email: formData.email,
-            password: senhaTemporaria,
-            email_confirm: true,
-            user_metadata: {
-              nome: formData.nome,
-              papel: formData.nivel_acesso,
-              cargo: formData.cargo
-            }
+          // Chamar função SQL para criar usuário no auth
+          const { data: authResult, error: authError } = await supabase.rpc('criar_usuario_auth', {
+            p_email: formData.email,
+            p_senha: senhaTemporaria,
+            p_nome: formData.nome,
+            p_papel: formData.nivel_acesso,
+            p_cargo: formData.cargo
           });
 
           if (authError) {
             console.warn('Erro ao criar usuário no auth:', authError);
             // Continuar mesmo se der erro no auth
-          } else if (authData.user) {
+          } else if (authResult && authResult.success) {
             // Atualizar funcionário com o profile_id
             await supabase
               .from('funcionarios')
-              .update({ profile_id: authData.user.id })
+              .update({ profile_id: authResult.user_id })
               .eq('id', funcionarioId);
-
-            // Criar perfil do usuário
-            await supabase
-              .from('profiles')
-              .insert({
-                user_id: authData.user.id,
-                nome: formData.nome,
-                papel: formData.nivel_acesso,
-                ativo: formData.ativo
-              });
 
             console.log('Usuário criado no auth com sucesso. Senha temporária:', senhaTemporaria);
             
@@ -162,6 +149,8 @@ export default function Funcionarios() {
               funcionarioEmail: formData.email,
               senhaTemporaria: senhaTemporaria
             });
+          } else {
+            console.warn('Erro na criação do usuário:', authResult?.error);
           }
         } catch (authError) {
           console.warn('Erro ao criar usuário no sistema de auth:', authError);

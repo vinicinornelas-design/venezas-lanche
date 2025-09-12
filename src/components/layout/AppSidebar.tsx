@@ -14,6 +14,8 @@ import {
   UserCog
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 import {
   Sidebar,
@@ -123,10 +125,73 @@ const navigationItems: NavigationItem[] = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const navigate = useNavigate();
-  const userRole: UserRole = 'ADMIN';
-  
+  const [userRole, setUserRole] = useState<UserRole>('FUNCIONARIO');
+  const [loading, setLoading] = useState(true);
 
   const isCollapsed = state === "collapsed";
+
+  useEffect(() => {
+    loadUserRole();
+  }, []);
+
+  const loadUserRole = async () => {
+    try {
+      // Verificar login hardcoded do admin
+      const adminLoggedIn = localStorage.getItem('admin_logged_in');
+      const storedUserRole = localStorage.getItem('user_role');
+      
+      if (adminLoggedIn === 'true' && storedUserRole === 'ADMIN') {
+        setUserRole('ADMIN');
+        setLoading(false);
+        return;
+      }
+
+      // Verificar autenticação normal do Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setUserRole('FUNCIONARIO');
+        setLoading(false);
+        return;
+      }
+
+      // Buscar dados do perfil no Supabase
+      let { data: profile } = await supabase
+        .from('profiles')
+        .select('papel')
+        .eq('user_id', user.id)
+        .single();
+
+      // Se perfil não existe, tentar criar automaticamente
+      if (!profile && user.email) {
+        const { data: newProfile } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            nome: user.email.split('@')[0] || 'Usuário',
+            papel: 'FUNCIONARIO',
+            ativo: true
+          })
+          .select('papel')
+          .single();
+
+        if (newProfile) {
+          profile = newProfile;
+        }
+      }
+
+      if (profile) {
+        setUserRole(profile.papel as UserRole || 'FUNCIONARIO');
+      } else {
+        setUserRole('FUNCIONARIO');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar papel do usuário:', error);
+      setUserRole('FUNCIONARIO');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogoClick = () => {
     navigate('/');
@@ -145,6 +210,31 @@ export function AppSidebar() {
         : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
     }`;
 
+  if (loading) {
+    return (
+      <div className="w-64 bg-white border-r border-gray-200 shadow-md h-full">
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+              <ChefHat className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-gray-900">LancheFlow</h2>
+              <p className="text-xs text-gray-500">Sistema de Gestão</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-4">
+          <h3 className="text-sm font-medium text-gray-500 mb-3">Navegação</h3>
+          <div className="space-y-1">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="w-full h-8 bg-gray-200 rounded-md animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 shadow-md h-full">

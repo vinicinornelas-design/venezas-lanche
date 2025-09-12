@@ -65,6 +65,12 @@ const navigationItems: NavigationItem[] = [
     roles: ['ADMIN', 'FUNCIONARIO', 'ATENDENTE']
   },
   {
+    title: "Atendimento de Mesas",
+    url: "/atendimento-mesas",
+    icon: UserCheck,
+    roles: ['FUNCIONARIO', 'ATENDENTE', 'GARCOM']
+  },
+  {
     title: "Gestão do Cardápio",
     url: "/cardapio",
     icon: ChefHat,

@@ -60,13 +60,36 @@ export function AppHeader() {
       }
 
       // Buscar dados do perfil no Supabase
-      const { data: profile, error: profileError } = await supabase
+      let { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('nome, papel')
         .eq('user_id', user.id)
         .single();
 
       console.log('🔍 AppHeader: Perfil encontrado:', { profile, error: profileError });
+
+      // Se perfil não existe, tentar criar automaticamente
+      if (!profile && user.email) {
+        console.log('⚠️ AppHeader: Perfil não encontrado, tentando criar...');
+        
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            nome: user.email.split('@')[0] || 'Usuário',
+            papel: 'FUNCIONARIO',
+            ativo: true
+          })
+          .select('nome, papel')
+          .single();
+
+        if (newProfile && !createError) {
+          console.log('✅ AppHeader: Perfil criado automaticamente:', newProfile);
+          profile = newProfile;
+        } else {
+          console.error('❌ AppHeader: Erro ao criar perfil:', createError);
+        }
+      }
 
       if (profile) {
         console.log('✅ AppHeader: Perfil carregado:', { nome: profile.nome, papel: profile.papel });

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Imagens - Veneza's Lanches</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .image-test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .image-test img { max-width: 200px; height: 150px; object-fit: cover; margin: 5px; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Teste de Imagens - Veneza's Lanches</h1>
+    
+    <div class="image-test">
+        <h3>Imagens da pasta public:</h3>
+        <img src="/acai-bowl.jpg" alt="Açaí no Copo" onerror="this.style.border='2px solid red'; this.alt='ERRO: ' + this.src;">
+        <img src="/bacon-cheddar-burger.jpg" alt="Bacon Cheddar Burger" onerror="this.style.border='2px solid red'; this.alt='ERRO: ' + this.src;">
+        <img src="/misto-sandwich.jpg" alt="Misto Sandwich" onerror="this.style.border='2px solid red'; this.alt='ERRO: ' + this.src;">
+        <img src="/smash-burger.jpg" alt="Smash Burger" onerror="this.style.border='2px solid red'; this.alt='ERRO: ' + this.src;">
+        <img src="/burger-cremoso.jpg" alt="Burger Cremoso" onerror="this.style.border='2px solid red'; this.alt='ERRO: ' + this.src;">
+        <img src="/burger-hawaii.jpg" alt="Burger Hawaii" onerror="this.style.border='2px solid red'; this.alt='ERRO: ' + this.src;">
+        <img src="/omelete-frango.jpg" alt="Omelete de Frango" onerror="this.style.border='2px solid red'; this.alt='ERRO: ' + this.src;">
+    </div>
+
+    <div class="image-test">
+        <h3>Imagens com caminho src/assets (antigo):</h3>
+        <img src="/src/assets/acai-bowl.jpg" alt="Açaí no Copo (antigo)" onerror="this.style.border='2px solid red'; this.alt='ERRO: ' + this.src;">
+        <img src="/src/assets/bacon-cheddar-burger.jpg" alt="Bacon Cheddar Burger (antigo)" onerror="this.style.border='2px solid red'; this.alt='ERRO: ' + this.src;">
+    </div>
+
+    <script>
+        // Log de erros de carregamento
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('error', function() {
+                console.error('Erro ao carregar:', this.src);
+            });
+            img.addEventListener('load', function() {
+                console.log('Carregado com sucesso:', this.src);
+            });
+        });
+    </script>
+</body>
+</html>

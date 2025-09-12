@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { LogOut, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 
@@ -8,9 +8,11 @@ export function AppHeader() {
   const [userRole, setUserRole] = useState<UserRole>('FUNCIONARIO');
   const [userName, setUserName] = useState('Usuário');
   const [loading, setLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState('');
 
   useEffect(() => {
     loadUserData();
+    updateCurrentDate();
     
     // Listener para mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -22,10 +24,25 @@ export function AppHeader() {
       }
     );
 
+    // Atualizar data a cada minuto
+    const dateInterval = setInterval(updateCurrentDate, 60000);
+
     return () => {
       subscription.unsubscribe();
+      clearInterval(dateInterval);
     };
   }, []);
+
+  const updateCurrentDate = () => {
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    setCurrentDate(formattedDate);
+  };
 
   const loadUserData = async () => {
     try {
@@ -160,7 +177,14 @@ export function AppHeader() {
           <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
+          {/* Data atual */}
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Calendar className="w-4 h-4" />
+            <span className="font-medium">{currentDate}</span>
+          </div>
+          
+          {/* Informações do usuário */}
           <div className="text-right">
             <p className="text-sm font-medium text-gray-900">{userName}</p>
             <p className="text-xs text-gray-500 capitalize">{userRole.toLowerCase()}</p>

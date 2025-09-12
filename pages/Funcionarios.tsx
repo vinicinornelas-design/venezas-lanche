@@ -125,21 +125,17 @@ export default function Funcionarios() {
           console.log('Email:', formData.email);
           console.log('Senha temporária:', senhaTemporaria);
           
-          // Usar signUp como na tela de Auth
-          const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: formData.email,
-            password: senhaTemporaria,
-            options: {
-              data: {
-                nome: formData.nome,
-                papel: formData.nivel_acesso,
-                cargo: formData.cargo
-              }
-            }
+          // Usar função SQL para criar usuário diretamente
+          const { data: authResult, error: authError } = await supabase.rpc('criar_usuario_direto', {
+            p_email: formData.email,
+            p_senha: senhaTemporaria,
+            p_nome: formData.nome,
+            p_papel: formData.nivel_acesso,
+            p_cargo: formData.cargo
           });
 
-          console.log('📊 Resultado do signUp:');
-          console.log('AuthData:', authData);
+          console.log('📊 Resultado da criação:');
+          console.log('AuthResult:', authResult);
           console.log('AuthError:', authError);
 
           if (authError) {
@@ -149,14 +145,14 @@ export default function Funcionarios() {
               description: `Funcionário cadastrado, mas erro ao criar usuário: ${authError.message}`,
               variant: "destructive",
             });
-          } else if (authData.user) {
+          } else if (authResult && authResult.success) {
             console.log('✅ Usuário criado no auth com sucesso!');
-            console.log('User ID:', authData.user.id);
+            console.log('User ID:', authResult.user_id);
             
             // Atualizar funcionário com o profile_id
             const { error: updateError } = await supabase
               .from('funcionarios')
-              .update({ profile_id: authData.user.id })
+              .update({ profile_id: authResult.user_id })
               .eq('id', funcionarioId);
 
             if (updateError) {
@@ -173,7 +169,8 @@ export default function Funcionarios() {
               senhaTemporaria: senhaTemporaria
             });
           } else {
-            console.warn('⚠️ AuthData.user é null/undefined');
+            console.warn('⚠️ AuthResult é null/undefined ou success=false');
+            console.warn('Erro:', authResult?.error);
           }
         } catch (authError) {
           console.error('❌ Erro inesperado ao criar usuário:', authError);

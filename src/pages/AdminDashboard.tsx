@@ -76,7 +76,7 @@ export default function AdminDashboard() {
         { data: funcionarios },
         { data: itens }
       ] = await Promise.all([
-        supabase.from('pedidos').select('status, total, created_at, pago').gte('created_at', today),
+        supabase.from('pedidos_unificados').select('status, total, created_at, pago').gte('created_at', today),
         supabase.from('mesas').select('status, numero'),
         supabase.from('customers').select('id'),
         supabase.from('funcionarios').select('id, ativo').eq('ativo', true),
@@ -87,8 +87,9 @@ export default function AdminDashboard() {
         const pendentes = pedidos.filter(p => p.status === 'PENDENTE').length;
         const concluidos = pedidos.filter(p => ['ENTREGUE', 'PRONTO'].includes(p.status)).length;
         const cancelados = pedidos.filter(p => p.status === 'CANCELADO').length;
+        // Faturamento considera pedidos finalizados (ENTREGUE/PRONTO) independente do campo pago
         const faturamento = pedidos
-          .filter(p => p.pago)
+          .filter(p => ['ENTREGUE', 'PRONTO'].includes(p.status))
           .reduce((sum, p) => sum + (p.total || 0), 0);
 
         setStats(prev => ({
@@ -135,7 +136,7 @@ export default function AdminDashboard() {
   const fetchRecentOrders = async () => {
     try {
       const { data } = await supabase
-        .from('pedidos')
+        .from('pedidos_unificados')
         .select('id, cliente_nome, status, total, created_at, origem, pago')
         .order('created_at', { ascending: false })
         .limit(5);

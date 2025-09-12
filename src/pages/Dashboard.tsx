@@ -79,7 +79,7 @@ export default function Dashboard() {
       const today = new Date().toISOString().split('T')[0];
       
       const { data: pedidos } = await supabase
-        .from('pedidos')
+        .from('pedidos_unificados')
         .select('status, total, created_at')
         .gte('created_at', today);
 
@@ -93,10 +93,10 @@ export default function Dashboard() {
 
       if (pedidos) {
         const pendentes = pedidos.filter(p => p.status === 'PENDENTE').length;
-        const concluidos = pedidos.filter(p => p.status === 'CONCLUIDO').length;
+        const concluidos = pedidos.filter(p => ['ENTREGUE', 'PRONTO'].includes(p.status)).length;
         const cancelados = pedidos.filter(p => p.status === 'CANCELADO').length;
         const faturamento = pedidos
-          .filter(p => p.status === 'CONCLUIDO')
+          .filter(p => ['ENTREGUE', 'PRONTO'].includes(p.status))
           .reduce((sum, p) => sum + (p.total || 0), 0);
 
         setStats(prev => ({
@@ -137,7 +137,7 @@ export default function Dashboard() {
   const fetchRecentOrders = async () => {
     try {
       const { data } = await supabase
-        .from('pedidos')
+        .from('pedidos_unificados')
         .select('id, cliente_nome, status, total, created_at, origem')
         .order('created_at', { ascending: false })
         .limit(5);

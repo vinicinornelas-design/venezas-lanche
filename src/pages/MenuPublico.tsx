@@ -45,7 +45,6 @@ interface RestaurantConfig {
   telefone: string;
   endereco: string;
   horario_funcionamento: any;
-  slogan: string | null;
 }
 
 export default function MenuPublico() {
@@ -137,25 +136,14 @@ export default function MenuPublico() {
 
   const fetchRestaurantConfig = async () => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('restaurant_config')
         .select('*')
         .single();
 
-      if (error) {
-        // Tentar sem .single()
-        const { data: allData, error: allError } = await supabase
-          .from('restaurant_config')
-          .select('*');
-        
-        if (!allError && allData && allData.length > 0) {
-          setRestaurantConfig(allData[0]);
-        }
-      } else {
-        setRestaurantConfig(data);
-      }
-    } catch (err) {
-      console.error('Erro ao carregar configurações do restaurante:', err);
+      if (data) setRestaurantConfig(data);
+    } catch (error) {
+      console.error('Error fetching restaurant config:', error);
     }
   };
 

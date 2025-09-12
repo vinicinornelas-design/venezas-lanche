@@ -20,7 +20,6 @@ import Clientes from "@/pages/Clientes";
 import Relatorios from "@/pages/Relatorios";
 import Restaurante from "@/pages/Restaurante";
 import ConfiguracaoRestaurante from "@/pages/ConfiguracaoRestaurante";
-import IndexSimple from "@/pages/IndexSimple";
 import Remarketing from "@/pages/Remarketing";
 import PainelColaborador from "@/pages/PainelColaborador";
 import NotFound from "@/pages/NotFound";
@@ -36,7 +35,6 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<WelcomePage />} />
-            <Route path="/test" element={<IndexSimple />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/menu-publico" element={<MenuPublico />} />
             <Route path="/cardapio-publico" element={<MenuPublico />} />
@@ -54,7 +52,6 @@ const App = () => (
               <Route path="/relatorios" element={<AppLayout><Relatorios /></AppLayout>} />
               <Route path="/cardapio" element={<AppLayout><GestaoCardapio /></AppLayout>} />
               <Route path="/gestao-cardapio" element={<AppLayout><GestaoCardapio /></AppLayout>} />
-              <Route path="/restaurante" element={<AppLayout><Restaurante /></AppLayout>} />
               <Route path="/configuracao-restaurante" element={<AppLayout><ConfiguracaoRestaurante /></AppLayout>} />
               <Route path="/configuracoes" element={<AppLayout><Configuracoes /></AppLayout>} />
             

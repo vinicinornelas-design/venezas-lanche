@@ -45,55 +45,27 @@ export default function Relatorios() {
 
   const fetchReports = async () => {
     try {
-      // Buscar dados do mês atual
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      // Buscar receita diária dos últimos 30 dias
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      // Buscar pedidos do mês atual da tabela unificada
-      const { data: ordersData } = await supabase
-        .from('pedidos_unificados')
-        .select('total, created_at, pago, status')
-        .gte('created_at', startOfMonth.toISOString())
-        .lte('created_at', endOfMonth.toISOString())
-        .not('status', 'eq', 'CANCELADO')
-        .order('created_at', { ascending: false });
+      const { data: revenueData } = await supabase
+        .from('daily_revenue')
+        .select('*')
+        .gte('date', thirtyDaysAgo.toISOString().split('T')[0])
+        .order('date', { ascending: false });
 
-      if (ordersData) {
-        // Calcular receita diária do mês atual
-        const dailyRevenueMap = new Map<string, { total_revenue: number; total_orders: number }>();
+      if (revenueData) {
+        setDailyRevenue(revenueData);
         
-        ordersData.forEach(order => {
-          const date = order.created_at.split('T')[0];
-          const isPaid = order.pago === true;
-          
-          if (!dailyRevenueMap.has(date)) {
-            dailyRevenueMap.set(date, { total_revenue: 0, total_orders: 0 });
-          }
-          
-          const dayData = dailyRevenueMap.get(date)!;
-          dayData.total_orders += 1;
-          if (isPaid) {
-            dayData.total_revenue += order.total || 0;
-          }
-        });
-
-        // Converter para array e ordenar
-        const dailyRevenueArray = Array.from(dailyRevenueMap.entries())
-          .map(([date, data]) => ({ date, ...data }))
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-        setDailyRevenue(dailyRevenueArray);
-        
-        // Calcular estatísticas do mês atual
-        const paidOrders = ordersData.filter(order => order.pago === true);
-        const totalRevenue = paidOrders.reduce((sum, order) => sum + (order.total || 0), 0);
-        const totalOrders = ordersData.length;
+        // Calcular estatísticas mensais
+        const totalRevenue = revenueData.reduce((sum, day) => sum + day.total_revenue, 0);
+        const totalOrders = revenueData.reduce((sum, day) => sum + day.total_orders, 0);
         const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
         
-        const bestDay = dailyRevenueArray.reduce((best, day) => 
+        const bestDay = revenueData.reduce((best, day) => 
           day.total_revenue > best.total_revenue ? day : best
-        , dailyRevenueArray[0] || { total_revenue: 0, date: '' });
+        , revenueData[0] || { total_revenue: 0, date: '' });
 
         setMonthlyStats({
           totalRevenue,
@@ -104,18 +76,17 @@ export default function Relatorios() {
         });
       }
 
-      // Buscar produtos mais vendidos do mês atual
-      const { data: productsData } = await supabase
+      // Buscar produtos mais vendidos da tabela unificada
+      const { data: ordersData } = await supabase
         .from('pedidos_unificados')
         .select('itens, total, created_at')
-        .gte('created_at', startOfMonth.toISOString())
-        .lte('created_at', endOfMonth.toISOString())
+        .gte('created_at', thirtyDaysAgo.toISOString())
         .not('status', 'eq', 'CANCELADO');
 
-      if (productsData) {
+      if (ordersData) {
         const productMap = new Map<string, ProductStats>();
         
-        productsData.forEach(order => {
+        ordersData.forEach(order => {
           if (order.itens && Array.isArray(order.itens)) {
             order.itens.forEach((item: any) => {
               const productName = item.nome || 'Produto sem nome';
@@ -204,7 +175,7 @@ export default function Relatorios() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-700">Faturamento (Mês Atual)</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-700">Faturamento (30 dias)</CardTitle>
             <DollarSign className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -257,7 +228,7 @@ export default function Relatorios() {
               {monthlyStats.totalOrders}
             </div>
             <p className="text-xs text-orange-600 mt-1">
-              Mês atual
+              Últimos 30 dias
             </p>
           </CardContent>
         </Card>
@@ -268,7 +239,7 @@ export default function Relatorios() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
-            Receita Diária (Mês Atual)
+            Receita Diária (Últimos 30 dias)
           </CardTitle>
         </CardHeader>
         <CardContent>

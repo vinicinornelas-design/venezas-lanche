@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,54 +13,10 @@ import {
   ArrowRight,
   Shield
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-
-interface RestaurantConfig {
-  id: string;
-  nome_restaurante: string | null;
-  endereco: string | null;
-  telefone: string | null;
-  horario_funcionamento: any;
-  logo_url: string | null;
-  banner_url: string | null;
-  slogan: string | null;
-}
 
 export default function WelcomePage() {
   const navigate = useNavigate();
   const [showAdminButton, setShowAdminButton] = useState(false);
-  const [restaurantConfig, setRestaurantConfig] = useState<RestaurantConfig | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchRestaurantConfig();
-  }, []);
-
-  const fetchRestaurantConfig = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('restaurant_config')
-        .select('*')
-        .single();
-
-      if (error) {
-        // Tentar sem .single()
-        const { data: allData, error: allError } = await supabase
-          .from('restaurant_config')
-          .select('*');
-        
-        if (!allError && allData && allData.length > 0) {
-          setRestaurantConfig(allData[0]);
-        }
-      } else {
-        setRestaurantConfig(data);
-      }
-    } catch (err) {
-      console.error('Erro ao carregar configurações do restaurante:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleMenuClick = () => {
     navigate('/menu-publico');
@@ -74,22 +30,6 @@ export default function WelcomePage() {
     setShowAdminButton(!showAdminButton);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
-        <div className="text-center space-y-6">
-          <div className="w-32 h-32 rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center mx-auto shadow-2xl animate-pulse">
-            <ChefHat className="w-16 h-16 text-white" />
-          </div>
-          <div className="space-y-2">
-            <p className="text-xl font-semibold text-foreground">Carregando...</p>
-            <p className="text-muted-foreground">Preparando as melhores informações para você</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-subtle">
       {/* Hero Section */}
@@ -100,30 +40,26 @@ export default function WelcomePage() {
           <div className="text-center space-y-8">
             {/* Logo and Brand */}
             <div className="space-y-4">
-              <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center shadow-2xl animate-logo-float animate-logo-glow hover:animate-logo-rotate transition-all duration-500 hover:scale-110 cursor-pointer group">
-                {restaurantConfig?.logo_url ? (
-                  <img 
-                    src={restaurantConfig.logo_url} 
-                    alt={restaurantConfig.nome_restaurante || "Logo do restaurante"} 
-                    className="w-24 h-24 object-contain animate-logo-pulse group-hover:animate-none"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      const fallback = document.createElement('div');
-                      fallback.innerHTML = '<svg class="w-16 h-16 text-white animate-logo-pulse" fill="currentColor" viewBox="0 0 20 20"><path d="M10.2 3.2c-.8-.8-2-.8-2.8 0L3.2 7.4c-.8.8-.8 2 0 2.8l4.2 4.2c.8.8 2 .8 2.8 0l4.2-4.2c.8-.8.8-2 0-2.8L10.2 3.2z"/><path d="M8 6h4v2H8V6zM8 10h4v2H8v-2z"/></svg>';
-                      e.currentTarget.parentElement?.appendChild(fallback);
-                    }}
-                  />
-                ) : (
-                  <ChefHat className="w-16 h-16 text-white animate-logo-pulse group-hover:animate-none" />
-                )}
+              <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center shadow-2xl">
+                <img 
+                  src="/lovable-uploads/venezas-logo.png" 
+                  alt="Veneza's Lanches" 
+                  className="w-24 h-24 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const fallback = document.createElement('div');
+                    fallback.innerHTML = '<svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M10.2 3.2c-.8-.8-2-.8-2.8 0L3.2 7.4c-.8.8-.8 2 0 2.8l4.2 4.2c.8.8 2 .8 2.8 0l4.2-4.2c.8-.8.8-2 0-2.8L10.2 3.2z"/><path d="M8 6h4v2H8V6zM8 10h4v2H8v-2z"/></svg>';
+                    e.currentTarget.parentElement?.appendChild(fallback);
+                  }}
+                />
               </div>
               
               <div>
                 <h1 className="text-6xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-2">
-                  {restaurantConfig?.nome_restaurante || "Veneza's Lanches"}
+                  Veneza's Lanches
                 </h1>
                 <p className="text-xl text-muted-foreground">
-                  {restaurantConfig?.slogan || "Sabores únicos que conquistam o seu paladar"}
+                  Sabores únicos que conquistam o seu paladar
                 </p>
               </div>
             </div>
@@ -145,16 +81,14 @@ export default function WelcomePage() {
             </div>
 
             {/* Restaurant Info */}
-            <Card className="max-w-4xl mx-auto border-border shadow-elegant animate-fade-in">
-              <CardContent className="p-6 md:p-8 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="max-w-2xl mx-auto border-border shadow-elegant animate-fade-in">
+              <CardContent className="p-8 space-y-6">
+                <div className="grid md:grid-cols-3 gap-6">
                   <div className="flex items-center gap-3">
                     <MapPin className="h-5 w-5 text-orange-500" />
                     <div className="text-left">
                       <p className="font-semibold">Endereço</p>
-                      <p className="text-sm text-muted-foreground">
-                        {restaurantConfig?.endereco || "Rua das Delícias, 123"}
-                      </p>
+                      <p className="text-sm text-muted-foreground">Rua das Delícias, 123</p>
                     </div>
                   </div>
                   
@@ -162,9 +96,7 @@ export default function WelcomePage() {
                     <Phone className="h-5 w-5 text-orange-500" />
                     <div className="text-left">
                       <p className="font-semibold">Telefone</p>
-                      <p className="text-sm text-muted-foreground">
-                        {restaurantConfig?.telefone || "(31) 99999-9999"}
-                      </p>
+                      <p className="text-sm text-muted-foreground">(31) 99999-9999</p>
                     </div>
                   </div>
                   
@@ -172,24 +104,7 @@ export default function WelcomePage() {
                     <Clock className="h-5 w-5 text-orange-500" />
                     <div className="text-left">
                       <p className="font-semibold">Horário</p>
-                      <div className="text-sm text-muted-foreground">
-                        {restaurantConfig?.horario_funcionamento ? (
-                          typeof restaurantConfig.horario_funcionamento === 'object' ? (
-                            <div className="space-y-1">
-                              {Object.entries(restaurantConfig.horario_funcionamento).map(([dia, horario]) => (
-                                <div key={dia} className="flex justify-between">
-                                  <span className="capitalize font-medium">{dia}:</span>
-                                  <span>{horario as string}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            restaurantConfig.horario_funcionamento
-                          )
-                        ) : (
-                          "18:00 - 23:00"
-                        )}
-                      </div>
+                      <p className="text-sm text-muted-foreground">18:00 - 23:00</p>
                     </div>
                   </div>
                 </div>
@@ -202,14 +117,9 @@ export default function WelcomePage() {
       {/* Highlights Section */}
       <section className="py-16 bg-background/50">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-              Por que escolher o {restaurantConfig?.nome_restaurante || "Veneza's"}?
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Descubra o que nos torna especiais e por que nossos clientes sempre voltam
-            </p>
-          </div>
+          <h2 className="text-4xl font-bold text-center mb-12 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+            Por que escolher o Veneza's?
+          </h2>
           
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="text-center hover:shadow-lg transition-shadow">
@@ -252,8 +162,8 @@ export default function WelcomePage() {
             <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
               Nossos Favoritos
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Os lanches mais pedidos pelos nossos clientes e que você não pode deixar de experimentar
+            <p className="text-xl text-muted-foreground">
+              Os lanches mais pedidos pelos nossos clientes
             </p>
           </div>
 
@@ -364,7 +274,7 @@ export default function WelcomePage() {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4">
             <p className="text-muted-foreground">
-              © 2024 {restaurantConfig?.nome_restaurante || "Veneza's Lanches"}. Todos os direitos reservados.
+              © 2024 Veneza's Lanches. Todos os direitos reservados.
             </p>
             
             {/* Hidden Admin Access */}

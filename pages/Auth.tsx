@@ -85,36 +85,16 @@ export default function Auth() {
     });
 
     if (error) {
-      console.error('Erro no cadastro:', error);
-      
-      if (error.message.includes("already registered") || error.message.includes("already been registered")) {
+      if (error.message.includes("already registered")) {
         toast({
-          title: "Email já cadastrado",
-          description: "Este email já está cadastrado. Tente fazer login ou use outro email.",
-          variant: "destructive",
-        });
-      } else if (error.message.includes("Database error") || error.message.includes("500")) {
-        toast({
-          title: "Erro no servidor",
-          description: "Erro interno do servidor. Tente novamente em alguns minutos ou entre em contato com o suporte.",
-          variant: "destructive",
-        });
-      } else if (error.message.includes("Invalid email")) {
-        toast({
-          title: "Email inválido",
-          description: "Por favor, insira um email válido.",
-          variant: "destructive",
-        });
-      } else if (error.message.includes("Password should be at least")) {
-        toast({
-          title: "Senha muito fraca",
-          description: "A senha deve ter pelo menos 6 caracteres.",
+          title: "Erro",
+          description: "Este email já está cadastrado. Tente fazer login.",
           variant: "destructive",
         });
       } else {
         toast({
           title: "Erro no cadastro",
-          description: `Erro: ${error.message}. Tente novamente ou entre em contato com o suporte.`,
+          description: error.message,
           variant: "destructive",
         });
       }

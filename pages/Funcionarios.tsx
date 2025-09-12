@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { SenhaTemporariaModal } from "@/components/SenhaTemporariaModal";
 import { 
   UserCheck, 
   Plus, 
@@ -35,6 +36,12 @@ export default function Funcionarios() {
     cargo: "",
     nivel_acesso: "FUNCIONARIO",
     ativo: true
+  });
+  const [senhaModal, setSenhaModal] = useState({
+    isOpen: false,
+    funcionarioNome: "",
+    funcionarioEmail: "",
+    senhaTemporaria: ""
   });
   const { toast } = useToast();
 
@@ -88,15 +95,78 @@ export default function Funcionarios() {
       };
 
       let error;
+      let funcionarioId;
+
       if (isEditing && selectedFuncionario) {
+        // Atualizar funcionário existente
         ({ error } = await supabase
           .from('funcionarios')
           .update(funcionarioData)
           .eq('id', selectedFuncionario.id));
+        
+        funcionarioId = selectedFuncionario.id;
       } else {
-        ({ error } = await supabase
+        // Cadastrar novo funcionário
+        const { data: funcionarioInserted, error: insertError } = await supabase
           .from('funcionarios')
-          .insert(funcionarioData));
+          .insert(funcionarioData)
+          .select()
+          .single();
+        
+        if (insertError) throw insertError;
+        funcionarioId = funcionarioInserted.id;
+
+        // Criar usuário no sistema de autenticação
+        try {
+          // Gerar senha temporária
+          const senhaTemporaria = Math.random().toString(36).slice(-8) + '123!';
+          
+          // Criar usuário no auth
+          const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+            email: formData.email,
+            password: senhaTemporaria,
+            email_confirm: true,
+            user_metadata: {
+              nome: formData.nome,
+              papel: formData.nivel_acesso,
+              cargo: formData.cargo
+            }
+          });
+
+          if (authError) {
+            console.warn('Erro ao criar usuário no auth:', authError);
+            // Continuar mesmo se der erro no auth
+          } else if (authData.user) {
+            // Atualizar funcionário com o profile_id
+            await supabase
+              .from('funcionarios')
+              .update({ profile_id: authData.user.id })
+              .eq('id', funcionarioId);
+
+            // Criar perfil do usuário
+            await supabase
+              .from('profiles')
+              .insert({
+                user_id: authData.user.id,
+                nome: formData.nome,
+                papel: formData.nivel_acesso,
+                ativo: formData.ativo
+              });
+
+            console.log('Usuário criado no auth com sucesso. Senha temporária:', senhaTemporaria);
+            
+            // Mostrar modal com senha temporária
+            setSenhaModal({
+              isOpen: true,
+              funcionarioNome: formData.nome,
+              funcionarioEmail: formData.email,
+              senhaTemporaria: senhaTemporaria
+            });
+          }
+        } catch (authError) {
+          console.warn('Erro ao criar usuário no sistema de auth:', authError);
+          // Continuar mesmo se der erro no auth
+        }
       }
 
       if (error) throw error;
@@ -105,7 +175,7 @@ export default function Funcionarios() {
       resetForm();
       toast({
         title: "Sucesso",
-        description: `Funcionário ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso`,
+        description: `Funcionário ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso${!isEditing ? ' e usuário criado no sistema' : ''}`,
       });
     } catch (error) {
       console.error('Error saving funcionario:', error);
@@ -583,6 +653,15 @@ export default function Funcionarios() {
           );
         })}
       </div>
+
+      {/* Modal de Senha Temporária */}
+      <SenhaTemporariaModal
+        isOpen={senhaModal.isOpen}
+        onClose={() => setSenhaModal({ ...senhaModal, isOpen: false })}
+        funcionarioNome={senhaModal.funcionarioNome}
+        funcionarioEmail={senhaModal.funcionarioEmail}
+        senhaTemporaria={senhaModal.senhaTemporaria}
+      />
     </div>
   );
 }

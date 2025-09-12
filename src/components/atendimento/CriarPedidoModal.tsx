@@ -83,9 +83,8 @@ export default function CriarPedidoModal({ mesa, funcionarios, onClose, onSucces
   
   // Dados do cliente
   const [clienteNome, setClienteNome] = useState("");
-  const [clienteTelefone, setClienteTelefone] = useState("");
+  const [atendenteId, setAtendenteId] = useState("");
   const [observacoesPedido, setObservacoesPedido] = useState("");
-  const [metodoPagamento, setMetodoPagamento] = useState("");
   
   const { toast } = useToast();
 
@@ -213,6 +212,15 @@ export default function CriarPedidoModal({ mesa, funcionarios, onClose, onSucces
       return;
     }
 
+    if (!atendenteId) {
+      toast({
+        title: "Erro",
+        description: "Selecione um atendente",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       // Get funcionario info
@@ -242,20 +250,21 @@ export default function CriarPedidoModal({ mesa, funcionarios, onClose, onSucces
         adicionais: []
       }));
 
+      // Buscar dados do atendente selecionado
+      const atendenteSelecionado = funcionarios.find(f => f.id === atendenteId);
+
       // Create unified pedido
       const pedidoData = {
         cliente_nome: clienteNome,
-        cliente_telefone: clienteTelefone || undefined,
         mesa_numero: mesa.numero,
         mesa_etiqueta: mesa.numero.toString(),
         origem: 'MESA',
-        funcionario_id: funcionarioData?.id,
-        funcionario_nome: funcionarioData?.nome,
+        funcionario_id: atendenteSelecionado?.id,
+        funcionario_nome: atendenteSelecionado?.nome,
         itens: itensPedido,
         subtotal: calcularSubtotal(),
         total: calcularTotal(),
         observacoes: observacoesPedido || undefined,
-        metodo_pagamento: metodoPagamento || undefined,
         status: 'PENDENTE'
       };
 
@@ -330,30 +339,22 @@ export default function CriarPedidoModal({ mesa, funcionarios, onClose, onSucces
                 />
               </div>
               <div>
-                <Label htmlFor="cliente-telefone">Telefone</Label>
-                <Input
-                  id="cliente-telefone"
-                  value={clienteTelefone}
-                  onChange={(e) => setClienteTelefone(e.target.value)}
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
-              <div>
-                <Label htmlFor="metodo-pagamento">Método de Pagamento</Label>
-                <Select value={metodoPagamento} onValueChange={setMetodoPagamento}>
+                <Label htmlFor="atendente">Atendente *</Label>
+                <Select value={atendenteId} onValueChange={setAtendenteId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o método" />
+                    <SelectValue placeholder="Selecione o atendente" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="DINHEIRO">Dinheiro</SelectItem>
-                    <SelectItem value="CARTAO_DEBITO">Cartão Débito</SelectItem>
-                    <SelectItem value="CARTAO_CREDITO">Cartão Crédito</SelectItem>
-                    <SelectItem value="PIX">PIX</SelectItem>
+                    {funcionarios.map((funcionario) => (
+                      <SelectItem key={funcionario.id} value={funcionario.id}>
+                        {funcionario.nome}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="observacoes">Observações do Pedido</Label>
+                <Label htmlFor="observacoes">Observações</Label>
                 <Textarea
                   id="observacoes"
                   value={observacoesPedido}

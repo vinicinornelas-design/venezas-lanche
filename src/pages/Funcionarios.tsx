@@ -125,8 +125,8 @@ export default function Funcionarios() {
           console.log('Email:', formData.email);
           console.log('Senha temporária:', senhaTemporaria);
           
-          // Usar função SQL para criar usuário diretamente
-          const { data: authResult, error: authError } = await supabase.rpc('criar_usuario_direto', {
+          // Usar função SQL existente para criar usuário
+          const { data: authResult, error: authError } = await supabase.rpc('criar_usuario_auth', {
             p_email: formData.email,
             p_senha: senhaTemporaria,
             p_nome: formData.nome,

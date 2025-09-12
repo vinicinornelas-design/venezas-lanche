@@ -85,6 +85,24 @@ export default function Funcionarios() {
 
   const saveFuncionario = async () => {
     try {
+      // Verificar se email já existe (apenas para novos funcionários)
+      if (!isEditing) {
+        const { data: existingFuncionario } = await supabase
+          .from('funcionarios')
+          .select('email')
+          .eq('email', formData.email)
+          .single();
+
+        if (existingFuncionario) {
+          toast({
+            title: "Erro",
+            description: "Este email já está cadastrado. Use um email diferente.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       const funcionarioData = {
         nome: formData.nome,
         email: formData.email,

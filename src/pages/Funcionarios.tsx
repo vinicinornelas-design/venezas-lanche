@@ -106,60 +106,40 @@ export default function Funcionarios() {
         
         funcionarioId = selectedFuncionario.id;
       } else {
-        // Cadastrar novo funcionário
-        const { data: funcionarioInserted, error: insertError } = await supabase
-          .from('funcionarios')
-          .insert(funcionarioData)
-          .select()
-          .single();
-        
-        if (insertError) throw insertError;
-        funcionarioId = funcionarioInserted.id;
-
-        // Criar usuário no sistema de autenticação usando signUp
+        // Criar funcionário completo (auth + profiles + funcionarios) de uma vez
         try {
           // Gerar senha temporária
           const senhaTemporaria = Math.random().toString(36).slice(-8) + '123!';
-          
-          console.log('🔍 Tentando criar usuário no auth...');
+
+          console.log('🚀 Criando funcionário completo...');
           console.log('Email:', formData.email);
           console.log('Senha temporária:', senhaTemporaria);
           
-          // Usar função SQL existente para criar usuário
-          const { data: authResult, error: authError } = await supabase.rpc('criar_usuario_auth', {
+          // Usar função SQL que cria tudo de uma vez
+          const { data: resultado, error: erro } = await supabase.rpc('criar_funcionario_completo', {
             p_email: formData.email,
             p_senha: senhaTemporaria,
             p_nome: formData.nome,
-            p_papel: formData.nivel_acesso,
-            p_cargo: formData.cargo
+            p_telefone: formData.telefone,
+            p_cargo: formData.cargo,
+            p_nivel_acesso: formData.nivel_acesso
           });
 
-          console.log('📊 Resultado da criação:');
-          console.log('AuthResult:', authResult);
-          console.log('AuthError:', authError);
+          console.log('📊 Resultado da criação completa:');
+          console.log('Resultado:', resultado);
+          console.log('Erro:', erro);
 
-          if (authError) {
-            console.error('❌ Erro ao criar usuário no auth:', authError);
+          if (erro) {
+            console.error('❌ Erro ao criar funcionário completo:', erro);
             toast({
-              title: "Aviso",
-              description: `Funcionário cadastrado, mas erro ao criar usuário: ${authError.message}`,
+              title: "Erro",
+              description: `Erro ao criar funcionário: ${erro.message}`,
               variant: "destructive",
             });
-          } else if (authResult && authResult.success) {
-            console.log('✅ Usuário criado no auth com sucesso!');
-            console.log('User ID:', authResult.user_id);
-            
-            // Atualizar funcionário com o profile_id
-            const { error: updateError } = await supabase
-              .from('funcionarios')
-              .update({ profile_id: authResult.user_id })
-              .eq('id', funcionarioId);
-
-            if (updateError) {
-              console.error('❌ Erro ao atualizar funcionário com profile_id:', updateError);
-            } else {
-              console.log('✅ Funcionário atualizado com profile_id');
-            }
+          } else if (resultado && resultado.success) {
+            console.log('✅ Funcionário criado com sucesso em todas as tabelas!');
+            console.log('User ID:', resultado.user_id);
+            console.log('Funcionário ID:', resultado.funcionario_id);
             
             // Mostrar modal com senha temporária
             setSenhaModal({
@@ -169,14 +149,19 @@ export default function Funcionarios() {
               senhaTemporaria: senhaTemporaria
             });
           } else {
-            console.warn('⚠️ AuthResult é null/undefined ou success=false');
-            console.warn('Erro:', authResult?.error);
+            console.warn('⚠️ Resultado é null/undefined ou success=false');
+            console.warn('Erro:', resultado?.error);
+            toast({
+              title: "Aviso",
+              description: `Funcionário não foi criado: ${resultado?.error || 'Erro desconhecido'}`,
+              variant: "destructive",
+            });
           }
-        } catch (authError) {
-          console.error('❌ Erro inesperado ao criar usuário:', authError);
+        } catch (erro) {
+          console.error('❌ Erro inesperado ao criar funcionário:', erro);
           toast({
-            title: "Aviso",
-            description: `Funcionário cadastrado, mas erro inesperado: ${authError.message}`,
+            title: "Erro",
+            description: `Erro inesperado: ${erro.message}`,
             variant: "destructive",
           });
         }

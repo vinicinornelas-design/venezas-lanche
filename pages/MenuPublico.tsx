@@ -623,12 +623,29 @@ export default function MenuPublico() {
                   {categoryItems.map((item) => (
                     <Card key={item.id} className="border-border shadow-elegant hover:shadow-warm transition-shadow overflow-hidden">
                       {item.foto_url && (
-                        <div className="relative h-48 overflow-hidden">
+                        <div className="relative h-48 overflow-hidden bg-gray-100">
                           <img 
                             src={item.foto_url} 
                             alt={item.nome}
                             className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              console.error('❌ ERRO ao carregar imagem:', item.foto_url);
+                              console.error('Item:', item.nome);
+                              e.currentTarget.style.display = 'none';
+                              // Mostrar placeholder em caso de erro
+                              const placeholder = document.createElement('div');
+                              placeholder.className = 'w-full h-full flex items-center justify-center bg-gray-200 text-gray-500';
+                              placeholder.innerHTML = `<div class="text-center"><div class="text-2xl">🍔</div><div class="text-sm">${item.nome}</div></div>`;
+                              e.currentTarget.parentElement?.appendChild(placeholder);
+                            }}
+                            onLoad={() => {
+                              console.log('✅ Imagem carregada com sucesso:', item.foto_url);
+                            }}
                           />
+                          {/* Debug info */}
+                          <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white text-xs p-1 rounded">
+                            {item.foto_url}
+                          </div>
                         </div>
                       )}
                       

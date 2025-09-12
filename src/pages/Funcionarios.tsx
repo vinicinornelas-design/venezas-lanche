@@ -106,65 +106,15 @@ export default function Funcionarios() {
         
         funcionarioId = selectedFuncionario.id;
       } else {
-        // Criar funcionário completo (auth + profiles + funcionarios) de uma vez
-        try {
-          // Gerar senha temporária
-          const senhaTemporaria = Math.random().toString(36).slice(-8) + '123!';
-
-          console.log('🚀 Criando funcionário completo...');
-          console.log('Email:', formData.email);
-          console.log('Senha temporária:', senhaTemporaria);
-          
-          // Usar função SQL que cria tudo de uma vez
-          const { data: resultado, error: erro } = await supabase.rpc('criar_funcionario_completo', {
-            p_email: formData.email,
-            p_senha: senhaTemporaria,
-            p_nome: formData.nome,
-            p_telefone: formData.telefone,
-            p_cargo: formData.cargo,
-            p_nivel_acesso: formData.nivel_acesso
-          });
-
-          console.log('📊 Resultado da criação completa:');
-          console.log('Resultado:', resultado);
-          console.log('Erro:', erro);
-
-          if (erro) {
-            console.error('❌ Erro ao criar funcionário completo:', erro);
-            toast({
-              title: "Erro",
-              description: `Erro ao criar funcionário: ${erro.message}`,
-              variant: "destructive",
-            });
-          } else if (resultado && resultado.success) {
-            console.log('✅ Funcionário criado com sucesso em todas as tabelas!');
-            console.log('User ID:', resultado.user_id);
-            console.log('Funcionário ID:', resultado.funcionario_id);
-            
-            // Mostrar modal com senha temporária
-            setSenhaModal({
-              isOpen: true,
-              funcionarioNome: formData.nome,
-              funcionarioEmail: formData.email,
-              senhaTemporaria: senhaTemporaria
-            });
-          } else {
-            console.warn('⚠️ Resultado é null/undefined ou success=false');
-            console.warn('Erro:', resultado?.error);
-            toast({
-              title: "Aviso",
-              description: `Funcionário não foi criado: ${resultado?.error || 'Erro desconhecido'}`,
-              variant: "destructive",
-            });
-          }
-        } catch (erro) {
-          console.error('❌ Erro inesperado ao criar funcionário:', erro);
-          toast({
-            title: "Erro",
-            description: `Erro inesperado: ${erro.message}`,
-            variant: "destructive",
-          });
-        }
+        // Inserir novo funcionário
+        const { data: funcionarioInserted, error: insertError } = await supabase
+          .from('funcionarios')
+          .insert([formData])
+          .select()
+          .single();
+        
+        if (insertError) throw insertError;
+        funcionarioId = funcionarioInserted.id;
       }
 
       if (error) throw error;

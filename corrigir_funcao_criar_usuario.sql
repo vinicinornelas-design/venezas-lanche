@@ -1,7 +1,7 @@
--- Função para criar usuário no auth via SQL
+-- Corrigir função para criar usuário com mapeamento correto de papéis
 -- Execute este script no Supabase Dashboard
 
--- 1. CRIAR FUNÇÃO PARA CRIAR USUÁRIO NO AUTH
+-- 1. RECRIAR FUNÇÃO COM MAPEAMENTO CORRETO
 CREATE OR REPLACE FUNCTION public.criar_usuario_auth(
   p_email TEXT,
   p_senha TEXT,
@@ -16,6 +16,7 @@ AS $$
 DECLARE
   user_id UUID;
   resultado JSON;
+  papel_corrigido TEXT;
 BEGIN
   -- Verificar se o usuário atual é admin
   IF NOT is_admin() THEN
@@ -24,6 +25,17 @@ BEGIN
       'error', 'Apenas administradores podem criar usuários'
     );
   END IF;
+
+  -- Mapear papel para valor aceito pela constraint
+  papel_corrigido := CASE 
+    WHEN p_papel = 'FUNCIONARIO' THEN 'FUNCIONARIO'
+    WHEN p_papel = 'ADMIN' THEN 'ADMIN'
+    WHEN p_papel = 'GERENTE' THEN 'GERENTE'
+    WHEN p_papel = 'ATENDENTE' THEN 'FUNCIONARIO'
+    WHEN p_papel = 'COZINHEIRO' THEN 'FUNCIONARIO'
+    WHEN p_papel = 'GARCOM' THEN 'FUNCIONARIO'
+    ELSE 'FUNCIONARIO'
+  END;
 
   -- Criar usuário no auth.users
   INSERT INTO auth.users (
@@ -56,22 +68,16 @@ BEGIN
     ''
   ) RETURNING id INTO user_id;
 
-  -- Criar perfil na tabela profiles
-  -- Converter papel para valor aceito pela constraint
+  -- Criar perfil na tabela profiles com papel corrigido
   INSERT INTO public.profiles (user_id, nome, papel, ativo)
-  VALUES (user_id, p_nome, 
-    CASE 
-      WHEN p_papel = 'FUNCIONARIO' THEN 'FUNCIONARIO'
-      WHEN p_papel = 'ADMIN' THEN 'ADMIN'
-      WHEN p_papel = 'GERENTE' THEN 'GERENTE'
-      ELSE 'FUNCIONARIO'
-    END, 
-    true);
+  VALUES (user_id, p_nome, papel_corrigido, true);
 
   -- Retornar resultado
   resultado := json_build_object(
     'success', true,
     'user_id', user_id,
+    'papel_original', p_papel,
+    'papel_corrigido', papel_corrigido,
     'message', 'Usuário criado com sucesso no auth e profiles'
   );
 
@@ -80,22 +86,24 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RETURN json_build_object(
     'success', false,
-    'error', SQLERRM
+    'error', SQLERRM,
+    'papel_original', p_papel,
+    'papel_corrigido', papel_corrigido
   );
 END;
 $$;
 
--- 2. TESTAR A FUNÇÃO
+-- 2. TESTAR A FUNÇÃO CORRIGIDA
 DO $$
 DECLARE
   resultado JSON;
 BEGIN
-  RAISE NOTICE '=== TESTANDO CRIAÇÃO DE USUÁRIO ===';
+  RAISE NOTICE '=== TESTANDO FUNÇÃO CORRIGIDA ===';
   
   SELECT public.criar_usuario_auth(
-    'teste_auth@exemplo.com',
+    'teste_corrigido@exemplo.com',
     'senha123!',
-    'Usuário Teste',
+    'Usuário Teste Corrigido',
     'FUNCIONARIO',
     'ATENDENTE'
   ) INTO resultado;
@@ -111,7 +119,7 @@ SELECT
   email_confirmed_at,
   created_at
 FROM auth.users 
-WHERE email = 'teste_auth@exemplo.com';
+WHERE email = 'teste_corrigido@exemplo.com';
 
 -- 4. VERIFICAR PERFIL CRIADO
 SELECT 
@@ -121,12 +129,12 @@ SELECT
   papel,
   ativo
 FROM public.profiles 
-WHERE nome = 'Usuário Teste';
+WHERE nome = 'Usuário Teste Corrigido';
 
 -- 5. MENSAGEM FINAL
 DO $$
 BEGIN
-  RAISE NOTICE '🎉 FUNÇÃO DE CRIAÇÃO DE USUÁRIO CRIADA!';
-  RAISE NOTICE '✅ Agora o frontend pode chamar esta função';
-  RAISE NOTICE '✅ Usuários serão criados no auth e profiles';
+  RAISE NOTICE '🎉 FUNÇÃO CORRIGIDA!';
+  RAISE NOTICE '✅ Mapeamento de papéis implementado';
+  RAISE NOTICE '✅ Agora deve funcionar sem erro de constraint';
 END $$;

@@ -32,7 +32,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 
-type UserRole = 'ADMIN' | 'FUNCIONARIO' | 'CAIXA' | 'CHAPEIRO' | 'ATENDENTE' | 'COZINHEIRA' | 'GARCOM';
+type UserRole = 'ADMIN' | 'CAIXA' | 'CHAPEIRO' | 'ATENDENTE' | 'COZINHEIRA' | 'GARCOM';
 
 interface NavigationItem {
   title: string;
@@ -52,7 +52,7 @@ const navigationItems: NavigationItem[] = [
     title: "Painel Colaborador",
     url: "/painel-colaborador",
     icon: UserCheck,
-    roles: ['FUNCIONARIO', 'CAIXA', 'CHAPEIRO', 'ATENDENTE', 'COZINHEIRA', 'GARCOM']
+    roles: ['CAIXA', 'CHAPEIRO', 'ATENDENTE', 'COZINHEIRA', 'GARCOM']
   },
   {
     title: "Gerenciar Pedidos",
@@ -119,7 +119,7 @@ const navigationItems: NavigationItem[] = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const navigate = useNavigate();
-  const [userRole, setUserRole] = useState<UserRole>('FUNCIONARIO');
+  const [userRole, setUserRole] = useState<UserRole>('CAIXA');
   const [loading, setLoading] = useState(true);
 
   const isCollapsed = state === "collapsed";

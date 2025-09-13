@@ -15,7 +15,7 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nome, setNome] = useState("");
-  const [papel, setPapel] = useState("FUNCIONARIO");
+  const [papel, setPapel] = useState("CAIXA");
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -120,7 +120,6 @@ export default function Auth() {
           } else {
             const roleNames = {
               'ADMIN': 'Administrador',
-              'FUNCIONARIO': 'Funcionário',
               'CAIXA': 'Caixa',
               'GARCOM': 'Garçom'
             };
@@ -361,12 +360,6 @@ export default function Auth() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="FUNCIONARIO">
-                          <div className="flex items-center gap-2">
-                            <UserCheck className="h-4 w-4" />
-                            Funcionário
-                          </div>
-                        </SelectItem>
                         <SelectItem value="CAIXA">
                           <div className="flex items-center gap-2">
                             <ChefHat className="h-4 w-4" />

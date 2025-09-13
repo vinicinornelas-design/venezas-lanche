@@ -2,10 +2,10 @@ import { LogOut, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 
-type UserRole = 'ADMIN' | 'FUNCIONARIO' | 'CAIXA' | 'CHAPEIRO' | 'ATENDENTE' | 'COZINHEIRA' | 'GARCOM';
+type UserRole = 'ADMIN' | 'CAIXA' | 'CHAPEIRO' | 'ATENDENTE' | 'COZINHEIRA' | 'GARCOM';
 
 export function AppHeader() {
-  const [userRole, setUserRole] = useState<UserRole>('FUNCIONARIO');
+  const [userRole, setUserRole] = useState<UserRole>('CAIXA');
   const [userName, setUserName] = useState('Usuário');
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState('');
@@ -70,7 +70,7 @@ export function AppHeader() {
       
       if (!user) {
         console.log('❌ AppHeader: Nenhum usuário autenticado');
-        setUserRole('FUNCIONARIO');
+        setUserRole('CAIXA');
         setUserName('Usuário');
         setLoading(false);
         return;
@@ -90,7 +90,7 @@ export function AppHeader() {
         console.log('⚠️ AppHeader: Perfil não encontrado, tentando criar...');
         
         // Tentar obter o papel dos metadados do usuário
-        const userRole = user.user_metadata?.papel || 'FUNCIONARIO';
+        const userRole = user.user_metadata?.papel || 'CAIXA';
         const userName = user.user_metadata?.nome || user.email.split('@')[0] || 'Usuário';
         
         const { data: newProfile, error: createError } = await supabase
@@ -115,16 +115,16 @@ export function AppHeader() {
       if (profile) {
         console.log('✅ AppHeader: Perfil carregado:', { nome: profile.nome, papel: profile.papel });
         setUserName(profile.nome || 'Usuário');
-        setUserRole(profile.papel as UserRole || 'FUNCIONARIO');
+        setUserRole(profile.papel as UserRole || 'CAIXA');
       } else {
         console.log('⚠️ AppHeader: Perfil não encontrado, usando padrão');
         setUserName('Usuário');
-        setUserRole('FUNCIONARIO');
+        setUserRole('CAIXA');
       }
     } catch (error) {
       console.error('❌ AppHeader: Erro ao carregar dados do usuário:', error);
       setUserName('Usuário');
-      setUserRole('FUNCIONARIO');
+      setUserRole('CAIXA');
     } finally {
       setLoading(false);
     }

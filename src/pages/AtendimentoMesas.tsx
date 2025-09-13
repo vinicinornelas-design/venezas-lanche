@@ -57,11 +57,11 @@ export default function AtendimentoMesas() {
   useEffect(() => {
     fetchMesas();
     fetchFuncionarios();
-    setupRealtimeSubscription();
+    setupPolling();
     
-    // Cleanup subscription on unmount
+    // Cleanup polling on unmount
     return () => {
-      supabase.removeAllChannels();
+      // Polling será limpo automaticamente
     };
   }, []);
 
@@ -121,43 +121,45 @@ export default function AtendimentoMesas() {
     }
   };
 
-  const setupRealtimeSubscription = () => {
-    console.log('Configurando subscription de mesas (atendimento)...');
+  const setupPolling = () => {
+    console.log('Configurando polling de mesas (atendimento)...');
     
-    const channel = supabase
-      .channel('atendimento-mesas-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Escutar todos os eventos (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'mesas',
-        },
-        (payload) => {
-          console.log('Mudança detectada na tabela mesas (atendimento):', payload);
-          
-          // Recarregar mesas quando houver mudanças
-          fetchMesas();
-        }
-      )
-      .subscribe((status, err) => {
-        console.log('Status da subscription de mesas (atendimento):', status);
-        if (err) {
-          console.error('Erro na subscription de mesas (atendimento):', err);
-        }
-        
-        if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
-          console.log('Tentando reconectar subscription de mesas (atendimento)...');
-          setTimeout(() => {
-            setupRealtimeSubscription();
-          }, 5000);
-        }
-      });
+    // Verificar mudanças a cada 20 segundos (menos frequente que pedidos)
+    const interval = setInterval(() => {
+      console.log('Verificando mudanças nas mesas (atendimento)...');
+      fetchMesasSilently();
+    }, 20000);
 
     return () => {
-      console.log('Removendo subscription de mesas (atendimento)');
-      supabase.removeChannel(channel);
+      console.log('Removendo polling de mesas (atendimento)');
+      clearInterval(interval);
     };
+  };
+
+  const fetchMesasSilently = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('mesas')
+        .select(`
+          *,
+          funcionarios (nome)
+        `)
+        .order('numero');
+
+      if (error) throw error;
+
+      // Só atualizar se houver mudanças
+      setMesas(prevMesas => {
+        const hasChanges = JSON.stringify(prevMesas) !== JSON.stringify(data || []);
+        if (hasChanges) {
+          console.log('Mudanças detectadas nas mesas (atendimento), atualizando...');
+          return data || [];
+        }
+        return prevMesas;
+      });
+    } catch (error) {
+      console.error('Erro ao verificar mesas silenciosamente (atendimento):', error);
+    }
   };
 
   const handleAtenderMesa = (mesa: Mesa) => {

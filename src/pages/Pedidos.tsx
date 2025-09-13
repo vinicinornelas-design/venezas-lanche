@@ -71,16 +71,63 @@ export default function Pedidos() {
   const setupPolling = () => {
     console.log('Configurando polling de pedidos...');
     
-    // Verificar mudanças a cada 5 segundos
+    // Verificar mudanças a cada 15 segundos (menos frequente)
     const interval = setInterval(() => {
       console.log('Verificando mudanças nos pedidos...');
-      fetchPedidos();
-    }, 5000);
+      fetchPedidosSilently();
+    }, 15000);
 
     return () => {
       console.log('Removendo polling de pedidos');
       clearInterval(interval);
     };
+  };
+
+  const fetchPedidosSilently = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('pedidos_unificados')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        throw error;
+      }
+
+      // Ordenação personalizada: PENDENTE > PREPARANDO > PRONTO > ENTREGUE > CANCELADO
+      const sortedPedidos = (data || []).sort((a, b) => {
+        const statusOrder = {
+          'PENDENTE': 1,
+          'PREPARANDO': 2,
+          'PRONTO': 3,
+          'ENTREGUE': 4,
+          'CANCELADO': 5
+        };
+        
+        const aOrder = statusOrder[a.status as keyof typeof statusOrder] || 6;
+        const bOrder = statusOrder[b.status as keyof typeof statusOrder] || 6;
+        
+        // Se o status for igual, ordenar por data de criação (mais recente primeiro)
+        if (aOrder === bOrder) {
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+        
+        return aOrder - bOrder;
+      });
+
+      // Só atualizar se houver mudanças
+      setPedidos(prevPedidos => {
+        const hasChanges = JSON.stringify(prevPedidos) !== JSON.stringify(sortedPedidos);
+        if (hasChanges) {
+          console.log('Mudanças detectadas nos pedidos, atualizando...');
+          return sortedPedidos;
+        }
+        return prevPedidos;
+      });
+    } catch (err) {
+      console.error('Erro ao verificar pedidos silenciosamente:', err);
+    }
   };
 
   const updatePedidoStatus = async (pedidoId: string, newStatus: string) => {

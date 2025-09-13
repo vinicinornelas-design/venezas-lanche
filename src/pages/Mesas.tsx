@@ -53,11 +53,11 @@ export default function Mesas() {
     fetchMesas();
     fetchFuncionarios();
     fetchUserProfile();
-    setupRealtimeSubscription();
+    setupPolling();
     
-    // Cleanup subscription on unmount
+    // Cleanup polling on unmount
     return () => {
-      supabase.removeAllChannels();
+      // Polling será limpo automaticamente
     };
   }, []);
 
@@ -115,43 +115,45 @@ export default function Mesas() {
     }
   };
 
-  const setupRealtimeSubscription = () => {
-    console.log('Configurando subscription de mesas...');
+  const setupPolling = () => {
+    console.log('Configurando polling de mesas...');
     
-    const channel = supabase
-      .channel('mesas-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Escutar todos os eventos (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'mesas',
-        },
-        (payload) => {
-          console.log('Mudança detectada na tabela mesas:', payload);
-          
-          // Recarregar mesas quando houver mudanças
-          fetchMesas();
-        }
-      )
-      .subscribe((status, err) => {
-        console.log('Status da subscription de mesas:', status);
-        if (err) {
-          console.error('Erro na subscription de mesas:', err);
-        }
-        
-        if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
-          console.log('Tentando reconectar subscription de mesas...');
-          setTimeout(() => {
-            setupRealtimeSubscription();
-          }, 5000);
-        }
-      });
+    // Verificar mudanças a cada 20 segundos (menos frequente que pedidos)
+    const interval = setInterval(() => {
+      console.log('Verificando mudanças nas mesas...');
+      fetchMesasSilently();
+    }, 20000);
 
     return () => {
-      console.log('Removendo subscription de mesas');
-      supabase.removeChannel(channel);
+      console.log('Removendo polling de mesas');
+      clearInterval(interval);
     };
+  };
+
+  const fetchMesasSilently = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('mesas')
+        .select(`
+          *,
+          funcionarios (nome)
+        `)
+        .order('numero');
+
+      if (error) throw error;
+
+      // Só atualizar se houver mudanças
+      setMesas(prevMesas => {
+        const hasChanges = JSON.stringify(prevMesas) !== JSON.stringify(data || []);
+        if (hasChanges) {
+          console.log('Mudanças detectadas nas mesas, atualizando...');
+          return data || [];
+        }
+        return prevMesas;
+      });
+    } catch (error) {
+      console.error('Erro ao verificar mesas silenciosamente:', error);
+    }
   };
 
   const initializeMesas = async () => {

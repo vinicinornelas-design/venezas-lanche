@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import WelcomePage from "./pages/WelcomePage";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -40,7 +41,11 @@ const App = () => (
             <Route path="/cardapio-publico" element={<MenuPublico />} />
             
             {/* Protected routes */}
-            <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute allowedRoles={['ADMIN']} fallbackPath="/painel-colaborador">
+                <AppLayout><Dashboard /></AppLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/admin-dashboard" element={<AppLayout><AdminDashboard /></AppLayout>} />
             <Route path="/painel-colaborador" element={<AppLayout><PainelColaborador /></AppLayout>} />
             <Route path="/atendimento-mesas" element={<AppLayout><AtendimentoMesas /></AppLayout>} />

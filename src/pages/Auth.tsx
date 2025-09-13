@@ -22,6 +22,28 @@ export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const checkUserRoleAndRedirect = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('papel')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile?.papel === 'ADMIN') {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/painel-colaborador');
+      }
+    } catch (error) {
+      console.error('Erro ao verificar papel do usuário:', error);
+      navigate('/painel-colaborador');
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -52,7 +74,8 @@ export default function Auth() {
     }
 
     if (session && user) {
-      navigate('/dashboard');
+      // Verificar o papel do usuário para redirecionar adequadamente
+      checkUserRoleAndRedirect();
     }
   }, [session, user, navigate]);
 

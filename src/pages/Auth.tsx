@@ -118,9 +118,16 @@ export default function Auth() {
               variant: "destructive",
             });
           } else {
+            const roleNames = {
+              'ADMIN': 'Administrador',
+              'FUNCIONARIO': 'Funcionário',
+              'CAIXA': 'Caixa',
+              'GARCOM': 'Garçom'
+            };
+            
             toast({
               title: "Cadastro realizado!",
-              description: `Conta criada com sucesso como ${papel === 'ADMIN' ? 'Administrador' : 'Funcionário'}. Verifique seu email para confirmar a conta.`,
+              description: `Conta criada com sucesso como ${roleNames[papel as keyof typeof roleNames] || 'Usuário'}. Verifique seu email para confirmar a conta.`,
             });
           }
         } catch (profileErr) {
@@ -358,6 +365,18 @@ export default function Auth() {
                           <div className="flex items-center gap-2">
                             <UserCheck className="h-4 w-4" />
                             Funcionário
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="CAIXA">
+                          <div className="flex items-center gap-2">
+                            <ChefHat className="h-4 w-4" />
+                            Caixa
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="GARCOM">
+                          <div className="flex items-center gap-2">
+                            <UserCheck className="h-4 w-4" />
+                            Garçom
                           </div>
                         </SelectItem>
                         <SelectItem value="ADMIN">

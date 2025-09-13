@@ -32,7 +32,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 
-type UserRole = 'ADMIN' | 'FUNCIONARIO' | 'CAIXA' | 'CHAPEIRO' | 'ATENDENTE' | 'COZINHEIRA';
+type UserRole = 'ADMIN' | 'FUNCIONARIO' | 'CAIXA' | 'CHAPEIRO' | 'ATENDENTE' | 'COZINHEIRA' | 'GARCOM';
 
 interface NavigationItem {
   title: string;
@@ -52,31 +52,31 @@ const navigationItems: NavigationItem[] = [
     title: "Painel Colaborador",
     url: "/painel-colaborador",
     icon: UserCheck,
-    roles: ['FUNCIONARIO', 'CAIXA', 'CHAPEIRO', 'ATENDENTE', 'COZINHEIRA']
+    roles: ['FUNCIONARIO', 'CAIXA', 'CHAPEIRO', 'ATENDENTE', 'COZINHEIRA', 'GARCOM']
   },
   {
     title: "Gerenciar Pedidos",
     url: "/pedidos",
     icon: ShoppingCart,
-    roles: ['ADMIN', 'FUNCIONARIO', 'CAIXA', 'CHAPEIRO', 'ATENDENTE', 'COZINHEIRA']
+    roles: ['ADMIN', 'CAIXA']
   },
   {
     title: "Controle de Mesas",
     url: "/mesas",
     icon: Table,
-    roles: ['ADMIN', 'FUNCIONARIO', 'ATENDENTE']
+    roles: ['ADMIN', 'GARCOM', 'CAIXA']
   },
   {
     title: "Atendimento de Mesas",
     url: "/atendimento-mesas",
     icon: UserCheck,
-    roles: ['FUNCIONARIO', 'ATENDENTE', 'GARCOM']
+    roles: ['ADMIN', 'GARCOM', 'CAIXA']
   },
   {
     title: "Gestão do Cardápio",
     url: "/cardapio",
     icon: ChefHat,
-    roles: ['ADMIN']
+    roles: ['ADMIN', 'CAIXA']
   },
   {
     title: "Funcionários",
@@ -100,7 +100,7 @@ const navigationItems: NavigationItem[] = [
     title: "Configurações",
     url: "/configuracoes",
     icon: Settings,
-    roles: ['ADMIN']
+    roles: ['ADMIN', 'CAIXA']
   },
   {
     title: "Remarketing",

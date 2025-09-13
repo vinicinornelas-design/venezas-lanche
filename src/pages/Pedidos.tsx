@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { PedidoUnificado, formatarStatusPedido, formatarOrigemPedido } from "@/types/pedidos-unificados";
-import { Truck, Utensils } from "lucide-react";
+import { Truck, Utensils, Clock, ChefHat, CheckCircle } from "lucide-react";
 
 export default function Pedidos() {
   const [pedidos, setPedidos] = useState<PedidoUnificado[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<{ [key: string]: boolean }>({});
+  const [activeTypeTab, setActiveTypeTab] = useState<string>('todos');
+  const [activeStatusTab, setActiveStatusTab] = useState<string>('todos');
 
   useEffect(() => {
     fetchPedidos();
@@ -365,6 +367,31 @@ export default function Pedidos() {
   const pedidosDelivery = pedidos.filter(p => p.origem === 'DELIVERY');
   const pedidosMesa = pedidos.filter(p => p.origem === 'MESA');
 
+  // Função para filtrar pedidos baseado nos filtros ativos
+  const getFilteredPedidos = () => {
+    let filtered = pedidos;
+
+    // Filtrar por tipo
+    if (activeTypeTab === 'delivery') {
+      filtered = filtered.filter(p => p.origem === 'DELIVERY');
+    } else if (activeTypeTab === 'mesa') {
+      filtered = filtered.filter(p => p.origem === 'MESA');
+    }
+
+    // Filtrar por status
+    if (activeStatusTab === 'pendentes') {
+      filtered = filtered.filter(p => p.status === 'PENDENTE');
+    } else if (activeStatusTab === 'preparando') {
+      filtered = filtered.filter(p => p.status === 'PREPARANDO');
+    } else if (activeStatusTab === 'prontos') {
+      filtered = filtered.filter(p => p.status === 'PRONTO');
+    }
+
+    return filtered;
+  };
+
+  const filteredPedidos = getFilteredPedidos();
+
   // Calcular estatísticas gerais
   const pedidosPendentes = pedidos.filter(p => p.status === 'PENDENTE').length;
   const pedidosPreparando = pedidos.filter(p => p.status === 'PREPARANDO').length;
@@ -442,8 +469,8 @@ export default function Pedidos() {
         </Card>
       </div>
 
-      {/* Abas de pedidos */}
-      <Tabs defaultValue="todos" className="space-y-4">
+      {/* Abas de tipo de pedidos */}
+      <Tabs value={activeTypeTab} onValueChange={setActiveTypeTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="todos" className="flex items-center gap-2">
             <Utensils className="h-4 w-4" />
@@ -458,57 +485,92 @@ export default function Pedidos() {
             Mesa ({totalMesa})
           </TabsTrigger>
         </TabsList>
+      </Tabs>
+
+      {/* Abas de status dos pedidos */}
+      <Tabs value={activeStatusTab} onValueChange={setActiveStatusTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="todos" className="flex items-center gap-2">
+            <Utensils className="h-4 w-4" />
+            Todos os Status
+          </TabsTrigger>
+          <TabsTrigger value="pendentes" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Pendentes ({pedidosPendentes})
+          </TabsTrigger>
+          <TabsTrigger value="preparando" className="flex items-center gap-2">
+            <ChefHat className="h-4 w-4" />
+            Preparando ({pedidosPreparando})
+          </TabsTrigger>
+          <TabsTrigger value="prontos" className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            Prontos ({pedidosProntos})
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="todos" className="space-y-4">
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Todos os Pedidos</h2>
-            {renderPedidosList(pedidos)}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">
+                {activeTypeTab === 'delivery' ? 'Pedidos de Delivery' : 
+                 activeTypeTab === 'mesa' ? 'Pedidos de Mesa' : 'Todos os Pedidos'}
+              </h2>
+              <div className="text-sm text-muted-foreground">
+                {filteredPedidos.length} pedido(s) encontrado(s)
+              </div>
+            </div>
+            {renderPedidosList(filteredPedidos)}
           </div>
         </TabsContent>
 
-        <TabsContent value="delivery" className="space-y-4">
+        <TabsContent value="pendentes" className="space-y-4">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Truck className="h-5 w-5" />
-                Pedidos de Delivery
+                <Clock className="h-5 w-5" />
+                Pedidos Pendentes
+                {activeTypeTab === 'delivery' && ' (Delivery)'}
+                {activeTypeTab === 'mesa' && ' (Mesa)'}
               </h2>
-              <div className="flex gap-2 text-sm text-muted-foreground">
-                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">
-                  Pendentes: {deliveryPendentes}
-                </span>
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                  Preparando: {deliveryPreparando}
-                </span>
-                <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
-                  Prontos: {deliveryProntos}
-                </span>
+              <div className="text-sm text-muted-foreground">
+                {filteredPedidos.length} pedido(s) pendente(s)
               </div>
             </div>
-            {renderPedidosList(pedidosDelivery)}
+            {renderPedidosList(filteredPedidos)}
           </div>
         </TabsContent>
 
-        <TabsContent value="mesa" className="space-y-4">
+        <TabsContent value="preparando" className="space-y-4">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Utensils className="h-5 w-5" />
-                Pedidos de Mesa
+                <ChefHat className="h-5 w-5" />
+                Pedidos em Preparo
+                {activeTypeTab === 'delivery' && ' (Delivery)'}
+                {activeTypeTab === 'mesa' && ' (Mesa)'}
               </h2>
-              <div className="flex gap-2 text-sm text-muted-foreground">
-                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">
-                  Pendentes: {mesaPendentes}
-                </span>
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                  Preparando: {mesaPreparando}
-                </span>
-                <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
-                  Prontos: {mesaProntos}
-                </span>
+              <div className="text-sm text-muted-foreground">
+                {filteredPedidos.length} pedido(s) em preparo
               </div>
             </div>
-            {renderPedidosList(pedidosMesa)}
+            {renderPedidosList(filteredPedidos)}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="prontos" className="space-y-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                Pedidos Prontos
+                {activeTypeTab === 'delivery' && ' (Delivery)'}
+                {activeTypeTab === 'mesa' && ' (Mesa)'}
+              </h2>
+              <div className="text-sm text-muted-foreground">
+                {filteredPedidos.length} pedido(s) pronto(s)
+              </div>
+            </div>
+            {renderPedidosList(filteredPedidos)}
           </div>
         </TabsContent>
       </Tabs>

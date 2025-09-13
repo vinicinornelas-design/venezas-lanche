@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { usePdfExport } from "@/hooks/usePdfExport";
-import { Plus, Edit, Trash2, Upload, Star, FileText } from "lucide-react";
+import { Plus, Edit, Trash2, Upload, Star, FileText, Image, X } from "lucide-react";
 
 interface MenuItem {
   id: string;
@@ -51,6 +51,8 @@ export default function ExpandedMenu() {
     categoria_id: "",
     ativo: true
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { toast } = useToast();
   const { exportMenuToPdf, isExporting } = usePdfExport();
 
@@ -117,6 +119,89 @@ export default function ExpandedMenu() {
     } catch (error) {
       console.error('Error fetching restaurant config:', error);
     }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione apenas arquivos de imagem",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar tamanho (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Erro",
+        description: "A imagem deve ter no máximo 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingImage(true);
+
+    try {
+      // Criar preview da imagem
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Gerar nome único para o arquivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `cardapio/${fileName}`;
+
+      // Upload para Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Obter URL pública da imagem
+      const { data: { publicUrl } } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath);
+
+      // Atualizar formData com a nova URL
+      setFormData(prev => ({
+        ...prev,
+        foto_url: publicUrl
+      }));
+
+      toast({
+        title: "Sucesso",
+        description: "Imagem enviada com sucesso!",
+      });
+
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar imagem. Tente novamente.",
+        variant: "destructive",
+      });
+      setPreviewImage(null);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({
+      ...prev,
+      foto_url: ""
+    }));
+    setPreviewImage(null);
   };
 
   const handleSaveItem = async () => {
@@ -222,6 +307,7 @@ export default function ExpandedMenu() {
     });
     setSelectedItem(null);
     setIsDialogOpen(false);
+    setPreviewImage(null);
   };
 
   const editItem = (item: MenuItem) => {
@@ -234,6 +320,7 @@ export default function ExpandedMenu() {
       categoria_id: item.categoria_id,
       ativo: item.ativo
     });
+    setPreviewImage(item.foto_url || null);
     setIsDialogOpen(true);
   };
 
@@ -360,12 +447,77 @@ export default function ExpandedMenu() {
               </div>
               
               <div>
-                <Label>URL da Imagem</Label>
-                <Input
-                  value={formData.foto_url}
-                  onChange={(e) => setFormData({...formData, foto_url: e.target.value})}
-                  placeholder="URL da imagem (opcional)"
-                />
+                <Label>Imagem do Item</Label>
+                
+                {/* Preview da imagem */}
+                {(previewImage || formData.foto_url) && (
+                  <div className="relative mb-4">
+                    <div className="aspect-video w-full rounded-lg overflow-hidden bg-muted border">
+                      <img 
+                        src={previewImage || formData.foto_url} 
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={removeImage}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* Upload de imagem */}
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="image-upload"
+                    disabled={uploadingImage}
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className="flex items-center justify-center w-full h-20 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
+                  >
+                    {uploadingImage ? (
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500"></div>
+                        Enviando...
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-gray-500">
+                        <Image className="h-6 w-6" />
+                        <span className="text-sm">
+                          {previewImage || formData.foto_url ? 'Trocar imagem' : 'Clique para enviar imagem'}
+                        </span>
+                        <span className="text-xs text-gray-400">PNG, JPG até 5MB</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
+
+                {/* Campo de URL como alternativa */}
+                <div className="mt-2">
+                  <Label className="text-sm text-gray-500">Ou cole uma URL:</Label>
+                  <Input
+                    value={formData.foto_url}
+                    onChange={(e) => {
+                      setFormData({...formData, foto_url: e.target.value});
+                      setPreviewImage(e.target.value || null);
+                    }}
+                    placeholder="URL da imagem (opcional)"
+                    className="mt-1"
+                  />
+                </div>
               </div>
               
               <Button onClick={handleSaveItem} className="w-full gradient-primary">

@@ -74,10 +74,7 @@ export function useNotifications() {
   };
 
   const shouldShowNotification = (notification: AppNotification): boolean => {
-    // Verificar se o usuário tem o papel correto
-    const userRole = localStorage.getItem('user_role') || 'CAIXA';
-    
-    // Notificações para CAIXA (novos pedidos)
+    // Notificações para CAIXA (novos pedidos) - sempre mostrar para CAIXA
     if (notification.target_role === 'CAIXA' || notification.target_role === null) {
       return true;
     }

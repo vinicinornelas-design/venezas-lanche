@@ -18,6 +18,7 @@ import {
 import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationItem } from '@/components/NotificationItem';
 import { AppNotification } from '@/types/notifications';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Notificacoes() {
   const {
@@ -28,9 +29,11 @@ export default function Notificacoes() {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    createNotification,
     updateSettings,
     refreshNotifications,
   } = useNotifications();
+  const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState('all');
 
@@ -347,6 +350,38 @@ export default function Notificacoes() {
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Deletar todas
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="w-full text-blue-600 hover:text-blue-700"
+                onClick={async () => {
+                  try {
+                    await createNotification({
+                      title: 'Teste de Notificação',
+                      message: 'Esta é uma notificação de teste para verificar se o sistema está funcionando.',
+                      type: 'INFO',
+                      priority: 'MEDIUM',
+                      target_role: 'CAIXA',
+                      read: false,
+                      metadata: { test: true }
+                    });
+                    toast({
+                      title: "Notificação de teste criada!",
+                      description: "Verifique se a notificação apareceu na lista.",
+                    });
+                  } catch (error) {
+                    console.error('Erro ao criar notificação de teste:', error);
+                    toast({
+                      title: "Erro",
+                      description: "Erro ao criar notificação de teste.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
+                <Bell className="h-4 w-4 mr-2" />
+                Testar Notificação
               </Button>
             </CardContent>
           </Card>

@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Upload, Star } from "lucide-react";
+import { usePdfExport } from "@/hooks/usePdfExport";
+import { Plus, Edit, Trash2, Upload, Star, FileText } from "lucide-react";
 
 interface MenuItem {
   id: string;
@@ -36,6 +37,12 @@ export default function ExpandedMenu() {
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [restaurantConfig, setRestaurantConfig] = useState({
+    nome_restaurante: "Veneza's Lanches",
+    telefone: "(31) 99999-0000",
+    endereco: "Rua das Palmeiras, 456 - Centro",
+    logo_url: ""
+  });
   const [formData, setFormData] = useState({
     nome: "",
     preco: 0,
@@ -45,10 +52,12 @@ export default function ExpandedMenu() {
     ativo: true
   });
   const { toast } = useToast();
+  const { exportMenuToPdf, isExporting } = usePdfExport();
 
   useEffect(() => {
     fetchMenuItems();
     fetchCategories();
+    fetchRestaurantConfig();
   }, []);
 
   const fetchMenuItems = async () => {
@@ -87,6 +96,26 @@ export default function ExpandedMenu() {
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchRestaurantConfig = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('restaurant_config')
+        .select('*')
+        .single();
+
+      if (data && !error) {
+        setRestaurantConfig({
+          nome_restaurante: data.nome_restaurante || "Veneza's Lanches",
+          telefone: data.telefone || "(31) 99999-0000",
+          endereco: data.endereco || "Rua das Palmeiras, 456 - Centro",
+          logo_url: data.logo_url || ""
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching restaurant config:', error);
     }
   };
 
@@ -215,6 +244,22 @@ export default function ExpandedMenu() {
     }).format(value);
   };
 
+  const handleExportPdf = async () => {
+    const menuItemsForPdf = items
+      .filter(item => item.ativo)
+      .map(item => ({
+        id: item.id,
+        nome: item.nome,
+        preco: item.preco,
+        descricao: item.descricao || "",
+        categoria: item.categorias?.nome || "Sem categoria",
+        ativo: item.ativo,
+        imagem_url: item.foto_url
+      }));
+
+    await exportMenuToPdf(menuItemsForPdf, restaurantConfig);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -239,13 +284,24 @@ export default function ExpandedMenu() {
           </p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm} className="gradient-primary">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Item
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-3">
+          <Button 
+            onClick={handleExportPdf} 
+            disabled={isExporting || items.length === 0}
+            variant="outline"
+            className="border-orange-200 text-orange-600 hover:bg-orange-50"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            {isExporting ? 'Exportando...' : 'Exportar PDF'}
+          </Button>
+          
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm} className="gradient-primary">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Item
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
@@ -318,6 +374,7 @@ export default function ExpandedMenu() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Categories Grid */}

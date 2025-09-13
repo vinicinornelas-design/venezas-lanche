@@ -1,6 +1,10 @@
-import { LogOut, Calendar } from "lucide-react";
+import { LogOut, Calendar, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useNotifications } from "@/hooks/useNotifications";
 
 type UserRole = 'ADMIN' | 'CAIXA' | 'CHAPEIRO' | 'ATENDENTE' | 'COZINHEIRA' | 'GARCOM';
 
@@ -9,6 +13,8 @@ export function AppHeader() {
   const [userName, setUserName] = useState('Usuário');
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState('');
+  const navigate = useNavigate();
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     loadUserData();
@@ -187,6 +193,26 @@ export function AppHeader() {
             <Calendar className="w-4 h-4" />
             <span className="font-medium">{currentDate}</span>
           </div>
+          
+          {/* Botão de notificações */}
+          {(userRole === 'ADMIN' || userRole === 'CAIXA') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/notificacoes')}
+              className="relative"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Badge>
+              )}
+            </Button>
+          )}
           
           {/* Informações do usuário */}
           <div className="text-right">

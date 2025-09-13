@@ -11,7 +11,8 @@ import {
   Receipt,
   Building2,
   DollarSign,
-  UserCog
+  UserCog,
+  Bell
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -95,6 +96,12 @@ const navigationItems: NavigationItem[] = [
     url: "/financeiro",
     icon: DollarSign,
     roles: ['ADMIN']
+  },
+  {
+    title: "Notificações",
+    url: "/notificacoes",
+    icon: Bell,
+    roles: ['ADMIN', 'CAIXA']
   },
   {
     title: "Configurações",

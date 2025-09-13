@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { PedidoUnificado, formatarStatusPedido, formatarOrigemPedido } from "@/types/pedidos-unificados";
-import { Truck, Utensils, Clock, ChefHat, CheckCircle } from "lucide-react";
+import { Truck, Utensils, Clock, ChefHat, CheckCircle, Package, XCircle } from "lucide-react";
 
 export default function Pedidos() {
   const [pedidos, setPedidos] = useState<PedidoUnificado[]>([]);
@@ -385,6 +385,10 @@ export default function Pedidos() {
       filtered = filtered.filter(p => p.status === 'PREPARANDO');
     } else if (activeStatusTab === 'prontos') {
       filtered = filtered.filter(p => p.status === 'PRONTO');
+    } else if (activeStatusTab === 'entregues') {
+      filtered = filtered.filter(p => p.status === 'ENTREGUE');
+    } else if (activeStatusTab === 'cancelados') {
+      filtered = filtered.filter(p => p.status === 'CANCELADO');
     }
 
     return filtered;
@@ -396,6 +400,8 @@ export default function Pedidos() {
   const pedidosPendentes = pedidos.filter(p => p.status === 'PENDENTE').length;
   const pedidosPreparando = pedidos.filter(p => p.status === 'PREPARANDO').length;
   const pedidosProntos = pedidos.filter(p => p.status === 'PRONTO').length;
+  const pedidosEntregues = pedidos.filter(p => p.status === 'ENTREGUE').length;
+  const pedidosCancelados = pedidos.filter(p => p.status === 'CANCELADO').length;
   const totalPedidos = pedidos.length;
 
   // Calcular estatísticas por tipo
@@ -489,7 +495,7 @@ export default function Pedidos() {
 
       {/* Abas de status dos pedidos */}
       <Tabs value={activeStatusTab} onValueChange={setActiveStatusTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="todos" className="flex items-center gap-2">
             <Utensils className="h-4 w-4" />
             Todos os Status
@@ -505,6 +511,14 @@ export default function Pedidos() {
           <TabsTrigger value="prontos" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
             Prontos ({pedidosProntos})
+          </TabsTrigger>
+          <TabsTrigger value="entregues" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Entregues ({pedidosEntregues})
+          </TabsTrigger>
+          <TabsTrigger value="cancelados" className="flex items-center gap-2">
+            <XCircle className="h-4 w-4" />
+            Cancelados ({pedidosCancelados})
           </TabsTrigger>
         </TabsList>
 
@@ -568,6 +582,40 @@ export default function Pedidos() {
               </h2>
               <div className="text-sm text-muted-foreground">
                 {filteredPedidos.length} pedido(s) pronto(s)
+              </div>
+            </div>
+            {renderPedidosList(filteredPedidos)}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="entregues" className="space-y-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Pedidos Entregues
+                {activeTypeTab === 'delivery' && ' (Delivery)'}
+                {activeTypeTab === 'mesa' && ' (Mesa)'}
+              </h2>
+              <div className="text-sm text-muted-foreground">
+                {filteredPedidos.length} pedido(s) entregue(s)
+              </div>
+            </div>
+            {renderPedidosList(filteredPedidos)}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="cancelados" className="space-y-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <XCircle className="h-5 w-5" />
+                Pedidos Cancelados
+                {activeTypeTab === 'delivery' && ' (Delivery)'}
+                {activeTypeTab === 'mesa' && ' (Mesa)'}
+              </h2>
+              <div className="text-sm text-muted-foreground">
+                {filteredPedidos.length} pedido(s) cancelado(s)
               </div>
             </div>
             {renderPedidosList(filteredPedidos)}

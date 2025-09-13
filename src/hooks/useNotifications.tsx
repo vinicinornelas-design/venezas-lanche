@@ -7,6 +7,7 @@ export function useNotifications() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [toastNotification, setToastNotification] = useState<AppNotification | null>(null);
   const [settings, setSettings] = useState<NotificationSettings>({
     sound_enabled: true,
     desktop_notifications: true,
@@ -56,17 +57,23 @@ export function useNotifications() {
           table: 'notifications',
         },
         (payload) => {
-          const newNotification = payload.new as Notification;
+          console.log('Nova notificação recebida:', payload.new);
+          const newNotification = payload.new as AppNotification;
           
           // Verificar se a notificação é para o usuário atual
           if (shouldShowNotification(newNotification)) {
+            console.log('Mostrando notificação:', newNotification);
             setNotifications(prev => [newNotification, ...prev]);
             showDesktopNotification(newNotification);
             playNotificationSound();
+          } else {
+            console.log('Notificação não é para este usuário:', newNotification.target_role);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Status da subscription:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -83,6 +90,15 @@ export function useNotifications() {
   };
 
   const showDesktopNotification = (notification: AppNotification) => {
+    // Mostrar toast notification personalizado (popup na tela)
+    setToastNotification(notification);
+    
+    // Auto-remover após 8 segundos
+    setTimeout(() => {
+      setToastNotification(null);
+    }, 8000);
+
+    // Mostrar notificação do sistema (se habilitado)
     if (!settings.desktop_notifications || !('Notification' in window)) {
       return;
     }
@@ -110,12 +126,38 @@ export function useNotifications() {
     if (!settings.sound_enabled) return;
     
     try {
+      // Tentar tocar som personalizado primeiro
       const audio = new Audio('/notification-sound.mp3');
-      audio.volume = 0.3;
+      audio.volume = 0.5;
       audio.play().catch(() => {
-        // Fallback para som do sistema
-        console.log('🔔 Nova notificação!');
+        // Fallback: usar som do sistema
+        playSystemSound();
       });
+    } catch (error) {
+      // Fallback: usar som do sistema
+      playSystemSound();
+    }
+  };
+
+  const playSystemSound = () => {
+    try {
+      // Criar um som simples usando Web Audio API
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
     } catch (error) {
       console.log('🔔 Nova notificação!');
     }
@@ -199,16 +241,30 @@ export function useNotifications() {
     localStorage.setItem('notification_settings', JSON.stringify({ ...settings, ...newSettings }));
   };
 
+  const closeToast = () => {
+    setToastNotification(null);
+  };
+
+  const markToastAsRead = async () => {
+    if (toastNotification) {
+      await markAsRead(toastNotification.id);
+      setToastNotification(null);
+    }
+  };
+
   return {
     notifications,
     unreadCount,
     loading,
     settings,
+    toastNotification,
     markAsRead,
     markAllAsRead,
     deleteNotification,
     createNotification,
     updateSettings,
     refreshNotifications: fetchNotifications,
+    closeToast,
+    markToastAsRead,
   };
 }

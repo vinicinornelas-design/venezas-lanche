@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { NotificationProvider } from "./components/NotificationProvider";
 import WelcomePage from "./pages/WelcomePage";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -34,6 +35,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <NotificationProvider />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<WelcomePage />} />

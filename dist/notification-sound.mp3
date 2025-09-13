@@ -1,6 +1,5 @@
-# Placeholder para arquivo de som
 # Este arquivo deve ser substituído por um arquivo MP3 real
-# Você pode baixar um som de notificação de sites como:
-# - https://freesound.org/
-# - https://www.zapsplat.com/
-# - https://mixkit.co/free-sound-effects/notification/
+# Para testar, você pode:
+# 1. Baixar um som de notificação de https://freesound.org/
+# 2. Ou usar o som do sistema que foi implementado no código
+# 3. O sistema tem fallback automático para som sintético

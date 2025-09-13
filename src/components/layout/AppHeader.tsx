@@ -89,12 +89,16 @@ export function AppHeader() {
       if (!profile && user.email) {
         console.log('⚠️ AppHeader: Perfil não encontrado, tentando criar...');
         
+        // Tentar obter o papel dos metadados do usuário
+        const userRole = user.user_metadata?.papel || 'FUNCIONARIO';
+        const userName = user.user_metadata?.nome || user.email.split('@')[0] || 'Usuário';
+        
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .insert({
             user_id: user.id,
-            nome: user.email.split('@')[0] || 'Usuário',
-            papel: 'FUNCIONARIO',
+            nome: userName,
+            papel: userRole,
             ativo: true
           })
           .select('nome, papel')

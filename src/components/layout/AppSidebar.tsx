@@ -119,6 +119,12 @@ const navigationItems: NavigationItem[] = [
     url: "/restaurante",
     icon: Building2,
     roles: ['ADMIN']
+  },
+  {
+    title: "Corrigir Perfis",
+    url: "/corrigir-perfis",
+    icon: UserCog,
+    roles: ['ADMIN']
   }
 ];
 
@@ -164,12 +170,16 @@ export function AppSidebar() {
 
       // Se perfil não existe, tentar criar automaticamente
       if (!profile && user.email) {
+        // Tentar obter o papel dos metadados do usuário
+        const userRole = user.user_metadata?.papel || 'FUNCIONARIO';
+        const userName = user.user_metadata?.nome || user.email.split('@')[0] || 'Usuário';
+        
         const { data: newProfile } = await supabase
           .from('profiles')
           .insert({
             user_id: user.id,
-            nome: user.email.split('@')[0] || 'Usuário',
-            papel: 'FUNCIONARIO',
+            nome: userName,
+            papel: userRole,
             ativo: true
           })
           .select('papel')

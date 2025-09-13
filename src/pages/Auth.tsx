@@ -71,7 +71,7 @@ export default function Auth() {
     
     const redirectUrl = `${window.location.origin}/dashboard`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -98,10 +98,45 @@ export default function Auth() {
         });
       }
     } else {
-      toast({
-        title: "Cadastro realizado!",
-        description: "Verifique seu email para confirmar a conta.",
-      });
+      // Criar perfil na tabela profiles com o papel correto
+      if (data.user) {
+        try {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              user_id: data.user.id,
+              nome: nome,
+              papel: papel,
+              ativo: true
+            });
+
+          if (profileError) {
+            console.error('Erro ao criar perfil:', profileError);
+            toast({
+              title: "Aviso",
+              description: "Conta criada, mas houve problema ao definir permissões. Entre em contato com o administrador.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Cadastro realizado!",
+              description: `Conta criada com sucesso como ${papel === 'ADMIN' ? 'Administrador' : 'Funcionário'}. Verifique seu email para confirmar a conta.`,
+            });
+          }
+        } catch (profileErr) {
+          console.error('Erro ao criar perfil:', profileErr);
+          toast({
+            title: "Aviso",
+            description: "Conta criada, mas houve problema ao definir permissões. Entre em contato com o administrador.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Cadastro realizado!",
+          description: "Verifique seu email para confirmar a conta.",
+        });
+      }
     }
     
     setLoading(false);

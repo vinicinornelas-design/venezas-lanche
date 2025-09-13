@@ -23,6 +23,7 @@ import ConfiguracaoRestaurante from "@/pages/ConfiguracaoRestaurante";
 import Remarketing from "@/pages/Remarketing";
 import PainelColaborador from "@/pages/PainelColaborador";
 import AtendimentoMesas from "@/pages/AtendimentoMesas";
+import CorrigirPerfis from "@/pages/CorrigirPerfis";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/gestao-cardapio" element={<AppLayout><GestaoCardapio /></AppLayout>} />
               <Route path="/configuracao-restaurante" element={<AppLayout><ConfiguracaoRestaurante /></AppLayout>} />
               <Route path="/configuracoes" element={<AppLayout><Configuracoes /></AppLayout>} />
+              <Route path="/corrigir-perfis" element={<AppLayout><CorrigirPerfis /></AppLayout>} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

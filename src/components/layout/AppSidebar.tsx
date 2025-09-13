@@ -91,12 +91,6 @@ const navigationItems: NavigationItem[] = [
     roles: ['ADMIN']
   },
   {
-    title: "Análise Completa",
-    url: "/relatorios",
-    icon: BarChart3,
-    roles: ['ADMIN']
-  },
-  {
     title: "Financeiro",
     url: "/financeiro",
     icon: DollarSign,

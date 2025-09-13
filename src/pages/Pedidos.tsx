@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { PedidoUnificado, formatarStatusPedido, formatarOrigemPedido } from "@/types/pedidos-unificados";
+import { Truck, Utensils } from "lucide-react";
 
 export default function Pedidos() {
   const [pedidos, setPedidos] = useState<PedidoUnificado[]>([]);
@@ -178,6 +180,117 @@ export default function Pedidos() {
     ).join(', ');
   };
 
+  const renderPedidosList = (pedidosList: PedidoUnificado[]) => {
+    if (pedidosList.length === 0) {
+      return (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-muted-foreground">Nenhum pedido encontrado</p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="grid gap-4">
+        {pedidosList.map((pedido) => (
+          <Card key={pedido.id} className="border-l-4" style={{borderLeftColor: getStatusColor(pedido.status || 'PENDENTE').replace('bg-', '#')}}>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-base">
+                      Pedido #{pedido.numero_pedido}
+                    </h3>
+                    <Badge className={getStatusColor(pedido.status || 'PENDENTE')} variant="secondary">
+                      {formatarStatusPedido(pedido.status || 'PENDENTE')}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    {pedido.cliente_nome && (
+                      <p><strong>Cliente:</strong> {pedido.cliente_nome}</p>
+                    )}
+                    {pedido.cliente_telefone && (
+                      <p><strong>Telefone:</strong> {pedido.cliente_telefone}</p>
+                    )}
+                    {pedido.mesa_numero && (
+                      <p><strong>Mesa:</strong> {pedido.mesa_numero}</p>
+                    )}
+                    <p><strong>Origem:</strong> {formatarOrigemPedido(pedido.origem)}</p>
+                  </div>
+                </div>
+                
+                <div className="text-right">
+                  <p className="text-lg font-bold text-primary">
+                    R$ {pedido.total.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(pedido.created_at).toLocaleString('pt-BR')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Itens do pedido - mais compacto */}
+              <div className="mb-3">
+                <p className="text-xs font-medium mb-1">Itens:</p>
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {formatarItens(pedido.itens)}
+                </p>
+              </div>
+              
+              {/* Observações - mais compacto */}
+              {(pedido.observacoes || pedido.observacoes_cozinha) && (
+                <div className="mb-3">
+                  {pedido.observacoes && (
+                    <p className="text-xs text-muted-foreground">
+                      <strong>Obs:</strong> {pedido.observacoes}
+                    </p>
+                  )}
+                  {pedido.observacoes_cozinha && (
+                    <p className="text-xs text-muted-foreground">
+                      <strong>Cozinha:</strong> {pedido.observacoes_cozinha}
+                    </p>
+                  )}
+                </div>
+              )}
+              
+              {/* Botões de ação - mais compactos */}
+              <div className="flex gap-2 pt-2 border-t">
+                {pedido.status !== 'ENTREGUE' && pedido.status !== 'CANCELADO' && (
+                  <Button 
+                    onClick={() => updatePedidoStatus(pedido.id, getNextStatus(pedido.status || 'PENDENTE'))}
+                    disabled={updating[pedido.id]}
+                    size="sm"
+                    className="h-7 text-xs"
+                  >
+                    {updating[pedido.id] ? 'Atualizando...' : getStatusButtonText(pedido.status || 'PENDENTE')}
+                  </Button>
+                )}
+                
+                {pedido.status !== 'CANCELADO' && pedido.status !== 'ENTREGUE' && (
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => updatePedidoStatus(pedido.id, 'CANCELADO')}
+                    disabled={updating[pedido.id]}
+                    className="h-7 text-xs"
+                  >
+                    Cancelar
+                  </Button>
+                )}
+                
+                <Button variant="outline" size="sm" className="h-7 text-xs">
+                  Detalhes
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -201,11 +314,26 @@ export default function Pedidos() {
     );
   }
 
-  // Calcular estatísticas
+  // Filtrar pedidos por tipo
+  const pedidosDelivery = pedidos.filter(p => p.origem === 'DELIVERY');
+  const pedidosMesa = pedidos.filter(p => p.origem === 'MESA');
+
+  // Calcular estatísticas gerais
   const pedidosPendentes = pedidos.filter(p => p.status === 'PENDENTE').length;
   const pedidosPreparando = pedidos.filter(p => p.status === 'PREPARANDO').length;
   const pedidosProntos = pedidos.filter(p => p.status === 'PRONTO').length;
   const totalPedidos = pedidos.length;
+
+  // Calcular estatísticas por tipo
+  const deliveryPendentes = pedidosDelivery.filter(p => p.status === 'PENDENTE').length;
+  const deliveryPreparando = pedidosDelivery.filter(p => p.status === 'PREPARANDO').length;
+  const deliveryProntos = pedidosDelivery.filter(p => p.status === 'PRONTO').length;
+  const totalDelivery = pedidosDelivery.length;
+
+  const mesaPendentes = pedidosMesa.filter(p => p.status === 'PENDENTE').length;
+  const mesaPreparando = pedidosMesa.filter(p => p.status === 'PREPARANDO').length;
+  const mesaProntos = pedidosMesa.filter(p => p.status === 'PRONTO').length;
+  const totalMesa = pedidosMesa.length;
 
   return (
     <div className="p-6 space-y-6">
@@ -267,115 +395,76 @@ export default function Pedidos() {
         </Card>
       </div>
 
-      {/* Lista de pedidos */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Pedidos Ativos</h2>
-        
-        {pedidos.length === 0 ? (
-          <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground">Nenhum pedido encontrado</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4">
-            {pedidos.map((pedido) => (
-              <Card key={pedido.id} className="border-l-4" style={{borderLeftColor: getStatusColor(pedido.status || 'PENDENTE').replace('bg-', '#')}}>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-base">
-                          Pedido #{pedido.numero_pedido}
-                        </h3>
-                        <Badge className={getStatusColor(pedido.status || 'PENDENTE')} variant="secondary">
-                          {formatarStatusPedido(pedido.status || 'PENDENTE')}
-                        </Badge>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                        {pedido.cliente_nome && (
-                          <p><strong>Cliente:</strong> {pedido.cliente_nome}</p>
-                        )}
-                        {pedido.cliente_telefone && (
-                          <p><strong>Telefone:</strong> {pedido.cliente_telefone}</p>
-                        )}
-                        {pedido.mesa_numero && (
-                          <p><strong>Mesa:</strong> {pedido.mesa_numero}</p>
-                        )}
-                        <p><strong>Origem:</strong> {formatarOrigemPedido(pedido.origem)}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-primary">
-                        R$ {pedido.total.toFixed(2)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(pedido.created_at).toLocaleString('pt-BR')}
-                      </p>
-                    </div>
-                  </div>
+      {/* Abas de pedidos */}
+      <Tabs defaultValue="todos" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="todos" className="flex items-center gap-2">
+            <Utensils className="h-4 w-4" />
+            Todos ({totalPedidos})
+          </TabsTrigger>
+          <TabsTrigger value="delivery" className="flex items-center gap-2">
+            <Truck className="h-4 w-4" />
+            Delivery ({totalDelivery})
+          </TabsTrigger>
+          <TabsTrigger value="mesa" className="flex items-center gap-2">
+            <Utensils className="h-4 w-4" />
+            Mesa ({totalMesa})
+          </TabsTrigger>
+        </TabsList>
 
-                  {/* Itens do pedido - mais compacto */}
-                  <div className="mb-3">
-                    <p className="text-xs font-medium mb-1">Itens:</p>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {formatarItens(pedido.itens)}
-                    </p>
-                  </div>
-                  
-                  {/* Observações - mais compacto */}
-                  {(pedido.observacoes || pedido.observacoes_cozinha) && (
-                    <div className="mb-3">
-                      {pedido.observacoes && (
-                        <p className="text-xs text-muted-foreground">
-                          <strong>Obs:</strong> {pedido.observacoes}
-                        </p>
-                      )}
-                      {pedido.observacoes_cozinha && (
-                        <p className="text-xs text-muted-foreground">
-                          <strong>Cozinha:</strong> {pedido.observacoes_cozinha}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Botões de ação - mais compactos */}
-                  <div className="flex gap-2 pt-2 border-t">
-                    {pedido.status !== 'ENTREGUE' && pedido.status !== 'CANCELADO' && (
-                      <Button 
-                        onClick={() => updatePedidoStatus(pedido.id, getNextStatus(pedido.status || 'PENDENTE'))}
-                        disabled={updating[pedido.id]}
-                        size="sm"
-                        className="h-7 text-xs"
-                      >
-                        {updating[pedido.id] ? 'Atualizando...' : getStatusButtonText(pedido.status || 'PENDENTE')}
-                      </Button>
-                    )}
-                    
-                    {pedido.status !== 'CANCELADO' && pedido.status !== 'ENTREGUE' && (
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => updatePedidoStatus(pedido.id, 'CANCELADO')}
-                        disabled={updating[pedido.id]}
-                        className="h-7 text-xs"
-                      >
-                        Cancelar
-                      </Button>
-                    )}
-                    
-                    <Button variant="outline" size="sm" className="h-7 text-xs">
-                      Detalhes
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        <TabsContent value="todos" className="space-y-4">
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Todos os Pedidos</h2>
+            {renderPedidosList(pedidos)}
           </div>
-        )}
-      </div>
+        </TabsContent>
+
+        <TabsContent value="delivery" className="space-y-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Truck className="h-5 w-5" />
+                Pedidos de Delivery
+              </h2>
+              <div className="flex gap-2 text-sm text-muted-foreground">
+                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">
+                  Pendentes: {deliveryPendentes}
+                </span>
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                  Preparando: {deliveryPreparando}
+                </span>
+                <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
+                  Prontos: {deliveryProntos}
+                </span>
+              </div>
+            </div>
+            {renderPedidosList(pedidosDelivery)}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="mesa" className="space-y-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Utensils className="h-5 w-5" />
+                Pedidos de Mesa
+              </h2>
+              <div className="flex gap-2 text-sm text-muted-foreground">
+                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">
+                  Pendentes: {mesaPendentes}
+                </span>
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                  Preparando: {mesaPreparando}
+                </span>
+                <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
+                  Prontos: {mesaProntos}
+                </span>
+              </div>
+            </div>
+            {renderPedidosList(pedidosMesa)}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

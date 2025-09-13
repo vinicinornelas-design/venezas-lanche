@@ -258,12 +258,12 @@ export default function Pedidos() {
           
           <div class="items">
             <h3>ITENS:</h3>
-            ${selectedPedido.itens.map(item => `
+            ${selectedPedido.itens && Array.isArray(selectedPedido.itens) ? selectedPedido.itens.map(item => `
               <div class="item">
-                <strong>${item.quantidade}x ${item.nome}</strong>
+                <strong>${item.quantidade || 1}x ${item.nome || 'Item'}</strong>
                 ${item.observacoes ? `<br><em>Obs: ${item.observacoes}</em>` : ''}
               </div>
-            `).join('')}
+            `).join('') : '<p>Nenhum item encontrado</p>'}
           </div>
           
           ${selectedPedido.observacoes ? `
@@ -729,7 +729,7 @@ export default function Pedidos() {
             </DialogTitle>
           </DialogHeader>
           
-          {selectedPedido && (
+          {selectedPedido && selectedPedido.itens && (
             <div className="space-y-6">
               {/* Informações do pedido */}
               <div className="grid grid-cols-2 gap-4">
@@ -787,10 +787,10 @@ export default function Pedidos() {
               <div>
                 <Label className="text-sm font-medium">Itens do Pedido</Label>
                 <div className="mt-2 space-y-2">
-                  {selectedPedido.itens.map((item, index) => (
+                  {selectedPedido.itens && Array.isArray(selectedPedido.itens) ? selectedPedido.itens.map((item, index) => (
                     <div key={index} className="flex justify-between items-start p-3 border rounded-lg">
                       <div className="flex-1">
-                        <p className="font-medium">{item.quantidade}x {item.nome}</p>
+                        <p className="font-medium">{item.quantidade || 1}x {item.nome || 'Item'}</p>
                         {item.observacoes && (
                           <p className="text-sm text-muted-foreground mt-1">
                             Obs: {item.observacoes}
@@ -798,11 +798,13 @@ export default function Pedidos() {
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">R$ {(item.preco * item.quantidade).toFixed(2)}</p>
-                        <p className="text-sm text-muted-foreground">R$ {item.preco.toFixed(2)} cada</p>
+                        <p className="font-medium">R$ {((item.preco || 0) * (item.quantidade || 1)).toFixed(2)}</p>
+                        <p className="text-sm text-muted-foreground">R$ {(item.preco || 0).toFixed(2)} cada</p>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-sm text-muted-foreground">Nenhum item encontrado</p>
+                  )}
                 </div>
               </div>
 

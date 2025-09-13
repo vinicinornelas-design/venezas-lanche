@@ -232,56 +232,163 @@ export default function Pedidos() {
         <head>
           <title>Comanda - Pedido #${selectedPedido.numero_pedido}</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-            .order-info { margin-bottom: 20px; }
-            .items { margin-bottom: 20px; }
-            .item { margin-bottom: 10px; padding: 5px; border-bottom: 1px solid #eee; }
-            .total { font-size: 18px; font-weight: bold; text-align: right; margin-top: 20px; }
-            .observations { margin-top: 20px; padding: 10px; background-color: #f5f5f5; }
-            @media print { body { margin: 0; } }
+            body { 
+              font-family: 'Courier New', monospace; 
+              margin: 0; 
+              padding: 20px; 
+              font-size: 14px;
+              line-height: 1.4;
+              color: #000;
+              background: white;
+            }
+            .header { 
+              text-align: center; 
+              margin-bottom: 20px; 
+              border-bottom: 2px solid #000; 
+              padding-bottom: 15px;
+            }
+            .logo {
+              font-size: 24px;
+              font-weight: bold;
+              margin-bottom: 5px;
+            }
+            .subtitle {
+              font-size: 12px;
+              margin-bottom: 10px;
+            }
+            .order-number {
+              font-size: 18px;
+              font-weight: bold;
+              margin: 10px 0;
+            }
+            .order-date {
+              font-size: 12px;
+              margin-bottom: 15px;
+            }
+            .section {
+              margin-bottom: 15px;
+            }
+            .section-title {
+              font-weight: bold;
+              margin-bottom: 8px;
+              text-transform: uppercase;
+            }
+            .item {
+              margin-bottom: 8px;
+              padding-bottom: 5px;
+            }
+            .item-name {
+              font-weight: bold;
+              margin-bottom: 2px;
+            }
+            .item-details {
+              font-size: 12px;
+              margin-left: 10px;
+              color: #666;
+            }
+            .item-obs {
+              font-style: italic;
+              color: #333;
+              margin-top: 2px;
+            }
+            .separator {
+              border-top: 1px dashed #000;
+              margin: 10px 0;
+            }
+            .price-summary {
+              margin-top: 15px;
+            }
+            .price-line {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 3px;
+            }
+            .total-line {
+              font-weight: bold;
+              font-size: 16px;
+              border-top: 1px solid #000;
+              padding-top: 5px;
+              margin-top: 10px;
+            }
+            .observations {
+              margin-top: 15px;
+              padding: 10px;
+              background-color: #f9f9f9;
+              border: 1px solid #ddd;
+            }
+            .delivery-info {
+              margin-top: 15px;
+              padding: 10px;
+              background-color: #f0f0f0;
+              border: 1px solid #ccc;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 20px;
+              font-size: 10px;
+              color: #666;
+            }
+            @media print { 
+              body { margin: 0; padding: 15px; }
+              .no-print { display: none; }
+            }
           </style>
         </head>
         <body>
           <div class="header">
-            <h1>COMANDA</h1>
-            <h2>Pedido #${selectedPedido.numero_pedido}</h2>
-            <p>Data: ${new Date(selectedPedido.created_at).toLocaleString('pt-BR')}</p>
+            <div class="logo">🍔 VENEZA'S LANCHE</div>
+            <div class="subtitle">LANCHONETE</div>
+            <div class="order-number">Pedido #${selectedPedido.numero_pedido}</div>
+            <div class="order-date">Realizado em: ${new Date(selectedPedido.created_at).toLocaleDateString('pt-BR')} - ${new Date(selectedPedido.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
           </div>
           
-          <div class="order-info">
-            <p><strong>Cliente:</strong> ${selectedPedido.cliente_nome || 'N/A'}</p>
-            <p><strong>Telefone:</strong> ${selectedPedido.cliente_telefone || 'N/A'}</p>
-            <p><strong>Origem:</strong> ${formatarOrigemPedido(selectedPedido.origem)}</p>
-            ${selectedPedido.mesa_numero ? `<p><strong>Mesa:</strong> ${selectedPedido.mesa_numero}</p>` : ''}
-          </div>
-          
-          <div class="items">
-            <h3>ITENS:</h3>
-            ${selectedPedido.itens && Array.isArray(selectedPedido.itens) ? selectedPedido.itens.map(item => `
+          <div class="section">
+            <div class="section-title">Itens do Pedido</div>
+            ${selectedPedido.itens && Array.isArray(selectedPedido.itens) ? selectedPedido.itens.map((item, index) => `
               <div class="item">
-                <strong>${item.quantidade || 1}x ${item.nome || 'Item'}</strong>
-                ${item.observacoes ? `<br><em>Obs: ${item.observacoes}</em>` : ''}
+                <div class="item-name">${item.quantidade || 1}x ${item.nome || 'Item'}</div>
+                <div class="item-details">R$ ${(item.preco || 0).toFixed(2)} cada</div>
+                ${item.observacoes ? `<div class="item-obs">Obs: ${item.observacoes}</div>` : ''}
+                ${index < selectedPedido.itens.length - 1 ? '<div class="separator"></div>' : ''}
               </div>
             `).join('') : '<p>Nenhum item encontrado</p>'}
           </div>
           
+          <div class="price-summary">
+            <div class="price-line">
+              <span>Valor dos produtos:</span>
+              <span>R$ ${selectedPedido.total.toFixed(2)}</span>
+            </div>
+            <div class="total-line">
+              <span>TOTAL:</span>
+              <span>R$ ${selectedPedido.total.toFixed(2)}</span>
+            </div>
+          </div>
+          
           ${selectedPedido.observacoes ? `
             <div class="observations">
-              <h3>OBSERVAÇÕES:</h3>
+              <div class="section-title">Observações</div>
               <p>${selectedPedido.observacoes}</p>
             </div>
           ` : ''}
           
           ${selectedPedido.observacoes_cozinha ? `
             <div class="observations">
-              <h3>OBSERVAÇÕES COZINHA:</h3>
+              <div class="section-title">Observações da Cozinha</div>
               <p>${selectedPedido.observacoes_cozinha}</p>
             </div>
           ` : ''}
           
-          <div class="total">
-            <p>TOTAL: R$ ${selectedPedido.total.toFixed(2)}</p>
+          <div class="delivery-info">
+            <div class="section-title">${formatarOrigemPedido(selectedPedido.origem)}</div>
+            <p><strong>Cliente:</strong> ${selectedPedido.cliente_nome || 'N/A'}</p>
+            <p><strong>Telefone:</strong> ${selectedPedido.cliente_telefone || 'N/A'}</p>
+            ${selectedPedido.mesa_numero ? `<p><strong>Mesa:</strong> ${selectedPedido.mesa_numero}</p>` : ''}
+          </div>
+          
+          <div class="footer">
+            <p>Comanda gerada automaticamente</p>
+            <p>Veneza's Lanche - Sistema de Gestão</p>
           </div>
         </body>
       </html>

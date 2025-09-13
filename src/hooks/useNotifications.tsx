@@ -20,7 +20,8 @@ export function useNotifications() {
   // Carregar notificações iniciais
   useEffect(() => {
     fetchNotifications();
-    setupRealtimeSubscription();
+    // Usar polling em vez de subscription para evitar erro de binding
+    setupPolling();
   }, []);
 
   // Atualizar contador de não lidas
@@ -46,50 +47,66 @@ export function useNotifications() {
     }
   };
 
-  const setupRealtimeSubscription = () => {
-    console.log('Configurando subscription de notificações...');
+  const setupPolling = () => {
+    console.log('Configurando polling de notificações...');
     
-    const channel = supabase
-      .channel('notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-        },
-        (payload) => {
-          console.log('Nova notificação recebida:', payload.new);
-          const newNotification = payload.new as AppNotification;
+    let lastNotificationId: string | null = null;
+    
+    // Buscar ID da última notificação
+    const getLastNotificationId = () => {
+      if (notifications.length > 0) {
+        return notifications[0].id;
+      }
+      return null;
+    };
+    
+    const checkForNewNotifications = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('target_role', 'CAIXA')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const latestNotification = data[0];
           
-          // Verificar se a notificação é para o usuário atual
-          if (shouldShowNotification(newNotification)) {
-            console.log('Mostrando notificação:', newNotification);
-            setNotifications(prev => [newNotification, ...prev]);
-            showDesktopNotification(newNotification);
-            playNotificationSound();
-          } else {
-            console.log('Notificação não é para este usuário:', newNotification.target_role);
+          // Verificar se é uma nova notificação
+          if (!lastNotificationId || latestNotification.id !== lastNotificationId) {
+            console.log('Nova notificação detectada via polling:', latestNotification);
+            
+            if (shouldShowNotification(latestNotification)) {
+              console.log('Mostrando notificação via polling:', latestNotification);
+              setNotifications(prev => {
+                // Evitar duplicatas
+                const exists = prev.some(n => n.id === latestNotification.id);
+                if (exists) return prev;
+                return [latestNotification, ...prev];
+              });
+              showDesktopNotification(latestNotification);
+              playNotificationSound();
+            }
+            
+            lastNotificationId = latestNotification.id;
           }
         }
-      )
-      .subscribe((status, err) => {
-        console.log('Status da subscription:', status);
-        if (err) {
-          console.error('Erro na subscription:', err);
-        }
-        
-        if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
-          console.log('Tentando reconectar subscription...');
-          setTimeout(() => {
-            setupRealtimeSubscription();
-          }, 5000);
-        }
-      });
+      } catch (error) {
+        console.error('Erro no polling de notificações:', error);
+      }
+    };
+
+    // Verificar a cada 3 segundos
+    const interval = setInterval(checkForNewNotifications, 3000);
+    
+    // Verificar imediatamente
+    checkForNewNotifications();
 
     return () => {
-      console.log('Removendo subscription de notificações');
-      supabase.removeChannel(channel);
+      console.log('Removendo polling de notificações');
+      clearInterval(interval);
     };
   };
 
@@ -156,21 +173,40 @@ export function useNotifications() {
     try {
       // Criar um som simples usando Web Audio API
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Verificar se o contexto está suspenso e resumir se necessário
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+          playTone(audioContext);
+        });
+      } else {
+        playTone(audioContext);
+      }
+    } catch (error) {
+      console.log('🔔 Nova notificação!');
+    }
+  };
+
+  const playTone = (audioContext: AudioContext) => {
+    try {
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
       
+      // Som de notificação mais agradável
       oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
       oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
       oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
       
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
       
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.3);
+      
+      console.log('🔊 Som de notificação reproduzido');
     } catch (error) {
       console.log('🔔 Nova notificação!');
     }

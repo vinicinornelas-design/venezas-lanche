@@ -13,11 +13,11 @@ export default function Pedidos() {
 
   useEffect(() => {
     fetchPedidos();
-    setupRealtimeSubscription();
+    setupPolling();
     
-    // Cleanup subscription on unmount
+    // Cleanup polling on unmount
     return () => {
-      supabase.removeAllChannels();
+      // Polling será limpo automaticamente
     };
   }, []);
 
@@ -66,42 +66,18 @@ export default function Pedidos() {
     }
   };
 
-  const setupRealtimeSubscription = () => {
-    console.log('Configurando subscription de pedidos...');
+  const setupPolling = () => {
+    console.log('Configurando polling de pedidos...');
     
-    const channel = supabase
-      .channel('pedidos-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Escutar todos os eventos (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'pedidos_unificados',
-        },
-        (payload) => {
-          console.log('Mudança detectada na tabela pedidos_unificados:', payload);
-          
-          // Recarregar pedidos quando houver mudanças
-          fetchPedidos();
-        }
-      )
-      .subscribe((status, err) => {
-        console.log('Status da subscription de pedidos:', status);
-        if (err) {
-          console.error('Erro na subscription de pedidos:', err);
-        }
-        
-        if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
-          console.log('Tentando reconectar subscription de pedidos...');
-          setTimeout(() => {
-            setupRealtimeSubscription();
-          }, 5000);
-        }
-      });
+    // Verificar mudanças a cada 5 segundos
+    const interval = setInterval(() => {
+      console.log('Verificando mudanças nos pedidos...');
+      fetchPedidos();
+    }, 5000);
 
     return () => {
-      console.log('Removendo subscription de pedidos');
-      supabase.removeChannel(channel);
+      console.log('Removendo polling de pedidos');
+      clearInterval(interval);
     };
   };
 

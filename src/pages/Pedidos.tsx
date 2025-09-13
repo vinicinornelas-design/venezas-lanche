@@ -70,12 +70,7 @@ export default function Pedidos() {
     console.log('Configurando subscription de pedidos...');
     
     const channel = supabase
-      .channel('pedidos-realtime', {
-        config: {
-          broadcast: { self: false },
-          presence: { key: 'pedidos' }
-        }
-      })
+      .channel('pedidos-realtime')
       .on(
         'postgres_changes',
         {

@@ -119,12 +119,7 @@ export default function Mesas() {
     console.log('Configurando subscription de mesas...');
     
     const channel = supabase
-      .channel('mesas-realtime', {
-        config: {
-          broadcast: { self: false },
-          presence: { key: 'mesas' }
-        }
-      })
+      .channel('mesas-realtime')
       .on(
         'postgres_changes',
         {

@@ -50,12 +50,7 @@ export function useNotifications() {
     console.log('Configurando subscription de notificações...');
     
     const channel = supabase
-      .channel('notifications', {
-        config: {
-          broadcast: { self: false },
-          presence: { key: 'notifications' }
-        }
-      })
+      .channel('notifications')
       .on(
         'postgres_changes',
         {

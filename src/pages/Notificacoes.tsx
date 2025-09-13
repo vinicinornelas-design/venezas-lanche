@@ -383,6 +383,45 @@ export default function Notificacoes() {
                 <Bell className="h-4 w-4 mr-2" />
                 Testar Notificação
               </Button>
+              
+              <Button
+                variant="outline"
+                className="w-full text-green-600 hover:text-green-700"
+                onClick={async () => {
+                  try {
+                    // Criar notificação que deve disparar popup e som
+                    await createNotification({
+                      title: 'Teste de Popup e Som',
+                      message: 'Esta notificação deve aparecer como popup e tocar som.',
+                      type: 'NEW_ORDER',
+                      priority: 'HIGH',
+                      target_role: 'CAIXA',
+                      read: false,
+                      metadata: { 
+                        test: true,
+                        order_type: 'DELIVERY',
+                        customer_name: 'Teste',
+                        total_amount: 50.00
+                      }
+                    });
+                    
+                    toast({
+                      title: "Notificação de teste criada!",
+                      description: "Verifique se apareceu popup e som.",
+                    });
+                  } catch (error) {
+                    console.error('Erro ao criar notificação de teste:', error);
+                    toast({
+                      title: "Erro",
+                      description: "Erro ao criar notificação de teste.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
+                <Bell className="h-4 w-4 mr-2" />
+                Testar Popup e Som
+              </Button>
             </CardContent>
           </Card>
         </div>

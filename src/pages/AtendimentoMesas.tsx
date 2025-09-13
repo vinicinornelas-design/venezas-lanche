@@ -125,12 +125,7 @@ export default function AtendimentoMesas() {
     console.log('Configurando subscription de mesas (atendimento)...');
     
     const channel = supabase
-      .channel('atendimento-mesas-realtime', {
-        config: {
-          broadcast: { self: false },
-          presence: { key: 'atendimento-mesas' }
-        }
-      })
+      .channel('atendimento-mesas-realtime')
       .on(
         'postgres_changes',
         {

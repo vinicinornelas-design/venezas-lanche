@@ -47,8 +47,15 @@ export function useNotifications() {
   };
 
   const setupRealtimeSubscription = () => {
+    console.log('Configurando subscription de notificações...');
+    
     const channel = supabase
-      .channel('notifications')
+      .channel('notifications', {
+        config: {
+          broadcast: { self: false },
+          presence: { key: 'notifications' }
+        }
+      })
       .on(
         'postgres_changes',
         {
@@ -71,11 +78,22 @@ export function useNotifications() {
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('Status da subscription:', status);
+        if (err) {
+          console.error('Erro na subscription:', err);
+        }
+        
+        if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+          console.log('Tentando reconectar subscription...');
+          setTimeout(() => {
+            setupRealtimeSubscription();
+          }, 5000);
+        }
       });
 
     return () => {
+      console.log('Removendo subscription de notificações');
       supabase.removeChannel(channel);
     };
   };

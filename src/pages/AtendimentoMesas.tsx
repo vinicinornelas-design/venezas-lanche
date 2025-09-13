@@ -122,8 +122,15 @@ export default function AtendimentoMesas() {
   };
 
   const setupRealtimeSubscription = () => {
+    console.log('Configurando subscription de mesas (atendimento)...');
+    
     const channel = supabase
-      .channel('atendimento-mesas-realtime')
+      .channel('atendimento-mesas-realtime', {
+        config: {
+          broadcast: { self: false },
+          presence: { key: 'atendimento-mesas' }
+        }
+      })
       .on(
         'postgres_changes',
         {
@@ -138,11 +145,22 @@ export default function AtendimentoMesas() {
           fetchMesas();
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('Status da subscription de mesas (atendimento):', status);
+        if (err) {
+          console.error('Erro na subscription de mesas (atendimento):', err);
+        }
+        
+        if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+          console.log('Tentando reconectar subscription de mesas (atendimento)...');
+          setTimeout(() => {
+            setupRealtimeSubscription();
+          }, 5000);
+        }
       });
 
     return () => {
+      console.log('Removendo subscription de mesas (atendimento)');
       supabase.removeChannel(channel);
     };
   };

@@ -67,8 +67,15 @@ export default function Pedidos() {
   };
 
   const setupRealtimeSubscription = () => {
+    console.log('Configurando subscription de pedidos...');
+    
     const channel = supabase
-      .channel('pedidos-realtime')
+      .channel('pedidos-realtime', {
+        config: {
+          broadcast: { self: false },
+          presence: { key: 'pedidos' }
+        }
+      })
       .on(
         'postgres_changes',
         {
@@ -83,11 +90,22 @@ export default function Pedidos() {
           fetchPedidos();
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('Status da subscription de pedidos:', status);
+        if (err) {
+          console.error('Erro na subscription de pedidos:', err);
+        }
+        
+        if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+          console.log('Tentando reconectar subscription de pedidos...');
+          setTimeout(() => {
+            setupRealtimeSubscription();
+          }, 5000);
+        }
       });
 
     return () => {
+      console.log('Removendo subscription de pedidos');
       supabase.removeChannel(channel);
     };
   };

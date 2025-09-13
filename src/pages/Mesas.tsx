@@ -116,8 +116,15 @@ export default function Mesas() {
   };
 
   const setupRealtimeSubscription = () => {
+    console.log('Configurando subscription de mesas...');
+    
     const channel = supabase
-      .channel('mesas-realtime')
+      .channel('mesas-realtime', {
+        config: {
+          broadcast: { self: false },
+          presence: { key: 'mesas' }
+        }
+      })
       .on(
         'postgres_changes',
         {
@@ -132,11 +139,22 @@ export default function Mesas() {
           fetchMesas();
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('Status da subscription de mesas:', status);
+        if (err) {
+          console.error('Erro na subscription de mesas:', err);
+        }
+        
+        if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+          console.log('Tentando reconectar subscription de mesas...');
+          setTimeout(() => {
+            setupRealtimeSubscription();
+          }, 5000);
+        }
       });
 
     return () => {
+      console.log('Removendo subscription de mesas');
       supabase.removeChannel(channel);
     };
   };

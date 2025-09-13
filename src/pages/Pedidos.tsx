@@ -13,6 +13,12 @@ export default function Pedidos() {
 
   useEffect(() => {
     fetchPedidos();
+    setupRealtimeSubscription();
+    
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeAllChannels();
+    };
   }, []);
 
   const fetchPedidos = async () => {
@@ -58,6 +64,32 @@ export default function Pedidos() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const setupRealtimeSubscription = () => {
+    const channel = supabase
+      .channel('pedidos-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Escutar todos os eventos (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'pedidos_unificados',
+        },
+        (payload) => {
+          console.log('Mudança detectada na tabela pedidos_unificados:', payload);
+          
+          // Recarregar pedidos quando houver mudanças
+          fetchPedidos();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Status da subscription de pedidos:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   };
 
   const updatePedidoStatus = async (pedidoId: string, newStatus: string) => {

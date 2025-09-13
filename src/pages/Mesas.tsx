@@ -53,6 +53,12 @@ export default function Mesas() {
     fetchMesas();
     fetchFuncionarios();
     fetchUserProfile();
+    setupRealtimeSubscription();
+    
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeAllChannels();
+    };
   }, []);
 
   const fetchUserProfile = async () => {
@@ -107,6 +113,32 @@ export default function Mesas() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const setupRealtimeSubscription = () => {
+    const channel = supabase
+      .channel('mesas-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Escutar todos os eventos (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'mesas',
+        },
+        (payload) => {
+          console.log('Mudança detectada na tabela mesas:', payload);
+          
+          // Recarregar mesas quando houver mudanças
+          fetchMesas();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Status da subscription de mesas:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   };
 
   const initializeMesas = async () => {

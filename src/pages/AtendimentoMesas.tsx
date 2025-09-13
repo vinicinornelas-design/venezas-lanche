@@ -57,13 +57,12 @@ export default function AtendimentoMesas() {
   useEffect(() => {
     fetchMesas();
     fetchFuncionarios();
+    setupRealtimeSubscription();
     
-    // Atualizar a cada 30 segundos
-    const interval = setInterval(() => {
-      fetchMesas();
-    }, 30000);
-
-    return () => clearInterval(interval);
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeAllChannels();
+    };
   }, []);
 
   const fetchMesas = async () => {
@@ -120,6 +119,32 @@ export default function AtendimentoMesas() {
     } catch (error) {
       console.error('Erro ao buscar funcionários:', error);
     }
+  };
+
+  const setupRealtimeSubscription = () => {
+    const channel = supabase
+      .channel('atendimento-mesas-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Escutar todos os eventos (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'mesas',
+        },
+        (payload) => {
+          console.log('Mudança detectada na tabela mesas (atendimento):', payload);
+          
+          // Recarregar mesas quando houver mudanças
+          fetchMesas();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Status da subscription de mesas (atendimento):', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   };
 
   const handleAtenderMesa = (mesa: Mesa) => {

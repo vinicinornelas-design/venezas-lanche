@@ -3,6 +3,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 import { UserDebugInfo } from "../UserDebugInfo";
+import { NotificationProvider } from "../NotificationProvider";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -24,6 +25,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </main>
         </div>
         <UserDebugInfo />
+        <NotificationProvider />
       </div>
     </SidebarProvider>
   );

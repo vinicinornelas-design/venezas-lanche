@@ -119,12 +119,6 @@ const navigationItems: NavigationItem[] = [
     url: "/restaurante",
     icon: Building2,
     roles: ['ADMIN']
-  },
-  {
-    title: "Corrigir Perfis",
-    url: "/corrigir-perfis",
-    icon: UserCog,
-    roles: ['ADMIN']
   }
 ];
 

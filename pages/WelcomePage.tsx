@@ -92,16 +92,16 @@ export default function WelcomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
+    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-orange-50 to-red-100">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-200/30 via-orange-100/20 to-red-200/30" />
         
         <div className="relative container mx-auto px-4 py-16">
           <div className="text-center space-y-8">
             {/* Logo and Brand */}
             <div className="space-y-4">
-              <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center shadow-2xl animate-logo-float animate-logo-glow hover:animate-logo-rotate transition-all duration-500 hover:scale-110 cursor-pointer group">
+              <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center shadow-2xl animate-logo-float animate-logo-glow hover:animate-logo-rotate transition-all duration-500 hover:scale-110 cursor-pointer group border-2 border-orange-400">
                 {restaurantConfig?.logo_url ? (
                   <img 
                     src={restaurantConfig.logo_url} 
@@ -122,10 +122,10 @@ export default function WelcomePage() {
               </div>
               
               <div>
-                <h1 className="text-6xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-2">
+                <h1 className="text-6xl font-bold text-orange-600 mb-2 drop-shadow-sm">
                   {restaurantConfig?.nome_restaurante || "Veneza's Lanches"}
                 </h1>
-                <p className="text-xl text-muted-foreground">
+                <p className="text-xl text-gray-600 font-medium">
                   {restaurantConfig?.slogan || "Sabores únicos que conquistam o seu paladar"}
                 </p>
               </div>
@@ -135,27 +135,27 @@ export default function WelcomePage() {
             <div className="space-y-4">
               <Button 
                 onClick={handleMenuClick}
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-xl px-12 py-6 h-auto rounded-xl shadow-2xl transform transition-all duration-300 hover:scale-105"
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-xl px-12 py-6 h-auto rounded-xl shadow-2xl transform transition-all duration-300 hover:scale-105 border border-orange-400"
               >
                 <MenuIcon className="mr-3 h-6 w-6" />
                 Ver Cardápio Completo
                 <ArrowRight className="ml-3 h-6 w-6" />
               </Button>
               
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-gray-600">
                 Confira nossos deliciosos lanches e faça seu pedido!
               </div>
             </div>
 
             {/* Restaurant Info */}
-            <Card className="max-w-4xl mx-auto border-border shadow-elegant animate-fade-in">
+            <Card className="max-w-4xl mx-auto bg-white/80 backdrop-blur-sm border-2 border-orange-200 shadow-xl animate-fade-in rounded-2xl">
               <CardContent className="p-6 md:p-8 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="flex items-center gap-3">
                     <MapPin className="h-5 w-5 text-orange-500" />
                     <div className="text-left">
-                      <p className="font-semibold">Endereço</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-semibold text-gray-700">Endereço</p>
+                      <p className="text-sm text-gray-600">
                         {restaurantConfig?.endereco || "Rua das Delícias, 123"}
                       </p>
                     </div>
@@ -164,8 +164,8 @@ export default function WelcomePage() {
                   <div className="flex items-center gap-3">
                     <Phone className="h-5 w-5 text-orange-500" />
                     <div className="text-left">
-                      <p className="font-semibold">Telefone</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-semibold text-gray-700">Telefone</p>
+                      <p className="text-sm text-gray-600">
                         {restaurantConfig?.telefone || "(31) 99999-9999"}
                       </p>
                     </div>
@@ -174,8 +174,8 @@ export default function WelcomePage() {
                   <div className="flex items-center gap-3">
                     <Clock className="h-5 w-5 text-orange-500" />
                     <div className="text-left">
-                      <p className="font-semibold">Horário</p>
-                      <div className="text-sm text-muted-foreground">
+                      <p className="font-semibold text-gray-700">Horário</p>
+                      <div className="text-sm text-gray-600">
                         {restaurantConfig?.horario_funcionamento ? (
                           typeof restaurantConfig.horario_funcionamento === 'object' ? (
                             <div className="space-y-1">
@@ -203,13 +203,13 @@ export default function WelcomePage() {
       </section>
 
       {/* Highlights Section */}
-      <section className="py-16 bg-background/50">
+      <section className="py-16 bg-white/30 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+            <h2 className="text-4xl font-bold mb-4 text-orange-600">
               Por que escolher o {restaurantConfig?.nome_restaurante || "Veneza's"}?
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Descubra o que nos torna especiais e por que nossos clientes sempre voltam
             </p>
           </div>
@@ -249,13 +249,13 @@ export default function WelcomePage() {
       </section>
 
       {/* Popular Items Preview */}
-      <section className="py-16">
+      <section className="py-16 bg-gradient-to-br from-orange-50/50 to-red-50/50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+            <h2 className="text-4xl font-bold mb-4 text-orange-600">
               Nossos Favoritos
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Os lanches mais pedidos pelos nossos clientes e que você não pode deixar de experimentar
             </p>
           </div>
@@ -363,10 +363,10 @@ export default function WelcomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-muted/50 py-8">
+      <footer className="bg-orange-100/50 py-8">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4">
-            <p className="text-muted-foreground">
+            <p className="text-gray-600">
               © 2024 {restaurantConfig?.nome_restaurante || "Veneza's Lanches"}. Todos os direitos reservados.
             </p>
             
@@ -374,7 +374,7 @@ export default function WelcomePage() {
             <div className="opacity-30 hover:opacity-100 transition-opacity duration-500">
               <button 
                 onClick={toggleAdminButton}
-                className="text-xs text-muted-foreground hover:text-foreground"
+                className="text-xs text-gray-500 hover:text-gray-700"
               >
                 •
               </button>
@@ -385,7 +385,7 @@ export default function WelcomePage() {
                     onClick={handleAdminClick}
                     variant="ghost" 
                     size="sm"
-                    className="text-xs"
+                    className="text-xs text-gray-600 hover:text-gray-800"
                   >
                     <Shield className="mr-1 h-3 w-3" />
                     Acesso ao Sistema

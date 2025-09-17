@@ -259,7 +259,7 @@ export default function Auth() {
           <div className="text-center space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center mx-auto shadow-lg">
               <img 
-                src="/lovable-uploads/venezas-logo.png" 
+                src="/venezas-logo.png" 
                 alt="Veneza's Lanches" 
                 className="w-12 h-12 object-contain"
                 onError={(e) => {

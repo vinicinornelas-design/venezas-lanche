@@ -113,7 +113,7 @@ export function useRealtimeNotifications(enabled: boolean = true) {
                 style: 'currency',
                 currency: 'BRL'
               }).format(newOrder.total || 0)}`,
-              icon: '/lovable-uploads/venezas-logo.png',
+              icon: '/venezas-logo.png',
               tag: 'new-order',
               requireInteraction: false
             });

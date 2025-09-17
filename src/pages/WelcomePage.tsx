@@ -42,7 +42,7 @@ export default function WelcomePage() {
             <div className="space-y-4">
               <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center shadow-2xl">
                 <img 
-                  src="/lovable-uploads/venezas-logo.png" 
+                  src="/venezas-logo.png" 
                   alt="Veneza's Lanches" 
                   className="w-24 h-24 object-contain"
                   onError={(e) => {

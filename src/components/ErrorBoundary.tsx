@@ -32,6 +32,10 @@ export class ErrorBoundary extends Component<Props, State> {
     window.location.reload();
   };
 
+  handleReset = () => {
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+  };
+
   render() {
     if (this.state.hasError) {
       return (
@@ -64,6 +68,12 @@ export class ErrorBoundary extends Component<Props, State> {
                   className="flex-1 bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition-colors"
                 >
                   Recarregar Página
+                </button>
+                <button 
+                  onClick={this.handleReset}
+                  className="flex-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+                >
+                  Tentar Novamente
                 </button>
                 <button 
                   onClick={() => window.location.href = '/'}

@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageErrorFallback } from "@/components/PageErrorFallback";
+import { usePageError } from "@/hooks/usePageError";
 import { 
   ShoppingCart, 
   Users, 
@@ -31,6 +33,18 @@ interface DashboardStats {
 export default function Dashboard() {
   // Redirect admin users to AdminDashboard
   const [userRole, setUserRole] = useState<string>('');
+  const { hasError, error, resetError, setError } = usePageError();
+
+  if (hasError) {
+    return (
+      <PageErrorFallback 
+        error={error || undefined}
+        resetError={resetError}
+        title="Erro no Dashboard"
+        description="Não foi possível carregar os dados do dashboard. Verifique sua conexão e tente novamente."
+      />
+    );
+  }
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -129,6 +143,7 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+      setError(error as Error);
     } finally {
       setLoading(false);
     }
@@ -147,6 +162,7 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error fetching recent orders:', error);
+      setError(error as Error);
     }
   };
 

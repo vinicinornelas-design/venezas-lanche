@@ -16,7 +16,12 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    chunkSizeWarningLimit: 2000, // 2MB
+    chunkSizeWarningLimit: 0, // Desabilita completamente o warning
+    rollupOptions: {
+      output: {
+        manualChunks: undefined, // Desabilita divisão manual de chunks
+      },
+    },
   },
   preview: {
     port: 8080,

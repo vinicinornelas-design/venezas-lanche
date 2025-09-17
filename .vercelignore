@@ -1,4 +1,3 @@
-# Ignore files that don't need to be deployed
 node_modules
 .git
 .env.local
@@ -14,3 +13,7 @@ yarn-error.log*
 *.swp
 *.swo
 *~
+src
+public
+*.md
+*.sql

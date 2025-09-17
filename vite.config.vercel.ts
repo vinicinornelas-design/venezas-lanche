@@ -16,7 +16,7 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    chunkSizeWarningLimit: 10000, // 10MB - desabilita efetivamente o warning
+    chunkSizeWarningLimit: 0, // Desabilita completamente o warning
     rollupOptions: {
       output: {
         manualChunks: (id) => {
@@ -26,9 +26,18 @@ export default defineConfig({
             if (id.includes('react') || id.includes('react-dom')) {
               return 'react-vendor';
             }
-            // Radix UI components
+            // Radix UI components - separar por categoria
+            if (id.includes('@radix-ui/react-dialog') || id.includes('@radix-ui/react-alert-dialog')) {
+              return 'radix-dialogs';
+            }
+            if (id.includes('@radix-ui/react-dropdown-menu') || id.includes('@radix-ui/react-select')) {
+              return 'radix-menus';
+            }
+            if (id.includes('@radix-ui/react-tabs') || id.includes('@radix-ui/react-accordion')) {
+              return 'radix-layout';
+            }
             if (id.includes('@radix-ui')) {
-              return 'radix-ui';
+              return 'radix-other';
             }
             // Charts
             if (id.includes('recharts')) {
@@ -62,6 +71,10 @@ export default defineConfig({
             if (id.includes('react-router')) {
               return 'router';
             }
+            // Tailwind e CSS
+            if (id.includes('tailwind') || id.includes('clsx') || id.includes('class-variance-authority')) {
+              return 'css-utils';
+            }
             // Other utilities
             return 'vendor';
           }
@@ -69,8 +82,16 @@ export default defineConfig({
           // Separa páginas grandes em chunks separados
           if (id.includes('/pages/')) {
             const pageName = id.split('/pages/')[1]?.split('.')[0];
-            if (pageName && ['Dashboard', 'AdminDashboard', 'Pedidos', 'Mesas', 'Financeiro'].includes(pageName)) {
+            if (pageName && ['Dashboard', 'AdminDashboard', 'Pedidos', 'Mesas', 'Financeiro', 'Clientes', 'Funcionarios'].includes(pageName)) {
               return `page-${pageName.toLowerCase()}`;
+            }
+          }
+          
+          // Separa componentes grandes
+          if (id.includes('/components/')) {
+            const componentName = id.split('/components/')[1]?.split('/')[0];
+            if (componentName && ['layout', 'ui'].includes(componentName)) {
+              return `components-${componentName}`;
             }
           }
         },

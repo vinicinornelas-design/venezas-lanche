@@ -1,0 +1,5 @@
+{
+  "buildCommand": "vite build --config vite.config.vercel.ts --mode production",
+  "outputDirectory": "dist",
+  "framework": "vite"
+}

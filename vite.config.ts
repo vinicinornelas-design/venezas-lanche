@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist",
-    chunkSizeWarningLimit: 0, // Desabilita o warning
+    chunkSizeWarningLimit: 1000, // 1MB - limite mais conservador
     rollupOptions: {
       output: {
         manualChunks: (id) => {

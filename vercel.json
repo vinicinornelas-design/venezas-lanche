@@ -1,5 +1,5 @@
 {
-  "buildCommand": "vite build --config vite.config.vercel.ts --mode production",
+  "buildCommand": "vite build",
   "outputDirectory": "dist",
   "functions": {
     "app/api/**/*.js": {
@@ -16,10 +16,5 @@
         }
       ]
     }
-  ],
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
-  }
+  ]
 }

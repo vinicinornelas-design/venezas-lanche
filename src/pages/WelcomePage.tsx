@@ -37,9 +37,9 @@ export default function WelcomePage() {
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20" />
         
         {/* Efeitos de fundo decorativos */}
-        <div className="absolute top-20 left-10 w-32 h-32 bg-orange-300/20 rounded-full blur-3xl animate-bounce-gentle"></div>
-        <div className="absolute bottom-20 right-10 w-40 h-40 bg-red-300/20 rounded-full blur-3xl animate-bounce-gentle" style={{animationDelay: '1s'}}></div>
-        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-yellow-300/20 rounded-full blur-2xl animate-pulse-slow"></div>
+        <div className="absolute top-20 left-10 w-32 h-32 bg-orange-300/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-40 h-40 bg-red-300/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-yellow-300/20 rounded-full blur-2xl"></div>
         
         <div className="relative container mx-auto px-4 py-16">
           <div className="text-center space-y-8">
@@ -64,10 +64,6 @@ export default function WelcomePage() {
                 {/* Efeito de brilho */}
                 <div className="absolute inset-0 w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-orange-300/30 to-red-300/30 blur-xl animate-pulse group-hover:blur-2xl transition-all duration-500"></div>
                 
-                {/* Efeito de partículas */}
-                <div className="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full animate-bounce-gentle opacity-70"></div>
-                <div className="absolute -bottom-2 -left-2 w-3 h-3 bg-orange-400 rounded-full animate-bounce-gentle opacity-70" style={{animationDelay: '0.5s'}}></div>
-                <div className="absolute top-1/2 -right-4 w-2 h-2 bg-red-400 rounded-full animate-bounce-gentle opacity-70" style={{animationDelay: '1s'}}></div>
               </div>
               
               {/* Nome da Marca */}

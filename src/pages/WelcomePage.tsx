@@ -36,38 +36,29 @@ export default function WelcomePage() {
       <section className="relative overflow-hidden min-h-screen flex items-center">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20" />
         
-        {/* Efeitos de fundo decorativos */}
-        <div className="absolute top-20 left-10 w-32 h-32 bg-orange-300/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 right-10 w-40 h-40 bg-red-300/20 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-yellow-300/20 rounded-full blur-2xl"></div>
-        
         <div className="relative container mx-auto px-4 py-16">
           <div className="text-center space-y-8">
             {/* Logo and Brand */}
             <div className="space-y-6">
               {/* Logo Principal */}
-              <div className="relative group">
-                <div className="w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-orange-400 via-orange-500 to-red-500 flex items-center justify-center shadow-2xl ring-4 ring-orange-200/50 animate-pulse-slow transition-all duration-500 group-hover:scale-110 group-hover:shadow-3xl group-hover:ring-orange-300/70">
+              <div className="relative">
+                <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-2xl">
                   <img 
                     src="/venezas-logo.png" 
                     alt="Veneza's Lanches" 
-                    className="w-32 h-32 object-contain drop-shadow-lg transition-transform duration-500 group-hover:scale-105"
+                    className="w-24 h-24 object-contain"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                       const fallback = document.createElement('div');
-                      fallback.innerHTML = '<div class="w-32 h-32 flex items-center justify-center"><ChefHat class="w-16 h-16 text-white" /></div>';
+                      fallback.innerHTML = '<div class="w-24 h-24 flex items-center justify-center"><ChefHat class="w-12 h-12 text-white" /></div>';
                       e.currentTarget.parentElement?.appendChild(fallback);
                     }}
                   />
                 </div>
-                
-                {/* Efeito de brilho */}
-                <div className="absolute inset-0 w-40 h-40 mx-auto rounded-full bg-gradient-to-br from-orange-300/30 to-red-300/30 blur-xl animate-pulse group-hover:blur-2xl transition-all duration-500"></div>
-                
               </div>
               
               {/* Nome da Marca */}
-              <div className="space-y-3 animate-slide-up">
+              <div className="space-y-3">
                 <h1 className="text-5xl sm:text-6xl md:text-7xl font-black bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 bg-clip-text text-transparent mb-2 tracking-tight">
                   VENEZA'S
                 </h1>

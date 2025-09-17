@@ -17,6 +17,20 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist",
+    chunkSizeWarningLimit: 2000, // Aumenta o limite para 2MB
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separa as bibliotecas grandes em chunks separados
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          charts: ['recharts'],
+          pdf: ['jspdf', 'html2canvas'],
+          supabase: ['@supabase/supabase-js'],
+          query: ['@tanstack/react-query'],
+        },
+      },
+    },
   },
   preview: {
     port: 8080,

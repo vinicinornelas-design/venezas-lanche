@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "VITE_CHUNK_SIZE_WARNING_LIMIT=0 VITE_BUILD_SILENT=true vite build --mode production",
-    "build:vercel": "VITE_CHUNK_SIZE_WARNING_LIMIT=0 VITE_BUILD_SILENT=true vite build --mode production --silent",
+    "build": "VITE_CHUNK_SIZE_WARNING_LIMIT=0 vite build",
+    "build:vercel": "VITE_CHUNK_SIZE_WARNING_LIMIT=0 vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview"

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { usePdfExport } from "@/hooks/usePdfExport";
-import { Plus, Edit, Trash2, Upload, Star, FileText, Image, X } from "lucide-react";
+import { Plus, Edit, Trash2, Upload, Star, FileText, Image, X, FolderPlus, Settings } from "lucide-react";
 
 interface MenuItem {
   id: string;
@@ -37,6 +37,8 @@ export default function ExpandedMenu() {
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [restaurantConfig, setRestaurantConfig] = useState({
     nome_restaurante: "Veneza's Lanches",
     telefone: "(31) 99999-0000",
@@ -49,6 +51,10 @@ export default function ExpandedMenu() {
     descricao: "",
     foto_url: "",
     categoria_id: "",
+    ativo: true
+  });
+  const [categoryFormData, setCategoryFormData] = useState({
+    nome: "",
     ativo: true
   });
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -91,7 +97,6 @@ export default function ExpandedMenu() {
       const { data, error } = await supabase
         .from('categorias')
         .select('*')
-        .eq('ativo', true)
         .order('nome');
 
       if (error) throw error;
@@ -310,6 +315,132 @@ export default function ExpandedMenu() {
     setPreviewImage(null);
   };
 
+  const resetCategoryForm = () => {
+    setCategoryFormData({
+      nome: "",
+      ativo: true
+    });
+    setSelectedCategory(null);
+    setIsCategoryDialogOpen(false);
+  };
+
+  const handleSaveCategory = async () => {
+    try {
+      if (!categoryFormData.nome.trim()) {
+        toast({
+          title: "Erro",
+          description: "Nome da categoria é obrigatório",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (selectedCategory) {
+        // Update existing category
+        const { error } = await supabase
+          .from('categorias')
+          .update(categoryFormData)
+          .eq('id', selectedCategory.id);
+
+        if (error) throw error;
+      } else {
+        // Create new category
+        const { error } = await supabase
+          .from('categorias')
+          .insert([categoryFormData]);
+
+        if (error) throw error;
+      }
+
+      await fetchCategories();
+      resetCategoryForm();
+      toast({
+        title: "Sucesso",
+        description: selectedCategory ? "Categoria atualizada" : "Categoria criada",
+      });
+    } catch (error) {
+      console.error('Error saving category:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar categoria",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    try {
+      // Verificar se há itens nesta categoria
+      const { data: itemsInCategory } = await supabase
+        .from('itens_cardapio')
+        .select('id')
+        .eq('categoria_id', categoryId)
+        .limit(1);
+
+      if (itemsInCategory && itemsInCategory.length > 0) {
+        toast({
+          title: "Erro",
+          description: "Não é possível deletar categoria que possui itens",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('categorias')
+        .delete()
+        .eq('id', categoryId);
+
+      if (error) throw error;
+
+      await fetchCategories();
+      toast({
+        title: "Sucesso",
+        description: "Categoria removida",
+      });
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remover categoria",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleCategoryStatus = async (categoryId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('categorias')
+        .update({ ativo: !currentStatus })
+        .eq('id', categoryId);
+
+      if (error) throw error;
+
+      await fetchCategories();
+      toast({
+        title: "Sucesso",
+        description: !currentStatus ? "Categoria ativada" : "Categoria desativada",
+      });
+    } catch (error) {
+      console.error('Error toggling category status:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao alterar status da categoria",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const editCategory = (category: Category) => {
+    setSelectedCategory(category);
+    setCategoryFormData({
+      nome: category.nome,
+      ativo: category.ativo
+    });
+    setIsCategoryDialogOpen(true);
+  };
+
   const editItem = (item: MenuItem) => {
     setSelectedItem(item);
     setFormData({
@@ -381,6 +512,15 @@ export default function ExpandedMenu() {
             <FileText className="h-4 w-4 mr-2" />
             {isExporting ? 'Exportando...' : 'Exportar PDF'}
           </Button>
+
+          <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={resetCategoryForm} variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">
+                <FolderPlus className="h-4 w-4 mr-2" />
+                Gerenciar Categorias
+              </Button>
+            </DialogTrigger>
+          </Dialog>
           
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -526,6 +666,122 @@ export default function ExpandedMenu() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Modal de Categorias */}
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderPlus className="h-5 w-5" />
+              Gerenciar Categorias
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Formulário de Categoria */}
+            <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+              <h3 className="font-semibold">
+                {selectedCategory ? "Editar Categoria" : "Nova Categoria"}
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Nome da Categoria</Label>
+                  <Input
+                    value={categoryFormData.nome}
+                    onChange={(e) => setCategoryFormData({...categoryFormData, nome: e.target.value})}
+                    placeholder="Ex: Lanches, Bebidas, Sobremesas"
+                  />
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="categoria-ativa"
+                    checked={categoryFormData.ativo}
+                    onChange={(e) => setCategoryFormData({...categoryFormData, ativo: e.target.checked})}
+                    className="rounded"
+                  />
+                  <Label htmlFor="categoria-ativa">Categoria ativa</Label>
+                </div>
+              </div>
+              
+              <Button onClick={handleSaveCategory} className="w-full">
+                {selectedCategory ? "Atualizar Categoria" : "Criar Categoria"}
+              </Button>
+            </div>
+
+            {/* Lista de Categorias */}
+            <div className="space-y-4">
+              <h3 className="font-semibold">Categorias Existentes</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                {categories.map((category) => {
+                  const itemsInCategory = items.filter(item => item.categoria_id === category.id).length;
+                  
+                  return (
+                    <Card key={category.id} className={`transition-all duration-200 ${!category.ativo ? 'opacity-60' : ''}`}>
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-medium">{category.nome}</h4>
+                            <p className="text-sm text-gray-500">
+                              {itemsInCategory} item(s)
+                            </p>
+                          </div>
+                          
+                          <div className="flex gap-1">
+                            {!category.ativo && (
+                              <Badge variant="secondary" className="text-xs">Inativa</Badge>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-1">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => editCategory(category)}
+                            className="flex-1"
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Editar
+                          </Button>
+                          
+                          <Button 
+                            size="sm" 
+                            variant={category.ativo ? "secondary" : "default"}
+                            onClick={() => handleToggleCategoryStatus(category.id, category.ativo)}
+                            className="flex-1"
+                          >
+                            {category.ativo ? "Desativar" : "Ativar"}
+                          </Button>
+                          
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleDeleteCategory(category.id)}
+                            disabled={itemsInCategory > 0}
+                            title={itemsInCategory > 0 ? "Não é possível deletar categoria com itens" : "Deletar categoria"}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              
+              {categories.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <FolderPlus className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Nenhuma categoria encontrada</p>
+                  <p className="text-sm">Crie sua primeira categoria acima</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
         </div>
       </div>
 
@@ -534,14 +790,33 @@ export default function ExpandedMenu() {
         {categories.map((category) => {
           const categoryItems = items.filter(item => item.categoria_id === category.id);
           
-          if (categoryItems.length === 0) return null;
-          
           return (
             <div key={category.id} className="space-y-4">
-              <h3 className="text-xl font-bold text-primary">{category.nome}</h3>
+              <div className="flex items-center justify-between">
+                <h3 className={`text-xl font-bold ${category.ativo ? 'text-primary' : 'text-gray-400'}`}>
+                  {category.nome}
+                </h3>
+                <div className="flex items-center gap-2">
+                  {!category.ativo && (
+                    <Badge variant="secondary">Categoria Inativa</Badge>
+                  )}
+                  <Badge variant="outline">
+                    {categoryItems.length} item(s)
+                  </Badge>
+                </div>
+              </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {categoryItems.map((item) => (
+              {categoryItems.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="p-8 text-center text-gray-500">
+                    <Upload className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p className="font-medium">Nenhum item nesta categoria</p>
+                    <p className="text-sm">Adicione itens para esta categoria</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categoryItems.map((item) => (
                   <Card key={item.id} className={`transition-all duration-200 hover:shadow-lg ${!item.ativo ? 'opacity-60' : ''}`}>
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
@@ -605,8 +880,9 @@ export default function ExpandedMenu() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}

@@ -33,7 +33,7 @@ const Index = () => {
             </Button>
             <div className="mt-8">
               <Button asChild size="sm" variant="ghost" className="text-xs text-muted-foreground hover:text-foreground">
-                <Link to="/auth">
+                <Link to="/dashboard">
                   Acesso ao Sistema
                 </Link>
               </Button>

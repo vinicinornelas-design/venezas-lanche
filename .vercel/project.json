@@ -1,5 +1,11 @@
 {
-  "buildCommand": "vite build --config vite.config.vercel.ts --mode production",
-  "outputDirectory": "dist",
-  "framework": "vite"
+  "orgId": "vercel",
+  "projectId": "venezas-lanche",
+  "settings": {
+    "buildCommand": "npm run build:vercel",
+    "outputDirectory": "dist",
+    "installCommand": "npm install",
+    "framework": "vite",
+    "nodeVersion": "18.x"
+  }
 }

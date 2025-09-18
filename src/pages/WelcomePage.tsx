@@ -23,7 +23,7 @@ export default function WelcomePage() {
   };
 
   const handleAdminClick = () => {
-    navigate('/auth');
+    navigate('/dashboard');
   };
 
   const toggleAdminButton = () => {

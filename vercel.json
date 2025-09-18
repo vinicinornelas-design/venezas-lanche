@@ -1,5 +1,6 @@
 {
-  "buildCommand": "VITE_CHUNK_SIZE_WARNING_LIMIT=0 vite build",
+  "buildCommand": "npm run build:vercel",
   "outputDirectory": "dist",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "framework": "vite"
 }

@@ -58,11 +58,7 @@ export default function Dashboard() {
         
         if (profile) {
           setUserRole(profile.papel);
-          // Admin users should be redirected to AdminDashboard
-          if (profile.papel === 'ADMIN') {
-            window.location.href = '/admin-dashboard';
-            return;
-          }
+          // Removido redirecionamento automático - usuário fica na página atual
         }
       }
     };

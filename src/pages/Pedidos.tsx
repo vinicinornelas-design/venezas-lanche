@@ -6,20 +6,48 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { PedidoUnificado, formatarStatusPedido, formatarOrigemPedido } from "@/types/pedidos-unificados";
-import { Truck, Utensils, Clock, ChefHat, CheckCircle, Package, XCircle, Printer, Eye } from "lucide-react";
+import { 
+  Truck, 
+  Utensils, 
+  Clock, 
+  ChefHat, 
+  CheckCircle, 
+  Package, 
+  XCircle, 
+  Printer, 
+  Eye, 
+  Search, 
+  Calendar, 
+  MapPin, 
+  Edit, 
+  Plus,
+  Settings,
+  Download,
+  Filter,
+  MoreHorizontal
+} from "lucide-react";
 
 export default function Pedidos() {
   const [pedidos, setPedidos] = useState<PedidoUnificado[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<{ [key: string]: boolean }>({});
-  const [activeTypeTab, setActiveTypeTab] = useState<string>('todos');
-  const [activeStatusTab, setActiveStatusTab] = useState<string>('todos');
+  const [activeTab, setActiveTab] = useState<string>('aberto');
   const [selectedPedido, setSelectedPedido] = useState<PedidoUnificado | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>('');
+  
+  // Estados para filtros e busca
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchDate, setSearchDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [selectedPedidos, setSelectedPedidos] = useState<string[]>([]);
 
   useEffect(() => {
     fetchPedidos();
@@ -206,6 +234,84 @@ export default function Pedidos() {
       'ENTREGUE': 'Concluído'
     };
     return buttonText[currentStatus as keyof typeof buttonText] || 'Atualizar';
+  };
+
+  // Função para filtrar pedidos baseado na aba ativa
+  const getFilteredPedidosByTab = () => {
+    let filtered = pedidos;
+
+    switch (activeTab) {
+      case 'aberto':
+        filtered = filtered.filter(p => p.status === 'PENDENTE' || p.status === 'PREPARANDO');
+        break;
+      case 'agendados':
+        // Aqui você pode implementar lógica para pedidos agendados
+        filtered = filtered.filter(p => p.status === 'PENDENTE');
+        break;
+      case 'finalizados':
+        filtered = filtered.filter(p => p.status === 'ENTREGUE');
+        break;
+      case 'cancelados':
+        filtered = filtered.filter(p => p.status === 'CANCELADO');
+        break;
+      default:
+        break;
+    }
+
+    // Aplicar filtros de busca
+    if (searchTerm) {
+      filtered = filtered.filter(p => 
+        p.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.cliente_telefone?.includes(searchTerm) ||
+        p.numero_pedido?.toString().includes(searchTerm)
+      );
+    }
+
+    return filtered;
+  };
+
+  // Função para calcular estatísticas
+  const getStats = () => {
+    const total = pedidos.length;
+    const emPreparacao = pedidos.filter(p => p.status === 'PREPARANDO').length;
+    const emEntrega = pedidos.filter(p => p.status === 'PRONTO').length;
+    const novos = pedidos.filter(p => p.status === 'PENDENTE').length;
+
+    return { total, emPreparacao, emEntrega, novos };
+  };
+
+  // Função para formatar tempo decorrido
+  const getTimeAgo = (date: string) => {
+    const now = new Date();
+    const orderDate = new Date(date);
+    const diffInHours = Math.floor((now.getTime() - orderDate.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      const diffInMinutes = Math.floor((now.getTime() - orderDate.getTime()) / (1000 * 60));
+      return `${diffInMinutes} min atrás`;
+    }
+    return `${diffInHours} hrs atrás`;
+  };
+
+  // Função para selecionar/deselecionar pedidos
+  const togglePedidoSelection = (pedidoId: string) => {
+    setSelectedPedidos(prev => 
+      prev.includes(pedidoId) 
+        ? prev.filter(id => id !== pedidoId)
+        : [...prev, pedidoId]
+    );
+  };
+
+  // Função para selecionar todos os pedidos
+  const toggleAllPedidos = () => {
+    const filteredPedidos = getFilteredPedidosByTab();
+    const allIds = filteredPedidos.map(p => p.id);
+    
+    if (selectedPedidos.length === allIds.length) {
+      setSelectedPedidos([]);
+    } else {
+      setSelectedPedidos(allIds);
+    }
   };
 
   const openOrderModal = (pedido: PedidoUnificado) => {
@@ -426,122 +532,6 @@ export default function Pedidos() {
     ).join(', ');
   };
 
-  const renderPedidosList = (pedidosList: PedidoUnificado[]) => {
-    if (pedidosList.length === 0) {
-      return (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-muted-foreground">Nenhum pedido encontrado</p>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    return (
-      <div className="grid gap-4">
-        {pedidosList.map((pedido) => (
-          <Card key={pedido.id} className="border-l-4" style={{borderLeftColor: getStatusColor(pedido.status || 'PENDENTE').replace('bg-', '#')}}>
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-base">
-                      Pedido #{pedido.numero_pedido}
-                    </h3>
-                    <Badge className={getStatusColor(pedido.status || 'PENDENTE')} variant="secondary">
-                      {formatarStatusPedido(pedido.status || 'PENDENTE')}
-                    </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    {pedido.cliente_nome && (
-                      <p><strong>Cliente:</strong> {pedido.cliente_nome}</p>
-                    )}
-                    {pedido.cliente_telefone && (
-                      <p><strong>Telefone:</strong> {pedido.cliente_telefone}</p>
-                    )}
-                    {pedido.mesa_numero && (
-                      <p><strong>Mesa:</strong> {pedido.mesa_numero}</p>
-                    )}
-                    <p><strong>Origem:</strong> {formatarOrigemPedido(pedido.origem)}</p>
-                  </div>
-                </div>
-                
-                <div className="text-right">
-                  <p className="text-lg font-bold text-primary">
-                    R$ {pedido.total.toFixed(2)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(pedido.created_at).toLocaleString('pt-BR')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Itens do pedido - mais compacto */}
-              <div className="mb-3">
-                <p className="text-xs font-medium mb-1">Itens:</p>
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {formatarItens(pedido.itens)}
-                </p>
-              </div>
-              
-              {/* Observações - mais compacto */}
-              {(pedido.observacoes || pedido.observacoes_cozinha) && (
-                <div className="mb-3">
-                  {pedido.observacoes && (
-                    <p className="text-xs text-muted-foreground">
-                      <strong>Obs:</strong> {pedido.observacoes}
-                    </p>
-                  )}
-                  {pedido.observacoes_cozinha && (
-                    <p className="text-xs text-muted-foreground">
-                      <strong>Cozinha:</strong> {pedido.observacoes_cozinha}
-                    </p>
-                  )}
-                </div>
-              )}
-              
-              {/* Botões de ação - mais compactos */}
-              <div className="flex gap-2 pt-2 border-t">
-                {pedido.status !== 'ENTREGUE' && pedido.status !== 'CANCELADO' && (
-                  <Button 
-                    onClick={() => openOrderModal(pedido)}
-                    disabled={updating[pedido.id]}
-                    size="sm"
-                    className="h-7 text-xs"
-                  >
-                    {updating[pedido.id] ? 'Atualizando...' : getStatusButtonText(pedido.status || 'PENDENTE')}
-                  </Button>
-                )}
-                
-                {pedido.status !== 'CANCELADO' && pedido.status !== 'ENTREGUE' && (
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    onClick={() => updatePedidoStatus(pedido.id, 'CANCELADO')}
-                    disabled={updating[pedido.id]}
-                    className="h-7 text-xs"
-                  >
-                    Cancelar
-                  </Button>
-                )}
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-7 text-xs"
-                  onClick={() => openOrderModal(pedido)}
-                >
-                  <Eye className="h-3 w-3 mr-1" />
-                  Detalhes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  };
 
   if (loading) {
     return (
@@ -566,263 +556,315 @@ export default function Pedidos() {
     );
   }
 
-  // Filtrar pedidos por tipo
-  const pedidosDelivery = pedidos.filter(p => p.origem === 'DELIVERY');
-  const pedidosMesa = pedidos.filter(p => p.origem === 'MESA');
 
-  // Função para filtrar pedidos baseado nos filtros ativos
-  const getFilteredPedidos = () => {
-    let filtered = pedidos;
+  const stats = getStats();
+  const filteredPedidos = getFilteredPedidosByTab();
 
-    // Filtrar por tipo
-    if (activeTypeTab === 'delivery') {
-      filtered = filtered.filter(p => p.origem === 'DELIVERY');
-    } else if (activeTypeTab === 'mesa') {
-      filtered = filtered.filter(p => p.origem === 'MESA');
-    }
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <p>Carregando pedidos...</p>
+        </div>
+      </div>
+    );
+  }
 
-    // Filtrar por status
-    if (activeStatusTab === 'pendentes') {
-      filtered = filtered.filter(p => p.status === 'PENDENTE');
-    } else if (activeStatusTab === 'preparando') {
-      filtered = filtered.filter(p => p.status === 'PREPARANDO');
-    } else if (activeStatusTab === 'prontos') {
-      filtered = filtered.filter(p => p.status === 'PRONTO');
-    } else if (activeStatusTab === 'entregues') {
-      filtered = filtered.filter(p => p.status === 'ENTREGUE');
-    } else if (activeStatusTab === 'cancelados') {
-      filtered = filtered.filter(p => p.status === 'CANCELADO');
-    }
-
-    return filtered;
-  };
-
-  const filteredPedidos = getFilteredPedidos();
-
-  // Calcular estatísticas gerais
-  const pedidosPendentes = pedidos.filter(p => p.status === 'PENDENTE').length;
-  const pedidosPreparando = pedidos.filter(p => p.status === 'PREPARANDO').length;
-  const pedidosProntos = pedidos.filter(p => p.status === 'PRONTO').length;
-  const pedidosEntregues = pedidos.filter(p => p.status === 'ENTREGUE').length;
-  const pedidosCancelados = pedidos.filter(p => p.status === 'CANCELADO').length;
-  const totalPedidos = pedidos.length;
-
-  // Calcular estatísticas por tipo
-  const deliveryPendentes = pedidosDelivery.filter(p => p.status === 'PENDENTE').length;
-  const deliveryPreparando = pedidosDelivery.filter(p => p.status === 'PREPARANDO').length;
-  const deliveryProntos = pedidosDelivery.filter(p => p.status === 'PRONTO').length;
-  const totalDelivery = pedidosDelivery.length;
-
-  const mesaPendentes = pedidosMesa.filter(p => p.status === 'PENDENTE').length;
-  const mesaPreparando = pedidosMesa.filter(p => p.status === 'PREPARANDO').length;
-  const mesaProntos = pedidosMesa.filter(p => p.status === 'PRONTO').length;
-  const totalMesa = pedidosMesa.length;
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="text-center text-red-600">
+          <p>Erro: {error}</p>
+          <Button onClick={fetchPedidos} className="mt-2">
+            Tentar Novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Gerenciamento de Pedidos Unificados</h1>
-        <Button variant="outline" onClick={fetchPedidos}>
-          Atualizar
-        </Button>
-      </div>
-
-      {/* Resumo dos pedidos */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pendentes</p>
-                <p className="text-2xl font-bold text-yellow-600">{pedidosPendentes}</p>
-              </div>
-              <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Preparando</p>
-                <p className="text-2xl font-bold text-blue-600">{pedidosPreparando}</p>
-              </div>
-              <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Prontos</p>
-                <p className="text-2xl font-bold text-green-600">{pedidosProntos}</p>
-              </div>
-              <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{totalPedidos}</p>
-              </div>
-              <div className="w-4 h-4 bg-gray-500 rounded-full"></div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Abas de tipo de pedidos */}
-      <Tabs value={activeTypeTab} onValueChange={setActiveTypeTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="todos" className="flex items-center gap-2">
-            <Utensils className="h-4 w-4" />
-            Todos ({totalPedidos})
-          </TabsTrigger>
-          <TabsTrigger value="delivery" className="flex items-center gap-2">
-            <Truck className="h-4 w-4" />
-            Delivery ({totalDelivery})
-          </TabsTrigger>
-          <TabsTrigger value="mesa" className="flex items-center gap-2">
-            <Utensils className="h-4 w-4" />
-            Mesa ({totalMesa})
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {/* Abas de status dos pedidos */}
-      <Tabs value={activeStatusTab} onValueChange={setActiveStatusTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="todos" className="flex items-center gap-2">
-            <Utensils className="h-4 w-4" />
-            Todos os Status
-          </TabsTrigger>
-          <TabsTrigger value="pendentes" className="flex items-center gap-2">
+      {/* Abas principais */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="aberto" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            Pendentes ({pedidosPendentes})
+            Em aberto
           </TabsTrigger>
-          <TabsTrigger value="preparando" className="flex items-center gap-2">
-            <ChefHat className="h-4 w-4" />
-            Preparando ({pedidosPreparando})
+          <TabsTrigger value="agendados" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Agendados
           </TabsTrigger>
-          <TabsTrigger value="prontos" className="flex items-center gap-2">
+          <TabsTrigger value="finalizados" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
-            Prontos ({pedidosProntos})
-          </TabsTrigger>
-          <TabsTrigger value="entregues" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Entregues ({pedidosEntregues})
+            Finalizados
           </TabsTrigger>
           <TabsTrigger value="cancelados" className="flex items-center gap-2">
             <XCircle className="h-4 w-4" />
-            Cancelados ({pedidosCancelados})
+            Cancelados
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="todos" className="space-y-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">
-                {activeTypeTab === 'delivery' ? 'Pedidos de Delivery' : 
-                 activeTypeTab === 'mesa' ? 'Pedidos de Mesa' : 'Todos os Pedidos'}
-              </h2>
-              <div className="text-sm text-muted-foreground">
-                {filteredPedidos.length} pedido(s) encontrado(s)
+        {/* Cards de status */}
+        <div className="grid grid-cols-4 gap-4">
+          <Card className="bg-gray-800 text-white">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <p className="text-sm opacity-80">Total</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
               </div>
-            </div>
-            {renderPedidosList(filteredPedidos)}
-          </div>
-        </TabsContent>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-orange-500 text-white">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <p className="text-sm opacity-80">Em Preparação</p>
+                <p className="text-2xl font-bold">{stats.emPreparacao}</p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-green-500 text-white">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <p className="text-sm opacity-80">Em Entrega</p>
+                <p className="text-2xl font-bold">{stats.emEntrega}</p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-blue-500 text-white">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <p className="text-sm opacity-80">Novos</p>
+                <p className="text-2xl font-bold">{stats.novos}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-        <TabsContent value="pendentes" className="space-y-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Pedidos Pendentes
-                {activeTypeTab === 'delivery' && ' (Delivery)'}
-                {activeTypeTab === 'mesa' && ' (Mesa)'}
-              </h2>
-              <div className="text-sm text-muted-foreground">
-                {filteredPedidos.length} pedido(s) pendente(s)
-              </div>
-            </div>
-            {renderPedidosList(filteredPedidos)}
-          </div>
-        </TabsContent>
+        {/* Botões de ação */}
+        <div className="flex justify-end gap-3">
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Pedido
+          </Button>
+          <Button className="bg-orange-600 hover:bg-orange-700 text-white">
+            <Utensils className="h-4 w-4 mr-2" />
+            Novo Pedido Balcão
+          </Button>
+          <Button className="bg-red-600 hover:bg-red-700 text-white">
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Finalizar Pedidos
+          </Button>
+        </div>
 
-        <TabsContent value="preparando" className="space-y-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <ChefHat className="h-5 w-5" />
-                Pedidos em Preparo
-                {activeTypeTab === 'delivery' && ' (Delivery)'}
-                {activeTypeTab === 'mesa' && ' (Mesa)'}
-              </h2>
-              <div className="text-sm text-muted-foreground">
-                {filteredPedidos.length} pedido(s) em preparo
-              </div>
+        {/* Seção de busca e filtros */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Busque por nome ou telefone do cliente ou por código"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            {renderPedidosList(filteredPedidos)}
+            
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="date"
+                placeholder="busque pelo dia"
+                value={searchDate}
+                onChange={(e) => setSearchDate(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <div className="relative">
+              <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="time"
+                placeholder="hora inicio"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <div className="relative">
+              <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="time"
+                placeholder="hora fim"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
-        </TabsContent>
 
-        <TabsContent value="prontos" className="space-y-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                Pedidos Prontos
-                {activeTypeTab === 'delivery' && ' (Delivery)'}
-                {activeTypeTab === 'mesa' && ' (Mesa)'}
-              </h2>
-              <div className="text-sm text-muted-foreground">
-                {filteredPedidos.length} pedido(s) pronto(s)
-              </div>
+          {/* Controles da tabela */}
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Configurar Colunas
+              </Button>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
+              </Button>
             </div>
-            {renderPedidosList(filteredPedidos)}
+            
+            <div className="text-sm text-gray-500">
+              Arraste aqui o cabeçalho de uma coluna para agrupar por esta coluna
+            </div>
           </div>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="entregues" className="space-y-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Pedidos Entregues
-                {activeTypeTab === 'delivery' && ' (Delivery)'}
-                {activeTypeTab === 'mesa' && ' (Mesa)'}
-              </h2>
-              <div className="text-sm text-muted-foreground">
-                {filteredPedidos.length} pedido(s) entregue(s)
-              </div>
-            </div>
-            {renderPedidosList(filteredPedidos)}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="cancelados" className="space-y-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <XCircle className="h-5 w-5" />
-                Pedidos Cancelados
-                {activeTypeTab === 'delivery' && ' (Delivery)'}
-                {activeTypeTab === 'mesa' && ' (Mesa)'}
-              </h2>
-              <div className="text-sm text-muted-foreground">
-                {filteredPedidos.length} pedido(s) cancelado(s)
-              </div>
-            </div>
-            {renderPedidosList(filteredPedidos)}
-          </div>
+        {/* Tabela de pedidos */}
+        <TabsContent value={activeTab} className="space-y-4">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedPedidos.length === filteredPedidos.length && filteredPedidos.length > 0}
+                        onCheckedChange={toggleAllPedidos}
+                      />
+                    </TableHead>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Realizado</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Tx. Entrega</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Pagamento</TableHead>
+                    <TableHead>Pago</TableHead>
+                    <TableHead>Endereço Entrega</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-20">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPedidos.map((pedido) => (
+                    <TableRow key={pedido.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedPedidos.includes(pedido.id)}
+                          onCheckedChange={() => togglePedidoSelection(pedido.id)}
+                        />
+                      </TableCell>
+                      
+                      <TableCell>
+                        <div className="space-y-1">
+                          <p className="font-medium">{pedido.numero_pedido}</p>
+                          <Badge variant="outline" className="text-xs">
+                            {formatarOrigemPedido(pedido.origem)}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell>
+                        <div className="space-y-1">
+                          <p className="text-sm">
+                            {new Date(pedido.created_at).toLocaleTimeString('pt-BR', { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </p>
+                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                            {getTimeAgo(pedido.created_at)}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{pedido.cliente_nome || 'N/A'}</p>
+                          <p className="text-sm text-gray-500">{pedido.cliente_telefone || 'N/A'}</p>
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell>
+                        <p className="text-sm">R$ 0,00</p>
+                      </TableCell>
+                      
+                      <TableCell>
+                        <p className="text-sm font-medium">R$ {pedido.total.toFixed(2)}</p>
+                      </TableCell>
+                      
+                      <TableCell>
+                        <p className="text-sm">Pix Online ***0316</p>
+                      </TableCell>
+                      
+                      <TableCell>
+                        {pedido.pago ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-600" />
+                        )}
+                      </TableCell>
+                      
+                      <TableCell>
+                        <div className="max-w-xs">
+                          <p className="text-sm line-clamp-2">
+                            {pedido.endereco_entrega || 'Endereço não informado'}
+                          </p>
+                          <Button variant="ghost" size="sm" className="h-6 px-2 mt-1">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            Localização
+                          </Button>
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell>
+                        <div className="space-y-2">
+                          <div className="flex gap-1">
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${
+                                pedido.status === 'PENDENTE' ? 'bg-blue-100 text-blue-800' :
+                                pedido.status === 'PREPARANDO' ? 'bg-orange-100 text-orange-800' :
+                                pedido.status === 'PRONTO' ? 'bg-green-100 text-green-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {formatarStatusPedido(pedido.status || 'PENDENTE')}
+                            </Badge>
+                          </div>
+                          
+                          {pedido.status === 'PREPARANDO' && (
+                            <Button size="sm" className="h-6 text-xs">
+                              <Truck className="h-3 w-3 mr-1" />
+                              Despachar
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

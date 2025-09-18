@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+// import { supabase } from '@/integrations/supabase/client'; // Removido para evitar erros
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,58 +12,26 @@ export function UserDebugInfo() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const getDebugInfo = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        setSession(session);
-        setUser(user);
-        
-        if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
-          setProfile(profile);
-        }
-      } catch (error) {
-        console.error('Error getting debug info:', error);
-      }
-    };
-
-    getDebugInfo();
+    // Simular dados de debug sem Supabase
+    setUser({ id: 'debug-user', email: 'admin@venezas.com' });
+    setProfile({ nome: 'Administrador', papel: 'ADMIN', ativo: true });
+    setSession({ access_token: 'debug-token', expires_at: Date.now() / 1000 + 3600 });
   }, []);
 
   const refreshInfo = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      setSession(session);
-      setUser(user);
-      
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-        setProfile(profile);
-      }
+      // Simular refresh sem Supabase
+      setUser({ id: 'debug-user', email: 'admin@venezas.com' });
+      setProfile({ nome: 'Administrador', papel: 'ADMIN', ativo: true });
+      setSession({ access_token: 'debug-token', expires_at: Date.now() / 1000 + 3600 });
     } catch (error) {
       console.error('Error refreshing debug info:', error);
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      window.location.href = '/auth';
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
+  const handleLogout = () => {
+    // Redirecionar para página inicial
+    window.location.href = '/';
   };
 
   // Only show in development

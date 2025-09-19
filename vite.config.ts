@@ -14,6 +14,9 @@ export default defineConfig({
     outDir: "dist",
     chunkSizeWarningLimit: 0,
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+      },
       output: {
         manualChunks: undefined,
       },

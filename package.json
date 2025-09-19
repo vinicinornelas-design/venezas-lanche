@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "VITE_CHUNK_SIZE_WARNING_LIMIT=0 vite build",
-    "build:vercel": "VITE_CHUNK_SIZE_WARNING_LIMIT=0 vite build",
+    "build:vercel": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview"

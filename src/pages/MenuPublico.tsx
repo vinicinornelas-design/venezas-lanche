@@ -708,7 +708,7 @@ export default function MenuPublico() {
         <div className="fixed bottom-6 right-6 z-50">
           <Button 
             onClick={() => setShowCart(true)}
-            className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-2xl hover:shadow-3xl rounded-full w-16 h-16 flex items-center justify-center animate-bounce"
+            className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-2xl hover:shadow-2xl rounded-full w-16 h-16 flex items-center justify-center animate-bounce"
             size="lg"
           >
             <div className="text-center">
@@ -766,7 +766,11 @@ export default function MenuPublico() {
                       </div>
                       
                       {item.descricao && (
-                        <p className="text-sm text-gray-600 line-clamp-2">
+                        <p className="text-sm text-gray-600 overflow-hidden" style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical'
+                        }}>
                           {item.descricao}
                         </p>
                       )}
@@ -837,7 +841,11 @@ export default function MenuPublico() {
                             </div>
                             
                             {item.descricao && (
-                              <p className="text-sm text-gray-600 line-clamp-2">
+                              <p className="text-sm text-gray-600 overflow-hidden" style={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical'
+                              }}>
                                 {item.descricao}
                               </p>
                             )}

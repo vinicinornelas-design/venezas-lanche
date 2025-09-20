@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm ci && npm run build",
+  "buildCommand": "./vercel-build.sh",
   "outputDirectory": "dist",
   "framework": "vite",
-  "installCommand": "npm install"
+  "installCommand": "echo 'Using custom build script'"
 }

@@ -12,6 +12,22 @@ export default defineConfig({
   build: {
     outDir: "dist",
     chunkSizeWarningLimit: 0,
+    rollupOptions: {
+      external: [],
+      output: {
+        manualChunks: undefined,
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
+      }
+    },
+    minify: 'esbuild',
+    sourcemap: false,
+    reportCompressedSize: false,
+    logLevel: 'warn'
   },
   base: "/",
+  optimizeDeps: {
+    include: ['react', 'react-dom']
+  }
 });

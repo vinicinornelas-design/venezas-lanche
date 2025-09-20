@@ -13,15 +13,5 @@ export default defineConfig({
   build: {
     outDir: "dist",
     chunkSizeWarningLimit: 0,
-    rollupOptions: {
-      input: path.resolve(__dirname, "index.html"),
-      output: {
-        manualChunks: undefined,
-      },
-    },
-    minify: 'esbuild',
-    sourcemap: false,
-    reportCompressedSize: false,
   },
-  logLevel: 'warn',
 });

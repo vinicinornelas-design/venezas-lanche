@@ -7,11 +7,16 @@ const path = require('path');
 console.log('🚀 Iniciando build ultra robusto para Vercel...');
 
 try {
-  // 1. Limpar cache do npm
+  // 1. Configurar npm para evitar warnings
+  console.log('⚙️ Configurando npm...');
+  execSync('npm config set fund false', { stdio: 'inherit' });
+  execSync('npm config set audit false', { stdio: 'inherit' });
+  
+  // 2. Limpar cache do npm
   console.log('🧹 Limpando cache do npm...');
   execSync('npm cache clean --force', { stdio: 'inherit' });
 
-  // 2. Remover node_modules e package-lock.json
+  // 3. Remover node_modules e package-lock.json
   console.log('🗑️ Removendo dependências antigas...');
   if (fs.existsSync('node_modules')) {
     execSync('rm -rf node_modules', { stdio: 'inherit' });
@@ -20,11 +25,11 @@ try {
     execSync('rm -f package-lock.json', { stdio: 'inherit' });
   }
 
-  // 3. Instalar dependências
+  // 4. Instalar dependências
   console.log('📦 Instalando dependências...');
-  execSync('npm install --no-audit --no-fund', { stdio: 'inherit' });
+  execSync('npm install --no-audit --no-fund --omit=optional --silent', { stdio: 'inherit' });
 
-  // 4. Verificar se o Rollup está funcionando
+  // 5. Verificar se o Rollup está funcionando
   console.log('🔍 Verificando Rollup...');
   try {
     execSync('npx rollup --version', { stdio: 'inherit' });
@@ -33,11 +38,11 @@ try {
     execSync('npm install rollup@4.9.6 --save-dev', { stdio: 'inherit' });
   }
 
-  // 5. Fazer build
+  // 6. Fazer build
   console.log('🔨 Executando build...');
   execSync('npm run build', { stdio: 'inherit' });
 
-  // 6. Verificar se o build foi criado
+  // 7. Verificar se o build foi criado
   if (fs.existsSync('dist/index.html')) {
     console.log('✅ Build concluído com sucesso!');
     console.log('📁 Arquivos gerados:');

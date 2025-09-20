@@ -16,7 +16,10 @@ import {
   Plus,
   Edit,
   Trash2,
-  Calculator
+  Calculator,
+  Calendar,
+  Filter,
+  RefreshCw
 } from "lucide-react";
 
 interface PaymentMethod {
@@ -45,6 +48,13 @@ export default function Financeiro() {
     fee_type: 'fixed',
     fee_value: 0
   });
+  
+  // Estados para filtro de período
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [isFiltered, setIsFiltered] = useState(false);
+  const [filterLoading, setFilterLoading] = useState(false);
+  
   const { toast } = useToast();
 
   useEffect(() => {
@@ -75,18 +85,26 @@ export default function Financeiro() {
     }
   };
 
-  const fetchFinancialSummary = async () => {
+  const fetchFinancialSummary = async (customStartDate?: string, customEndDate?: string) => {
     try {
-      // Get orders from current month
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      let startDate, endDate;
+      
+      if (customStartDate && customEndDate) {
+        // Usar datas personalizadas
+        startDate = new Date(customStartDate + 'T00:00:00');
+        endDate = new Date(customEndDate + 'T23:59:59');
+      } else {
+        // Usar mês atual como padrão
+        const now = new Date();
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      }
 
       const { data: orders, error } = await supabase
         .from('pedidos_unificados')
         .select('total, metodo_pagamento, pago, status')
-        .gte('created_at', startOfMonth.toISOString())
-        .lte('created_at', endOfMonth.toISOString())
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
         .not('status', 'eq', 'CANCELADO');
 
       if (error) throw error;
@@ -220,6 +238,81 @@ export default function Financeiro() {
     setEditingMethod(null);
   };
 
+  const handleFilterPeriod = async () => {
+    if (!startDate || !endDate) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione as datas de início e fim",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      toast({
+        title: "Erro",
+        description: "A data de início deve ser anterior à data de fim",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setFilterLoading(true);
+    setIsFiltered(true);
+    
+    try {
+      await fetchFinancialSummary(startDate, endDate);
+      toast({
+        title: "Sucesso",
+        description: `Filtro aplicado para o período de ${formatDate(startDate)} a ${formatDate(endDate)}`,
+      });
+    } catch (error) {
+      console.error('Error filtering period:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao aplicar filtro de período",
+        variant: "destructive",
+      });
+    } finally {
+      setFilterLoading(false);
+    }
+  };
+
+  const handleResetFilter = async () => {
+    setStartDate('');
+    setEndDate('');
+    setIsFiltered(false);
+    setFilterLoading(true);
+    
+    try {
+      await fetchFinancialSummary();
+      toast({
+        title: "Sucesso",
+        description: "Filtro removido - exibindo dados do mês atual",
+      });
+    } catch (error) {
+      console.error('Error resetting filter:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remover filtro",
+        variant: "destructive",
+      });
+    } finally {
+      setFilterLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const getPeriodTitle = () => {
+    if (isFiltered && startDate && endDate) {
+      return `Período: ${formatDate(startDate)} a ${formatDate(endDate)}`;
+    }
+    return 'Mês Atual';
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -264,6 +357,12 @@ export default function Financeiro() {
           <p className="text-muted-foreground">
             Controle financeiro e gestão de métodos de pagamento
           </p>
+          {isFiltered && (
+            <div className="flex items-center gap-2 text-sm text-orange-600 bg-orange-50 px-3 py-1 rounded-full">
+              <Calendar className="h-4 w-4" />
+              <span className="font-medium">{getPeriodTitle()}</span>
+            </div>
+          )}
         </div>
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
           <DialogTrigger asChild>
@@ -332,6 +431,69 @@ export default function Financeiro() {
         </Dialog>
       </div>
 
+      {/* Filtro de Período */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filtrar por Período
+          </CardTitle>
+          <CardDescription>
+            Selecione um período específico para visualizar o faturamento, total de pedidos e ticket médio
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Data de Início</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endDate">Data de Fim</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleFilterPeriod}
+                disabled={filterLoading || !startDate || !endDate}
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                {filterLoading ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Filter className="h-4 w-4 mr-2" />
+                )}
+                {filterLoading ? 'Filtrando...' : 'Filtrar'}
+              </Button>
+              {isFiltered && (
+                <Button 
+                  variant="outline"
+                  onClick={handleResetFilter}
+                  disabled={filterLoading}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Resetar
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Financial Summary */}
       {financialSummary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -339,7 +501,9 @@ export default function Financeiro() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Faturamento (Mês Atual)</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Faturamento {isFiltered ? `(${getPeriodTitle()})` : '(Mês Atual)'}
+                  </p>
                   <p className="text-2xl font-bold">{formatCurrency(financialSummary.totalRevenue)}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-primary" />
@@ -351,7 +515,9 @@ export default function Financeiro() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total de Pedidos</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Total de Pedidos {isFiltered ? `(${getPeriodTitle()})` : '(Mês Atual)'}
+                  </p>
                   <p className="text-2xl font-bold">{financialSummary.totalOrders}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-success" />
@@ -363,7 +529,9 @@ export default function Financeiro() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Ticket Médio</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Ticket Médio {isFiltered ? `(${getPeriodTitle()})` : '(Mês Atual)'}
+                  </p>
                   <p className="text-2xl font-bold">{formatCurrency(financialSummary.averageTicket)}</p>
                 </div>
                 <Calculator className="h-8 w-8 text-accent" />
@@ -377,8 +545,12 @@ export default function Financeiro() {
       {financialSummary && Object.keys(financialSummary.paymentMethodsBreakdown).length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Vendas por Método de Pagamento (30 dias)</CardTitle>
-            <CardDescription>Distribuição das vendas pelos métodos de pagamento</CardDescription>
+            <CardTitle>
+              Vendas por Método de Pagamento {isFiltered ? `(${getPeriodTitle()})` : '(30 dias)'}
+            </CardTitle>
+            <CardDescription>
+              Distribuição das vendas pelos métodos de pagamento {isFiltered ? 'no período selecionado' : 'nos últimos 30 dias'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

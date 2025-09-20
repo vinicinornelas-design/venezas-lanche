@@ -392,9 +392,7 @@ export default function MenuPublico() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {restaurantConfig?.logo_url && (
-                  <img src={restaurantConfig.logo_url} alt="Logo" className="w-12 h-12 object-contain rounded-xl shadow-md" />
-                )}
+                <img src={restaurantConfig?.logo_url || "/restaurant-logo.jpg"} alt="Logo" className="w-12 h-12 object-contain rounded-xl shadow-md" />
                 <div>
                   <h1 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                     {restaurantConfig?.nome_restaurante || 'Veneza\'s Lanches'}
@@ -608,18 +606,16 @@ export default function MenuPublico() {
       <div className="bg-white/90 backdrop-blur-sm shadow-lg sticky top-0 z-30">
         <div className="container mx-auto px-4 py-6">
           <div className="text-center space-y-4">
-            {restaurantConfig?.logo_url && (
-              <div className="relative inline-block">
-                <img 
-                  src={restaurantConfig.logo_url} 
-                  alt="Logo" 
-                  className="w-24 h-24 object-contain rounded-2xl mx-auto shadow-xl border-4 border-white"
-                />
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
-                  <Award className="w-4 h-4 text-white" />
-                </div>
+            <div className="relative inline-block">
+              <img 
+                src={restaurantConfig?.logo_url || "/restaurant-logo.jpg"} 
+                alt="Logo" 
+                className="w-24 h-24 object-contain rounded-2xl mx-auto shadow-xl border-4 border-white"
+              />
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
+                <Award className="w-4 h-4 text-white" />
               </div>
-            )}
+            </div>
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent">
                 {restaurantConfig?.nome_restaurante || 'Veneza\'s Lanches'}

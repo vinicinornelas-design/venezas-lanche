@@ -1,5 +1,5 @@
 {
-  "buildCommand": "node build-simple.cjs",
+  "buildCommand": "node build-ultimate.cjs",
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "npm install --no-audit --no-fund"

@@ -4,7 +4,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-console.log('🚀 SOLUÇÃO ULTRA DEFINITIVA - Build Definitivo para Vercel...');
+console.log('🚀 BUILD SEM ROLLUP - Solução alternativa para Vercel...');
 
 try {
   // 1. Configurar ambiente
@@ -28,20 +28,7 @@ try {
   console.log('📦 Instalando dependências básicas...');
   execSync('npm install --no-audit --no-fund', { stdio: 'inherit' });
 
-  // 4. Instalar Rollup específico para Linux (apenas no Vercel)
-  console.log('🔧 Instalando Rollup para Linux...');
-  try {
-    // Tentar instalar apenas se estivermos no Linux
-    if (process.platform === 'linux') {
-      execSync('npm install @rollup/rollup-linux-x64-gnu@4.9.6 --save-dev --no-audit --no-fund', { stdio: 'inherit' });
-    } else {
-      console.log('⚠️ Não é Linux, pulando instalação específica do Rollup');
-    }
-  } catch (e) {
-    console.log('⚠️ Erro ao instalar Rollup específico, continuando...');
-  }
-
-  // 5. Fazer build com estratégias alternativas
+  // 4. Tentar build com diferentes estratégias
   console.log('🔨 Executando build com estratégias alternativas...');
   
   // Estratégia 1: Build normal
@@ -69,7 +56,7 @@ try {
     }
   }
 
-  // 6. Verificar se o build foi criado
+  // 5. Verificar se o build foi criado
   if (fs.existsSync('dist/index.html')) {
     console.log('✅ Build concluído com sucesso!');
     console.log('📁 Arquivos gerados:');

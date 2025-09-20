@@ -13,5 +13,11 @@ export default defineConfig({
   build: {
     outDir: "dist",
     chunkSizeWarningLimit: 0,
+    rollupOptions: {
+      external: [],
+    },
+  },
+  optimizeDeps: {
+    include: ['rollup'],
   },
 });

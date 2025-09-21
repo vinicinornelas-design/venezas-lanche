@@ -11,20 +11,21 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    chunkSizeWarningLimit: 0,
-    rollupOptions: {
-      external: [],
-      output: {
-        manualChunks: undefined,
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
-      }
-    },
+    target: 'es2020',
     minify: 'esbuild',
     sourcemap: false,
     reportCompressedSize: false,
-    logLevel: 'warn'
+    logLevel: 'warn',
+    rollupOptions: {
+      external: [],
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          utils: ['date-fns', 'lucide-react']
+        }
+      }
+    }
   },
   base: "/",
   optimizeDeps: {

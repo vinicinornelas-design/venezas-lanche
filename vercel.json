@@ -1,6 +1,6 @@
 {
-  "buildCommand": "node build-simple-working.cjs",
-  "outputDirectory": "dist",
   "framework": "vite",
-  "installCommand": "npm install --no-audit --no-fund"
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install"
 }

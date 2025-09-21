@@ -1,5 +1,5 @@
 {
-  "buildCommand": "node build-final-definitive.cjs",
+  "buildCommand": "node build-esbuild-direct.cjs",
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "npm install --no-audit --no-fund"

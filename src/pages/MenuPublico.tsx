@@ -365,19 +365,38 @@ export default function MenuPublico() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
-        <div className="text-center space-y-6">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-orange-200 to-red-200 rounded-full opacity-20 animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-pink-200 to-orange-200 rounded-full opacity-20 animate-pulse" style={{animationDelay: '1s'}}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-gradient-to-br from-yellow-200 to-orange-200 rounded-full opacity-10 animate-pulse" style={{animationDelay: '2s'}}></div>
+        </div>
+        
+        <div className="text-center space-y-8 relative z-10">
           <div className="relative">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center mx-auto animate-pulse">
-              <div className="w-8 h-8 bg-white rounded-lg" />
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 flex items-center justify-center mx-auto animate-bounce shadow-2xl">
+              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-orange-500" />
+              </div>
             </div>
-            <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-              <Sparkles className="w-3 h-3 text-white" />
+            <div className="absolute -top-3 -right-3 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg animate-ping">
+              <Award className="w-4 h-4 text-white" />
+            </div>
+            <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-green-400 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+              <Zap className="w-3 h-3 text-white" />
             </div>
           </div>
-          <div className="space-y-2">
-            <p className="text-lg font-semibold text-gray-800">Carregando cardápio...</p>
-            <p className="text-sm text-gray-600">Preparando os melhores sabores para você</p>
+          <div className="space-y-4">
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent animate-pulse">
+              Preparando Delícias
+            </h2>
+            <p className="text-lg text-gray-700 font-medium">Os melhores sabores estão chegando...</p>
+            <div className="flex justify-center space-x-2">
+              <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce"></div>
+              <div className="w-3 h-3 bg-red-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+              <div className="w-3 h-3 bg-pink-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+            </div>
           </div>
         </div>
       </div>
@@ -603,36 +622,56 @@ export default function MenuPublico() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
       {/* Header with Restaurant Info */}
-      <div className="bg-white/90 backdrop-blur-sm shadow-lg sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-6">
-          <div className="text-center space-y-4">
-            <div className="relative inline-block">
-              <img 
-                src={restaurantConfig?.logo_url || "/restaurant-logo.jpg"} 
-                alt="Logo" 
-                className="w-24 h-24 object-contain rounded-2xl mx-auto shadow-xl border-4 border-white"
-              />
-              <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
-                <Award className="w-4 h-4 text-white" />
+      <div className="relative bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 overflow-hidden">
+        {/* Animated background pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.1"%3E%3Ccircle cx="30" cy="30" r="4"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] animate-pulse"></div>
+        </div>
+        
+        <div className="relative bg-white/95 backdrop-blur-sm shadow-2xl sticky top-0 z-30">
+          <div className="container mx-auto px-4 py-8">
+            <div className="text-center space-y-6">
+              <div className="relative inline-block group">
+                <div className="absolute -inset-4 bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                <div className="relative">
+                  <img 
+                    src={restaurantConfig?.logo_url || "/restaurant-logo.jpg"} 
+                    alt="Logo" 
+                    className="w-28 h-28 object-contain rounded-3xl mx-auto shadow-2xl border-4 border-white transform group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute -top-3 -right-3 w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center shadow-xl animate-bounce">
+                    <Award className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="absolute -bottom-2 -left-2 w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                    <Zap className="w-4 h-4 text-white" />
+                  </div>
+                </div>
               </div>
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent">
-                {restaurantConfig?.nome_restaurante || 'Veneza\'s Lanches'}
-              </h1>
-              <div className="flex items-center justify-center gap-6 mt-3 text-gray-600">
-                {restaurantConfig?.telefone && (
-                  <div className="flex items-center gap-2 bg-orange-100 px-3 py-1 rounded-full">
-                    <Phone className="w-4 h-4 text-orange-600" />
-                    <span className="font-medium">{restaurantConfig.telefone}</span>
-                  </div>
-                )}
-                {restaurantConfig?.endereco && (
-                  <div className="flex items-center gap-2 bg-red-100 px-3 py-1 rounded-full">
-                    <MapPin className="w-4 h-4 text-red-600" />
-                    <span className="font-medium">{restaurantConfig.endereco}</span>
-                  </div>
-                )}
+              
+              <div className="space-y-4">
+                <h1 className="text-5xl font-black bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent drop-shadow-lg animate-pulse">
+                  {restaurantConfig?.nome_restaurante || 'Veneza\'s Lanches'}
+                </h1>
+                <p className="text-xl text-gray-700 font-semibold">🍔 Sabor que conquista, qualidade que encanta ✨</p>
+                
+                <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
+                  {restaurantConfig?.telefone && (
+                    <div className="flex items-center gap-3 bg-gradient-to-r from-orange-100 to-red-100 px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group">
+                      <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                        <Phone className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="font-bold text-gray-800 group-hover:text-orange-600 transition-colors">{restaurantConfig.telefone}</span>
+                    </div>
+                  )}
+                  {restaurantConfig?.endereco && (
+                    <div className="flex items-center gap-3 bg-gradient-to-r from-red-100 to-pink-100 px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group">
+                      <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center">
+                        <MapPin className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="font-bold text-gray-800 group-hover:text-red-600 transition-colors">{restaurantConfig.endereco}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -656,44 +695,60 @@ export default function MenuPublico() {
       )}
 
       {/* Search and Filter Bar */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-orange-100 sticky top-0 z-20">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Buscar por nome ou descrição..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 border-orange-200 focus:border-orange-400"
-              />
+      <div className="bg-gradient-to-r from-white/95 to-orange-50/95 backdrop-blur-sm border-b border-orange-200 sticky top-0 z-20 shadow-lg">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col lg:flex-row gap-6 items-center">
+            <div className="flex-1 relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
+                <Input
+                  placeholder="🔍 Buscar por nome ou descrição..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-12 pr-4 py-3 border-2 border-orange-200 focus:border-orange-400 rounded-2xl bg-white/80 backdrop-blur-sm shadow-lg focus:shadow-xl transition-all duration-300 text-lg"
+                />
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-40 border-orange-200">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-40 border-orange-200">
-                  <SelectValue placeholder="Ordenar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">Nome A-Z</SelectItem>
-                  <SelectItem value="price-low">Menor Preço</SelectItem>
-                  <SelectItem value="price-high">Maior Preço</SelectItem>
-                  <SelectItem value="rating">Melhor Avaliado</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                <div className="relative">
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-48 border-2 border-blue-200 focus:border-blue-400 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 py-3">
+                      <Filter className="w-5 h-5 mr-2 text-blue-500" />
+                      <SelectValue placeholder="📂 Categoria" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl shadow-2xl border-0">
+                      <SelectItem value="all" className="rounded-lg">🌟 Todas as Categorias</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id} className="rounded-lg">
+                          {category.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                <div className="relative">
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-48 border-2 border-green-200 focus:border-green-400 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 py-3">
+                      <Sparkles className="w-5 h-5 mr-2 text-green-500" />
+                      <SelectValue placeholder="⚡ Ordenar" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl shadow-2xl border-0">
+                      <SelectItem value="name" className="rounded-lg">📝 Nome A-Z</SelectItem>
+                      <SelectItem value="price-low" className="rounded-lg">💰 Menor Preço</SelectItem>
+                      <SelectItem value="price-high" className="rounded-lg">💎 Maior Preço</SelectItem>
+                      <SelectItem value="rating" className="rounded-lg">⭐ Melhor Avaliado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -701,15 +756,18 @@ export default function MenuPublico() {
 
       {/* Fixed Cart Button */}
       {cart.length > 0 && (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed bottom-6 right-6 z-50 group">
+          <div className="absolute -inset-2 bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
           <Button 
             onClick={() => setShowCart(true)}
-            className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-2xl hover:shadow-2xl rounded-full w-16 h-16 flex items-center justify-center animate-bounce"
+            className="relative bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-600 hover:via-red-600 hover:to-pink-600 shadow-2xl hover:shadow-3xl rounded-full w-20 h-20 flex items-center justify-center animate-bounce hover:scale-110 transition-all duration-300"
             size="lg"
           >
             <div className="text-center">
-              <ShoppingCart className="w-6 h-6 mx-auto text-white" />
-              <span className="text-xs font-bold text-white">{cart.length}</span>
+              <ShoppingCart className="w-8 h-8 mx-auto text-white drop-shadow-lg" />
+              <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-xs font-black text-yellow-900">{cart.length}</span>
+              </div>
             </div>
           </Button>
         </div>
@@ -727,65 +785,75 @@ export default function MenuPublico() {
               <p className="text-gray-600">Deliciosos sabores esperando por você</p>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredItems.map((item) => (
-                <Card key={item.id} className="group border-orange-200 shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden bg-white/80 backdrop-blur-sm">
-                  {item.foto_url && (
-                    <div className="relative h-40 overflow-hidden">
-                      <img 
-                        src={item.foto_url} 
-                        alt={item.nome}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute top-2 right-2">
-                        {item.total_ratings > 0 && (
-                          <Badge className="bg-yellow-400 text-yellow-900 border-0 shadow-lg">
-                            <Star className="w-3 h-3 mr-1 fill-current" />
-                            {item.average_rating?.toFixed(1)}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      <div>
-                        <h3 className="font-bold text-lg text-gray-800 group-hover:text-orange-600 transition-colors">
-                          {item.nome}
-                        </h3>
-                        {item.categoria_nome && (
-                          <Badge variant="outline" className="text-xs text-orange-600 border-orange-200">
-                            {item.categoria_nome}
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      {item.descricao && (
-                        <p className="text-sm text-gray-600 overflow-hidden" style={{
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical'
-                        }}>
-                          {item.descricao}
-                        </p>
-                      )}
-                      
-                      <div className="flex items-center justify-between pt-2">
-                        <div className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                          {formatCurrency(item.preco)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {filteredItems.map((item, index) => (
+                <Card key={item.id} className="group border-0 shadow-2xl hover:shadow-3xl transition-all duration-500 overflow-hidden bg-white/90 backdrop-blur-sm transform hover:-translate-y-2 hover:scale-105" style={{animationDelay: `${index * 0.1}s`}}>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                  <div className="relative">
+                    {item.foto_url && (
+                      <div className="relative h-48 overflow-hidden">
+                        <img 
+                          src={item.foto_url} 
+                          alt={item.nome}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                        <div className="absolute top-3 right-3">
+                          {item.total_ratings > 0 && (
+                            <Badge className="bg-gradient-to-r from-yellow-400 to-orange-400 text-yellow-900 border-0 shadow-xl backdrop-blur-sm">
+                              <Star className="w-4 h-4 mr-1 fill-current" />
+                              {item.average_rating?.toFixed(1)}
+                            </Badge>
+                          )}
                         </div>
-                        <Button 
-                          onClick={() => addToCart(item)}
-                          className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 rounded-full px-6"
-                          size="sm"
-                        >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Adicionar
-                        </Button>
+                        <div className="absolute bottom-3 left-3">
+                          <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-lg">
+                            <Heart className="w-3 h-3 mr-1" />
+                            Popular
+                          </Badge>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
+                    )}
+                    
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="font-black text-xl text-gray-800 group-hover:text-orange-600 transition-colors duration-300 mb-2">
+                            {item.nome}
+                          </h3>
+                          {item.categoria_nome && (
+                            <Badge variant="outline" className="text-sm text-orange-600 border-orange-300 bg-orange-50 font-semibold">
+                              {item.categoria_nome}
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {item.descricao && (
+                          <p className="text-sm text-gray-600 overflow-hidden leading-relaxed" style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical'
+                          }}>
+                            {item.descricao}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center justify-between pt-4">
+                          <div className="text-3xl font-black bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent drop-shadow-sm">
+                            {formatCurrency(item.preco)}
+                          </div>
+                          <Button 
+                            onClick={() => addToCart(item)}
+                            className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-600 hover:via-red-600 hover:to-pink-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl px-8 py-3 font-bold hover:scale-105"
+                            size="sm"
+                          >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Adicionar
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </div>
                 </Card>
               ))}
             </div>
@@ -880,24 +948,42 @@ export default function MenuPublico() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-r from-orange-600 to-red-600 text-white mt-16">
-        <div className="container mx-auto px-4 py-12 text-center">
-          <div className="space-y-4">
-            <h3 className="text-2xl font-bold">Veneza's Lanches</h3>
-            <p className="text-orange-100">Sabor que conquista, qualidade que encanta</p>
-            <div className="flex justify-center gap-6 text-orange-100">
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                <span>{restaurantConfig?.telefone || '(31) 99549-2713'}</span>
+      <footer className="relative bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 text-white mt-20 overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.1"%3E%3Ccircle cx="20" cy="20" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] animate-pulse"></div>
+        </div>
+        
+        <div className="relative container mx-auto px-4 py-16 text-center">
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <h3 className="text-4xl font-black drop-shadow-lg">🍔 Veneza's Lanches</h3>
+              <p className="text-xl text-orange-100 font-semibold">✨ Sabor que conquista, qualidade que encanta ✨</p>
+            </div>
+            
+            <div className="flex flex-wrap justify-center gap-8 text-orange-100">
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-2xl shadow-lg hover:bg-white/20 transition-all duration-300 group">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <Phone className="w-5 h-5" />
+                </div>
+                <span className="font-bold text-lg">{restaurantConfig?.telefone || '(31) 99549-2713'}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                <span>{restaurantConfig?.endereco || 'Rua Laguna, 145A - Veneza'}</span>
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-2xl shadow-lg hover:bg-white/20 transition-all duration-300 group">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <span className="font-bold text-lg">{restaurantConfig?.endereco || 'Rua Laguna, 145A - Veneza'}</span>
               </div>
             </div>
-            <p className="text-sm text-orange-200 pt-4 border-t border-orange-400">
-              © 2024 Veneza's Lanches. Todos os direitos reservados.
-            </p>
+            
+            <div className="pt-8 border-t border-orange-400/30">
+              <p className="text-orange-200 font-medium">
+                © 2024 Veneza's Lanches. Todos os direitos reservados. 🎉
+              </p>
+              <p className="text-orange-300 text-sm mt-2">
+                Feito com ❤️ para os amantes da boa comida
+              </p>
+            </div>
           </div>
         </div>
       </footer>

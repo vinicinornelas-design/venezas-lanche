@@ -183,21 +183,23 @@ export default function ExpandedMenu() {
 
   const fetchAdicionais = async () => {
     try {
-      // Tentar buscar da tabela opcionais
-      const { data, error } = await supabase
-        .from('opcionais')
-        .select('*')
-        .order('nome');
+      // Primeiro, tentar usar dados locais para evitar erros
+      const localAdicionais = getLocalAdicionais();
+      setAdicionais(localAdicionais);
+      
+      // Depois, tentar buscar da tabela opcionais (opcional)
+      try {
+        const { data, error } = await supabase
+          .from('opcionais')
+          .select('*')
+          .order('nome');
 
-      if (error) {
-        console.log('Tabela opcionais não existe, usando dados locais');
-        // Se a tabela não existe, usar dados locais
-        const localAdicionais = getLocalAdicionais();
-        setAdicionais(localAdicionais);
-        return;
+        if (!error && data) {
+          setAdicionais(data);
+        }
+      } catch (dbError) {
+        console.log('Banco de dados não disponível, usando dados locais');
       }
-
-      setAdicionais(data || []);
     } catch (error) {
       console.error('Error fetching adicionais:', error);
       // Em caso de erro, usar dados locais
@@ -207,11 +209,25 @@ export default function ExpandedMenu() {
   };
 
   const getLocalAdicionais = (): Adicional[] => {
-    const stored = localStorage.getItem('venezas_adicionais');
-    if (stored) {
-      return JSON.parse(stored);
+    // Verificar se localStorage está disponível (evitar erro no SSR)
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return getDefaultAdicionais();
     }
     
+    const stored = localStorage.getItem('venezas_adicionais');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (error) {
+        console.error('Erro ao fazer parse dos adicionais locais:', error);
+        return getDefaultAdicionais();
+      }
+    }
+    
+    return getDefaultAdicionais();
+  };
+
+  const getDefaultAdicionais = (): Adicional[] => {
     // Dados padrão com todos os adicionais solicitados
     return [
       // Molhos e condimentos
@@ -255,7 +271,14 @@ export default function ExpandedMenu() {
   };
 
   const saveLocalAdicionais = (adicionais: Adicional[]) => {
-    localStorage.setItem('venezas_adicionais', JSON.stringify(adicionais));
+    // Verificar se localStorage está disponível (evitar erro no SSR)
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        localStorage.setItem('venezas_adicionais', JSON.stringify(adicionais));
+      } catch (error) {
+        console.error('Erro ao salvar adicionais no localStorage:', error);
+      }
+    }
   };
 
   const handleBulkAdd = async () => {
@@ -406,9 +429,7 @@ export default function ExpandedMenu() {
       setIsAdicionaisDialogOpen(true);
       
       // Carregar adicionais quando abrir o modal
-      setTimeout(() => {
-        fetchAdicionais();
-      }, 100);
+      fetchAdicionais();
       
       console.log('Modal de adicionais aberto com sucesso');
     } catch (error) {
@@ -827,7 +848,6 @@ export default function ExpandedMenu() {
                 {/* Formulário de Novo/Editar Adicional */}
                 {!showBulkAdd && (
                   <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
-                    {console.log('Renderizando formulário, showBulkAdd:', showBulkAdd, 'selectedAdicional:', selectedAdicional)}
                     <h3 className="font-semibold text-blue-800">
                       {selectedAdicional ? "Editar Adicional" : "Novo Adicional"}
                     </h3>

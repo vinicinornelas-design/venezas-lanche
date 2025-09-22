@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { 
   ShoppingCart, 
@@ -22,7 +24,9 @@ import {
   Heart,
   Zap,
   Award,
-  Sparkles
+  Sparkles,
+  X,
+  Settings
 } from "lucide-react";
 import RatingSystem from "@/components/RatingSystem";
 import { CriarPedidoUnificado, PedidoItem } from "@/types/pedidos-unificados";
@@ -39,9 +43,20 @@ interface MenuItem {
   total_ratings?: number;
 }
 
+interface Adicional {
+  id: string;
+  nome: string;
+  preco_extra: number;
+  multi_selecao?: boolean;
+  obrigatorio?: boolean;
+  item_id?: string;
+}
+
 interface CartItem extends MenuItem {
   quantidade: number;
   observacoes?: string;
+  adicionais?: Adicional[];
+  preco_total?: number;
 }
 
 interface RestaurantConfig {
@@ -67,6 +82,13 @@ export default function MenuPublico() {
   const [sortBy, setSortBy] = useState<string>("name");
   const { toast } = useToast();
 
+  // Estados para popup de adicionais
+  const [adicionais, setAdicionais] = useState<Adicional[]>([]);
+  const [isAdicionaisDialogOpen, setIsAdicionaisDialogOpen] = useState(false);
+  const [selectedItemForAdicionais, setSelectedItemForAdicionais] = useState<MenuItem | null>(null);
+  const [selectedAdicionais, setSelectedAdicionais] = useState<Adicional[]>([]);
+  const [observacoes, setObservacoes] = useState("");
+
   // Customer form data
   const [customerData, setCustomerData] = useState({
     nome: '',
@@ -82,6 +104,7 @@ export default function MenuPublico() {
     fetchRestaurantConfig();
     fetchBairros();
     fetchPaymentMethods();
+    fetchAdicionais();
   }, []);
 
   const fetchMenuData = async () => {
@@ -182,22 +205,137 @@ export default function MenuPublico() {
     }
   };
 
-  const addToCart = (item: MenuItem) => {
+  const fetchAdicionais = async () => {
+    try {
+      // Primeiro tenta buscar do Supabase
+      const { data, error } = await supabase
+        .from('opcionais')
+        .select('*')
+        .order('nome');
+
+      if (error) {
+        console.log('Tabela opcionais não existe, usando dados locais');
+        // Se não existir, usa dados do localStorage
+        const localAdicionais = getLocalAdicionais();
+        setAdicionais(localAdicionais);
+      } else {
+        setAdicionais(data || []);
+      }
+    } catch (error) {
+      console.log('Erro ao buscar adicionais, usando dados locais:', error);
+      // Em caso de erro, usa dados do localStorage
+      const localAdicionais = getLocalAdicionais();
+      setAdicionais(localAdicionais);
+    }
+  };
+
+  const getLocalAdicionais = (): Adicional[] => {
+    const stored = localStorage.getItem('venezas_adicionais');
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    
+    // Dados padrão com todos os adicionais solicitados
+    return [
+      // Molhos e condimentos
+      { id: '1', nome: 'Molho verde adicional', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '2', nome: 'Molho Barbecue', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '3', nome: 'Ketchup e Maionese adicional', preco_extra: 2.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      
+      // Ingredientes básicos
+      { id: '4', nome: 'Ovo adicional', preco_extra: 3.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '5', nome: 'Abacaxi adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '6', nome: 'Banana adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '7', nome: 'Bife de Hambúrguer adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '8', nome: 'Cebola Caramelizada adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '9', nome: 'Presunto adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '10', nome: 'Cebola adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      
+      // Ingredientes premium
+      { id: '11', nome: 'Frango adicional', preco_extra: 5.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '12', nome: 'Muçarela adicional', preco_extra: 5.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '13', nome: 'Bacon adicional', preco_extra: 6.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '14', nome: 'Linguiça adicional', preco_extra: 6.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      
+      // Ingredientes artesanais
+      { id: '15', nome: 'Bife artesanal adicional', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '16', nome: 'Catupiry adicional', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '17', nome: 'Cheddar adicional no lanche', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '18', nome: 'Costela ao molho barbecue', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      
+      // Adicionais especiais
+      { id: '19', nome: 'Cheddar adicional na batata frita', preco_extra: 10.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '20', nome: 'Requeijão cremoso adicional', preco_extra: 12.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      
+      // Opções de remoção (sem custo)
+      { id: '21', nome: 'Sem Pão', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '22', nome: 'Sem Presunto', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '23', nome: 'Sem Mussarela', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '24', nome: 'Sem maionese', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '25', nome: 'Sem ketchup', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '26', nome: 'Sem molho verde', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null }
+    ];
+  };
+
+  const openAdicionaisDialog = (item: MenuItem) => {
+    setSelectedItemForAdicionais(item);
+    setSelectedAdicionais([]);
+    setObservacoes("");
+    setIsAdicionaisDialogOpen(true);
+  };
+
+  const addToCartWithAdicionais = () => {
+    if (!selectedItemForAdicionais) return;
+
+    const precoAdicionais = selectedAdicionais.reduce((total, adicional) => total + adicional.preco_extra, 0);
+    const precoTotal = selectedItemForAdicionais.preco + precoAdicionais;
+
+    const cartItem: CartItem = {
+      ...selectedItemForAdicionais,
+      quantidade: 1,
+      adicionais: selectedAdicionais,
+      observacoes: observacoes,
+      preco_total: precoTotal
+    };
+
     setCart(prev => {
-      const existingItem = prev.find(cartItem => cartItem.id === item.id);
+      const existingItem = prev.find(cartItem => 
+        cartItem.id === selectedItemForAdicionais.id && 
+        JSON.stringify(cartItem.adicionais) === JSON.stringify(selectedAdicionais) &&
+        cartItem.observacoes === observacoes
+      );
+      
       if (existingItem) {
         return prev.map(cartItem =>
-          cartItem.id === item.id
+          cartItem.id === selectedItemForAdicionais.id && 
+          JSON.stringify(cartItem.adicionais) === JSON.stringify(selectedAdicionais) &&
+          cartItem.observacoes === observacoes
             ? { ...cartItem, quantidade: cartItem.quantidade + 1 }
             : cartItem
         );
       }
-      return [...prev, { ...item, quantidade: 1 }];
+      return [...prev, cartItem];
     });
-    
+
+    setIsAdicionaisDialogOpen(false);
+    setSelectedItemForAdicionais(null);
+    setSelectedAdicionais([]);
+    setObservacoes("");
+
     toast({
-      title: "Item adicionado!",
-      description: `${item.nome} foi adicionado ao carrinho`,
+      title: "Item adicionado ao carrinho",
+      description: `${selectedItemForAdicionais.nome} foi adicionado com sucesso!`,
+    });
+  };
+
+  const toggleAdicional = (adicional: Adicional) => {
+    setSelectedAdicionais(prev => {
+      const isSelected = prev.some(sel => sel.id === adicional.id);
+      if (isSelected) {
+        return prev.filter(sel => sel.id !== adicional.id);
+      } else {
+        return [...prev, adicional];
+      }
     });
   };
 
@@ -843,7 +981,7 @@ export default function MenuPublico() {
                             {formatCurrency(item.preco)}
                           </div>
                           <Button 
-                            onClick={() => addToCart(item)}
+                            onClick={() => openAdicionaisDialog(item)}
                             className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-600 hover:via-red-600 hover:to-pink-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl px-8 py-3 font-bold hover:scale-105"
                             size="sm"
                           >
@@ -919,7 +1057,7 @@ export default function MenuPublico() {
                                 {formatCurrency(item.preco)}
                               </div>
                               <Button 
-                                onClick={() => addToCart(item)}
+                                onClick={() => openAdicionaisDialog(item)}
                                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 rounded-full px-6"
                                 size="sm"
                               >
@@ -987,6 +1125,137 @@ export default function MenuPublico() {
           </div>
         </div>
       </footer>
+
+      {/* Modal de Adicionais */}
+      <Dialog open={isAdicionaisDialogOpen} onOpenChange={setIsAdicionaisDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Personalizar {selectedItemForAdicionais?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedItemForAdicionais && (
+            <div className="space-y-6">
+              {/* Informações do item */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-center gap-4">
+                  {selectedItemForAdicionais.foto_url && (
+                    <img 
+                      src={selectedItemForAdicionais.foto_url} 
+                      alt={selectedItemForAdicionais.nome}
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                  )}
+                  <div>
+                    <h3 className="font-semibold text-lg">{selectedItemForAdicionais.nome}</h3>
+                    <p className="text-gray-600 text-sm">{selectedItemForAdicionais.descricao}</p>
+                    <p className="text-orange-600 font-bold text-lg">
+                      {formatCurrency(selectedItemForAdicionais.preco)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Adicionais com preço */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-lg">Adicionais (Opcionais)</h4>
+                <div className="grid gap-3 max-h-60 overflow-y-auto">
+                  {adicionais.filter(adicional => adicional.preco_extra > 0).map((adicional) => (
+                    <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id={adicional.id}
+                          checked={selectedAdicionais.some(sel => sel.id === adicional.id)}
+                          onCheckedChange={() => toggleAdicional(adicional)}
+                        />
+                        <label htmlFor={adicional.id} className="font-medium cursor-pointer">
+                          {adicional.nome}
+                        </label>
+                      </div>
+                      <span className="text-orange-600 font-semibold">
+                        +{formatCurrency(adicional.preco_extra)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Opções de remoção */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-lg">Remover Ingredientes</h4>
+                <div className="grid gap-3 max-h-40 overflow-y-auto">
+                  {adicionais.filter(adicional => adicional.preco_extra === 0).map((adicional) => (
+                    <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id={adicional.id}
+                          checked={selectedAdicionais.some(sel => sel.id === adicional.id)}
+                          onCheckedChange={() => toggleAdicional(adicional)}
+                        />
+                        <label htmlFor={adicional.id} className="font-medium cursor-pointer text-red-600">
+                          {adicional.nome}
+                        </label>
+                      </div>
+                      <span className="text-gray-500 text-sm">Grátis</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Observações */}
+              <div className="space-y-2">
+                <Label htmlFor="observacoes">Observações especiais</Label>
+                <Textarea
+                  id="observacoes"
+                  value={observacoes}
+                  onChange={(e) => setObservacoes(e.target.value)}
+                  placeholder="Ex: Bem assado, sem cebola, etc..."
+                  rows={3}
+                />
+              </div>
+
+              {/* Resumo do preço */}
+              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-semibold">Preço base: {formatCurrency(selectedItemForAdicionais.preco)}</p>
+                    {selectedAdicionais.length > 0 && (
+                      <p className="text-sm text-gray-600">
+                        Adicionais: {formatCurrency(selectedAdicionais.reduce((total, adicional) => total + adicional.preco_extra, 0))}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-orange-600">
+                      {formatCurrency(selectedItemForAdicionais.preco + selectedAdicionais.reduce((total, adicional) => total + adicional.preco_extra, 0))}
+                    </p>
+                    <p className="text-sm text-gray-600">Total</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botões de ação */}
+              <div className="flex gap-3 justify-end">
+                <Button
+                  onClick={() => setIsAdicionaisDialogOpen(false)}
+                  variant="outline"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={addToCartWithAdicionais}
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar ao Carrinho
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

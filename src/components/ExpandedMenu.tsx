@@ -166,10 +166,7 @@ export default function ExpandedMenu() {
     try {
       const { data, error } = await supabase
         .from('opcionais')
-        .select(`
-          *,
-          itens_cardapio (nome)
-        `)
+        .select('*')
         .order('nome');
 
       if (error) throw error;
@@ -217,6 +214,21 @@ export default function ExpandedMenu() {
     });
     setSelectedAdicional(null);
     setIsAdicionaisDialogOpen(false);
+  };
+
+  const handleOpenAdicionaisDialog = () => {
+    try {
+      setIsAdicionaisDialogOpen(true);
+      // Carregar adicionais quando abrir o modal
+      fetchAdicionais();
+    } catch (error) {
+      console.error('Error opening adicionais dialog:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao abrir gerenciador de adicionais",
+        variant: "destructive",
+      });
+    }
   };
 
   const editCategory = (category: Category) => {
@@ -430,7 +442,7 @@ export default function ExpandedMenu() {
           </Button>
 
           <Button 
-            onClick={() => setIsAdicionaisDialogOpen(true)} 
+            onClick={handleOpenAdicionaisDialog} 
             variant="outline" 
             className="border-green-200 text-green-600 hover:bg-green-50"
           >
@@ -540,7 +552,7 @@ export default function ExpandedMenu() {
                 {/* Lista de Adicionais */}
                 <div className="space-y-4">
                   <h3 className="font-semibold">Adicionais Existentes</h3>
-                  {adicionais.length > 0 ? (
+                  {adicionais && adicionais.length > 0 ? (
                     <div className="grid gap-3">
                       {adicionais.map((adicional) => (
                         <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -551,7 +563,7 @@ export default function ExpandedMenu() {
                                 {formatCurrency(adicional.preco_extra)}
                                 {adicional.item_id && (
                                   <span className="ml-2 text-blue-600">
-                                    • {adicional.item_id}
+                                    • Item específico
                                   </span>
                                 )}
                                 {adicional.multi_selecao && (

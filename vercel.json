@@ -2,5 +2,5 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm ci && npm install @rollup/rollup-linux-x64-gnu@3.29.4 --save-dev"
+  "installCommand": "npm ci"
 }

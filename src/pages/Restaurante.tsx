@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import FileUpload from "@/components/FileUpload";
+import SimpleFileUpload from "@/components/SimpleFileUpload";
 import { 
   Store, 
   Phone, 
@@ -278,14 +278,14 @@ export default function Restaurante() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FileUpload
+            <SimpleFileUpload
               label="Logo do Restaurante"
               value={config.logo_url}
               onChange={(url) => updateConfig('logo_url', url)}
               maxSize={5}
               preview={true}
             />
-            <FileUpload
+            <SimpleFileUpload
               label="Banner do Restaurante"
               value={config.banner_url}
               onChange={(url) => updateConfig('banner_url', url)}

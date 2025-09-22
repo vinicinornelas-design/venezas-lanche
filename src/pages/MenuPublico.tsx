@@ -286,11 +286,13 @@ export default function MenuPublico() {
   };
 
   const openAdicionaisDialog = (item: MenuItem) => {
-    console.log('Abrindo modal de adicionais para:', item.nome);
+    console.log('=== ABRINDO MODAL DE ADICIONAIS ===');
+    console.log('Item:', item.nome);
     
     // Carrega os adicionais diretamente
     const localAdicionais = getLocalAdicionais();
     console.log('Adicionais carregados:', localAdicionais.length);
+    console.log('Primeiros 3 adicionais:', localAdicionais.slice(0, 3));
     
     // Define o item selecionado
     setSelectedItemForAdicionais(item);
@@ -299,9 +301,11 @@ export default function MenuPublico() {
     
     // Carrega os adicionais no estado
     setAdicionais(localAdicionais);
+    console.log('Estado adicionais definido para:', localAdicionais.length);
     
     // Abre o modal
     setIsAdicionaisDialogOpen(true);
+    console.log('Modal aberto');
   };
 
   const addToCartWithAdicionais = () => {
@@ -1157,31 +1161,53 @@ export default function MenuPublico() {
           
           {selectedItemForAdicionais && (
             <div className="space-y-4">
+              {/* Debug - Mostrar quantos adicionais foram carregados */}
+              <div className="text-xs text-gray-500 text-center">
+                Adicionais carregados: {adicionais.length}
+              </div>
+
               {/* Lista de Adicionais */}
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {adicionais.map((adicional) => (
-                  <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                    <div className="flex items-center space-x-3">
-                      <Checkbox
-                        id={adicional.id}
-                        checked={selectedAdicionais.some(sel => sel.id === adicional.id)}
-                        onCheckedChange={() => toggleAdicional(adicional)}
-                      />
-                      <label htmlFor={adicional.id} className="font-medium cursor-pointer">
-                        {adicional.nome}
-                      </label>
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {adicionais.length > 0 ? (
+                  adicionais.map((adicional) => (
+                    <div key={adicional.id} className="flex items-center justify-between p-2 border rounded hover:bg-gray-50">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id={adicional.id}
+                          checked={selectedAdicionais.some(sel => sel.id === adicional.id)}
+                          onCheckedChange={() => toggleAdicional(adicional)}
+                        />
+                        <label htmlFor={adicional.id} className="text-sm font-medium cursor-pointer">
+                          {adicional.nome}
+                        </label>
+                      </div>
+                      <div className="text-right">
+                        {adicional.preco_extra > 0 ? (
+                          <span className="text-orange-600 font-semibold text-sm">
+                            +{formatCurrency(adicional.preco_extra)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-500 text-xs">Grátis</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {adicional.preco_extra > 0 ? (
-                        <span className="text-orange-600 font-semibold">
-                          +{formatCurrency(adicional.preco_extra)}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500 text-sm">Grátis</span>
-                      )}
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>Nenhum adicional encontrado</p>
+                    <Button 
+                      onClick={() => {
+                        const localAdicionais = getLocalAdicionais();
+                        setAdicionais(localAdicionais);
+                        console.log('Carregando adicionais manualmente:', localAdicionais.length);
+                      }}
+                      size="sm"
+                      className="mt-2"
+                    >
+                      Carregar Adicionais
+                    </Button>
                   </div>
-                ))}
+                )}
               </div>
 
               {/* Contador de quantidade do item principal */}

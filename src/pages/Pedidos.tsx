@@ -390,6 +390,30 @@ export default function Pedidos() {
     document.body.removeChild(link);
   };
 
+  const handleDespachar = async (pedidoId: string) => {
+    if (!confirm('Deseja despachar este pedido? O status será alterado para "PRONTO".')) {
+      return;
+    }
+
+    try {
+      // Atualizar status do pedido para PRONTO
+      const { error } = await supabase
+        .from('pedidos_unificados')
+        .update({ status: 'PRONTO' })
+        .eq('id', pedidoId);
+
+      if (error) throw error;
+
+      // Recarregar pedidos
+      await fetchPedidos();
+      
+      alert('Pedido despachado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao despachar pedido:', error);
+      alert('Erro ao despachar pedido. Tente novamente.');
+    }
+  };
+
   const openOrderModal = (pedido: PedidoUnificado) => {
     setSelectedPedido(pedido);
     setSelectedStatus(pedido.status || 'PENDENTE');
@@ -936,7 +960,11 @@ export default function Pedidos() {
                           </div>
                           
                           {pedido.status === 'PREPARANDO' && (
-                            <Button size="sm" className="h-6 text-xs">
+                            <Button 
+                              size="sm" 
+                              className="h-6 text-xs"
+                              onClick={() => handleDespachar(pedido.id)}
+                            >
                               <Truck className="h-3 w-3 mr-1" />
                               Despachar
                             </Button>

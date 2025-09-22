@@ -576,7 +576,7 @@ export default function ExpandedMenu() {
           </Button>
 
           <Dialog open={isAdicionaisDialogOpen} onOpenChange={setIsAdicionaisDialogOpen}>
-            <DialogContent className="max-w-4xl">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
@@ -584,8 +584,8 @@ export default function ExpandedMenu() {
                 </DialogTitle>
               </DialogHeader>
               
-              <div className="space-y-6">
-                {/* Ações em massa */}
+              <div className="space-y-4">
+                {/* Ações básicas */}
                 <div className="flex gap-2 flex-wrap">
                   <Button 
                     onClick={() => setShowBulkAdd(!showBulkAdd)} 
@@ -596,184 +596,40 @@ export default function ExpandedMenu() {
                     Adicionar em Massa
                   </Button>
                   
-                  <Select value={selectedCategoryForBulk} onValueChange={setSelectedCategoryForBulk}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Adicionar por categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  {selectedCategoryForBulk && (
-                    <Button 
-                      onClick={() => handleAddByCategory(selectedCategoryForBulk)} 
-                      variant="outline" 
-                      className="border-orange-200 text-orange-600 hover:bg-orange-50"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Criar para Categoria
-                    </Button>
-                  )}
+                  <Button 
+                    onClick={() => {
+                      setAdicionalFormData({
+                        nome: "",
+                        preco_extra: 0,
+                        multi_selecao: false,
+                        obrigatorio: false,
+                        item_id: ""
+                      });
+                      setSelectedAdicional(null);
+                    }} 
+                    variant="outline" 
+                    className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Adicional
+                  </Button>
                 </div>
 
-                {/* Formulário de adição em massa */}
-                {showBulkAdd && (
-                  <div className="p-4 border rounded-lg bg-gray-50">
-                    <h3 className="font-semibold mb-3">Adicionar Adicionais em Massa</h3>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Digite um adicional por linha no formato: <code>Nome do Adicional|Preço</code>
-                      <br />
-                      Exemplo: <code>Molho especial|3.50</code>
-                    </p>
-                    <Textarea
-                      value={bulkAdicionais}
-                      onChange={(e) => setBulkAdicionais(e.target.value)}
-                      placeholder="Molho especial|3.50&#10;Queijo extra|2.00&#10;Bacon crocante|4.00"
-                      rows={6}
-                      className="mb-3"
-                    />
-                    <div className="flex gap-2">
-                      <Button onClick={handleBulkAdd} className="gradient-primary">
-                        Adicionar Todos
-                      </Button>
-                      <Button onClick={() => setShowBulkAdd(false)} variant="outline">
-                        Cancelar
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Formulário de Adicional */}
-                <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
-                  <h3 className="font-semibold">
-                    {selectedAdicional ? "Editar Adicional" : "Novo Adicional"}
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Nome do Adicional</Label>
-                      <Input
-                        value={adicionalFormData.nome}
-                        onChange={(e) => setAdicionalFormData({...adicionalFormData, nome: e.target.value})}
-                        placeholder="Ex: Molho verde adicional"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Preço Extra (R$)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={adicionalFormData.preco_extra}
-                        onChange={(e) => setAdicionalFormData({...adicionalFormData, preco_extra: parseFloat(e.target.value) || 0})}
-                        placeholder="0.00"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Item Específico (Opcional)</Label>
-                      <Select 
-                        value={adicionalFormData.item_id} 
-                        onValueChange={(value) => setAdicionalFormData({...adicionalFormData, item_id: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um item específico" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">Todos os itens</SelectItem>
-                          {items.map((item) => (
-                            <SelectItem key={item.id} value={item.id}>
-                              {item.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="multi-selecao"
-                          checked={adicionalFormData.multi_selecao}
-                          onChange={(e) => setAdicionalFormData({...adicionalFormData, multi_selecao: e.target.checked})}
-                          className="rounded"
-                        />
-                        <Label htmlFor="multi-selecao">Permitir múltipla seleção</Label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="obrigatorio"
-                          checked={adicionalFormData.obrigatorio}
-                          onChange={(e) => setAdicionalFormData({...adicionalFormData, obrigatorio: e.target.checked})}
-                          className="rounded"
-                        />
-                        <Label htmlFor="obrigatorio">Obrigatório</Label>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={resetAdicionalForm}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button 
-                      onClick={handleSaveAdicional}
-                      className="flex-1 gradient-primary"
-                    >
-                      {selectedAdicional ? "Atualizar" : "Criar"} Adicional
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Lista de Adicionais */}
+                {/* Lista simples de adicionais */}
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-semibold">Adicionais Existentes</h3>
-                    <div className="flex gap-2 text-sm text-gray-600">
-                      <span>Total: {adicionais?.length || 0}</span>
-                      <span>•</span>
-                      <span>Pagos: {adicionais?.filter(a => a.preco_extra > 0).length || 0}</span>
-                      <span>•</span>
-                      <span>Remoções: {adicionais?.filter(a => a.preco_extra === 0).length || 0}</span>
-                    </div>
-                  </div>
+                  <h3 className="font-semibold">Adicionais Disponíveis ({adicionais?.length || 0})</h3>
                   
                   {adicionais && adicionais.length > 0 ? (
-                    <div className="grid gap-3">
+                    <div className="grid gap-2 max-h-60 overflow-y-auto">
                       {adicionais.map((adicional) => (
                         <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div>
-                              <span className="font-medium">{adicional.nome}</span>
-                              <div className="text-sm text-muted-foreground">
-                                {formatCurrency(adicional.preco_extra)}
-                                {adicional.item_id && (
-                                  <span className="ml-2 text-blue-600">
-                                    • Item específico
-                                  </span>
-                                )}
-                                {adicional.multi_selecao && (
-                                  <Badge variant="secondary" className="ml-2">Múltipla seleção</Badge>
-                                )}
-                                {adicional.obrigatorio && (
-                                  <Badge variant="destructive" className="ml-2">Obrigatório</Badge>
-                                )}
-                              </div>
+                          <div>
+                            <span className="font-medium">{adicional.nome}</span>
+                            <div className="text-sm text-gray-600">
+                              {formatCurrency(adicional.preco_extra)}
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1">
                             <Button
                               onClick={() => editAdicional(adicional)}
                               variant="outline"
@@ -794,13 +650,13 @@ export default function ExpandedMenu() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-8 text-gray-500">
                       <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>Nenhum adicional encontrado</p>
-                      <p className="text-sm">Crie seu primeiro adicional acima</p>
                     </div>
                   )}
                 </div>
+
               </div>
             </DialogContent>
           </Dialog>

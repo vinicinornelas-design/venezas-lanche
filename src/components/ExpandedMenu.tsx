@@ -258,10 +258,10 @@ export default function ExpandedMenu() {
     localStorage.setItem('venezas_adicionais', JSON.stringify(adicionais));
   };
 
-  const handleBulkAdd = () => {
+  const handleBulkAdd = async () => {
     try {
       const lines = bulkAdicionais.split('\n').filter(line => line.trim());
-      const novosAdicionais = [...adicionais];
+      const adicionaisParaInserir = [];
       let addedCount = 0;
 
       lines.forEach(line => {
@@ -269,28 +269,66 @@ export default function ExpandedMenu() {
         const preco = parseFloat(precoStr) || 0;
         
         if (nome) {
-          const novoAdicional = {
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          adicionaisParaInserir.push({
             nome: nome,
             preco_extra: preco,
             multi_selecao: false,
             obrigatorio: false,
             item_id: selectedCategoryForBulk || null
-          };
-          novosAdicionais.push(novoAdicional);
+          });
           addedCount++;
         }
       });
 
-      setAdicionais(novosAdicionais);
-      saveLocalAdicionais(novosAdicionais);
-      setBulkAdicionais("");
-      setShowBulkAdd(false);
-      
-      toast({
-        title: "Sucesso",
-        description: `${addedCount} adicionais criados com sucesso`,
-      });
+      if (adicionaisParaInserir.length === 0) {
+        toast({
+          title: "Aviso",
+          description: "Nenhum adicional válido encontrado",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Tentar inserir no banco de dados primeiro
+      try {
+        const { error } = await supabase
+          .from('opcionais')
+          .insert(adicionaisParaInserir);
+
+        if (error) throw error;
+
+        // Se inseriu no banco com sucesso, recarregar
+        await fetchAdicionais();
+        setBulkAdicionais("");
+        setShowBulkAdd(false);
+        
+        toast({
+          title: "Sucesso",
+          description: `${addedCount} adicionais criados com sucesso`,
+        });
+      } catch (dbError) {
+        console.log('Erro no banco, salvando localmente:', dbError);
+        
+        // Se der erro no banco, salvar localmente
+        const novosAdicionais = [...adicionais];
+        adicionaisParaInserir.forEach(adicional => {
+          const novoAdicional = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            ...adicional
+          };
+          novosAdicionais.push(novoAdicional);
+        });
+
+        setAdicionais(novosAdicionais);
+        saveLocalAdicionais(novosAdicionais);
+        setBulkAdicionais("");
+        setShowBulkAdd(false);
+        
+        toast({
+          title: "Sucesso",
+          description: `${addedCount} adicionais criados com sucesso`,
+        });
+      }
     } catch (error) {
       console.error('Error in bulk add:', error);
       toast({
@@ -360,7 +398,6 @@ export default function ExpandedMenu() {
       item_id: ""
     });
     setSelectedAdicional(null);
-    setIsAdicionaisDialogOpen(false);
   };
 
   const handleOpenAdicionaisDialog = () => {
@@ -417,7 +454,6 @@ export default function ExpandedMenu() {
       obrigatorio: adicional.obrigatorio || false,
       item_id: adicional.item_id || ""
     });
-    setIsAdicionaisDialogOpen(true);
   };
 
   const handleSaveAdicional = async () => {
@@ -449,29 +485,70 @@ export default function ExpandedMenu() {
         item_id: adicionalFormData.item_id || null
       };
 
-      let novosAdicionais = [...adicionais];
+      // Tentar salvar no banco de dados primeiro
+      try {
+        if (selectedAdicional) {
+          // Atualizar no banco
+          const { error } = await supabase
+            .from('opcionais')
+            .update({
+              nome: novoAdicional.nome,
+              preco_extra: novoAdicional.preco_extra,
+              multi_selecao: novoAdicional.multi_selecao,
+              obrigatorio: novoAdicional.obrigatorio,
+              item_id: novoAdicional.item_id
+            })
+            .eq('id', selectedAdicional.id);
 
-      if (selectedAdicional) {
-        // Atualizar adicional existente
-        novosAdicionais = novosAdicionais.map(adicional => 
-          adicional.id === selectedAdicional.id ? novoAdicional : adicional
-        );
+          if (error) throw error;
+        } else {
+          // Inserir no banco
+          const { error } = await supabase
+            .from('opcionais')
+            .insert([{
+              nome: novoAdicional.nome,
+              preco_extra: novoAdicional.preco_extra,
+              multi_selecao: novoAdicional.multi_selecao,
+              obrigatorio: novoAdicional.obrigatorio,
+              item_id: novoAdicional.item_id
+            }]);
+
+          if (error) throw error;
+        }
+
+        // Se salvou no banco com sucesso, recarregar
+        await fetchAdicionais();
+        resetAdicionalForm();
+        
         toast({
           title: "Sucesso",
-          description: "Adicional atualizado com sucesso",
+          description: selectedAdicional ? "Adicional atualizado com sucesso" : "Adicional criado com sucesso",
         });
-      } else {
-        // Criar novo adicional
-        novosAdicionais.push(novoAdicional);
+      } catch (dbError) {
+        console.log('Erro no banco, salvando localmente:', dbError);
+        
+        // Se der erro no banco, salvar localmente
+        let novosAdicionais = [...adicionais];
+
+        if (selectedAdicional) {
+          // Atualizar adicional existente
+          novosAdicionais = novosAdicionais.map(adicional => 
+            adicional.id === selectedAdicional.id ? novoAdicional : adicional
+          );
+        } else {
+          // Criar novo adicional
+          novosAdicionais.push(novoAdicional);
+        }
+
+        setAdicionais(novosAdicionais);
+        saveLocalAdicionais(novosAdicionais);
+        resetAdicionalForm();
+        
         toast({
           title: "Sucesso",
-          description: "Adicional criado com sucesso",
+          description: selectedAdicional ? "Adicional atualizado com sucesso" : "Adicional criado com sucesso",
         });
       }
-
-      setAdicionais(novosAdicionais);
-      saveLocalAdicionais(novosAdicionais);
-      resetAdicionalForm();
     } catch (error) {
       console.error('Error saving adicional:', error);
       toast({
@@ -484,19 +561,86 @@ export default function ExpandedMenu() {
 
   const handleDeleteAdicional = async (adicional: Adicional) => {
     try {
-      const novosAdicionais = adicionais.filter(adic => adic.id !== adicional.id);
-      setAdicionais(novosAdicionais);
-      saveLocalAdicionais(novosAdicionais);
+      // Tentar deletar do banco de dados primeiro
+      try {
+        const { error } = await supabase
+          .from('opcionais')
+          .delete()
+          .eq('id', adicional.id);
 
-      toast({
-        title: "Sucesso",
-        description: "Adicional removido com sucesso",
-      });
+        if (error) throw error;
+
+        // Se deletou do banco com sucesso, recarregar
+        await fetchAdicionais();
+        
+        toast({
+          title: "Sucesso",
+          description: "Adicional removido com sucesso",
+        });
+      } catch (dbError) {
+        console.log('Erro no banco, removendo localmente:', dbError);
+        
+        // Se der erro no banco, remover localmente
+        const novosAdicionais = adicionais.filter(adic => adic.id !== adicional.id);
+        setAdicionais(novosAdicionais);
+        saveLocalAdicionais(novosAdicionais);
+
+        toast({
+          title: "Sucesso",
+          description: "Adicional removido com sucesso",
+        });
+      }
     } catch (error) {
       console.error('Error deleting adicional:', error);
       toast({
         title: "Erro",
         description: "Erro ao remover adicional",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLoadDefaultAdicionais = async () => {
+    try {
+      const defaultAdicionais = getLocalAdicionais();
+      
+      // Tentar inserir no banco de dados primeiro
+      try {
+        const { error } = await supabase
+          .from('opcionais')
+          .insert(defaultAdicionais.map(adicional => ({
+            nome: adicional.nome,
+            preco_extra: adicional.preco_extra,
+            multi_selecao: adicional.multi_selecao || false,
+            obrigatorio: adicional.obrigatorio || false,
+            item_id: adicional.item_id || null
+          })));
+
+        if (error) {
+          console.log('Erro ao inserir no banco, usando dados locais:', error);
+          // Se der erro, usar dados locais
+          setAdicionais(defaultAdicionais);
+          saveLocalAdicionais(defaultAdicionais);
+        } else {
+          // Se inseriu com sucesso, recarregar do banco
+          await fetchAdicionais();
+        }
+      } catch (dbError) {
+        console.log('Banco não disponível, usando dados locais:', dbError);
+        // Se o banco não estiver disponível, usar dados locais
+        setAdicionais(defaultAdicionais);
+        saveLocalAdicionais(defaultAdicionais);
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Adicionais padrão carregados com sucesso",
+      });
+    } catch (error) {
+      console.error('Error loading default adicionais:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar adicionais padrão",
         variant: "destructive",
       });
     }
@@ -609,7 +753,10 @@ export default function ExpandedMenu() {
                 {/* Ações básicas */}
                 <div className="flex gap-2 flex-wrap">
                   <Button 
-                    onClick={() => setShowBulkAdd(!showBulkAdd)} 
+                    onClick={() => {
+                      console.log('Clicou em Adicionar em Massa, showBulkAdd:', showBulkAdd);
+                      setShowBulkAdd(!showBulkAdd);
+                    }} 
                     variant="outline" 
                     className="border-purple-200 text-purple-600 hover:bg-purple-50"
                   >
@@ -619,14 +766,9 @@ export default function ExpandedMenu() {
                   
                   <Button 
                     onClick={() => {
-                      setAdicionalFormData({
-                        nome: "",
-                        preco_extra: 0,
-                        multi_selecao: false,
-                        obrigatorio: false,
-                        item_id: ""
-                      });
-                      setSelectedAdicional(null);
+                      console.log('Clicou em Novo Adicional');
+                      resetAdicionalForm();
+                      setShowBulkAdd(false);
                     }} 
                     variant="outline" 
                     className="border-blue-200 text-blue-600 hover:bg-blue-50"
@@ -636,15 +778,7 @@ export default function ExpandedMenu() {
                   </Button>
 
                   <Button 
-                    onClick={() => {
-                      const defaultAdicionais = getLocalAdicionais();
-                      setAdicionais(defaultAdicionais);
-                      saveLocalAdicionais(defaultAdicionais);
-                      toast({
-                        title: "Sucesso",
-                        description: "Adicionais padrão carregados com sucesso",
-                      });
-                    }} 
+                    onClick={handleLoadDefaultAdicionais}
                     variant="outline" 
                     className="border-orange-200 text-orange-600 hover:bg-orange-50"
                   >
@@ -652,6 +786,136 @@ export default function ExpandedMenu() {
                     Carregar Padrão
                   </Button>
                 </div>
+
+                {/* Seção de Adicionar em Massa */}
+                {showBulkAdd && (
+                  <div className="space-y-4 p-4 border rounded-lg bg-purple-50">
+                    <h3 className="font-semibold text-purple-800">Adicionar em Massa</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-sm font-medium">Formato: Nome do Adicional | Preço</Label>
+                        <Textarea
+                          value={bulkAdicionais}
+                          onChange={(e) => setBulkAdicionais(e.target.value)}
+                          placeholder="Exemplo:&#10;Bacon adicional | 6.00&#10;Queijo adicional | 4.00&#10;Tomate adicional | 2.00"
+                          rows={6}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={handleBulkAdd}
+                          className="bg-purple-600 hover:bg-purple-700"
+                          disabled={!bulkAdicionais.trim()}
+                        >
+                          Adicionar {bulkAdicionais.split('\n').filter(line => line.trim()).length} Adicionais
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            setShowBulkAdd(false);
+                            setBulkAdicionais("");
+                          }}
+                          variant="outline"
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Formulário de Novo/Editar Adicional */}
+                {!showBulkAdd && (
+                  <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
+                    {console.log('Renderizando formulário, showBulkAdd:', showBulkAdd, 'selectedAdicional:', selectedAdicional)}
+                    <h3 className="font-semibold text-blue-800">
+                      {selectedAdicional ? "Editar Adicional" : "Novo Adicional"}
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Nome do Adicional</Label>
+                        <Input
+                          value={adicionalFormData.nome}
+                          onChange={(e) => setAdicionalFormData({...adicionalFormData, nome: e.target.value})}
+                          placeholder="Ex: Bacon adicional"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Preço Extra (R$)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={adicionalFormData.preco_extra}
+                          onChange={(e) => setAdicionalFormData({...adicionalFormData, preco_extra: parseFloat(e.target.value) || 0})}
+                          placeholder="0.00"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label>Item Específico (Opcional)</Label>
+                        <Select
+                          value={adicionalFormData.item_id}
+                          onValueChange={(value) => setAdicionalFormData({...adicionalFormData, item_id: value})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um item (deixe vazio para todos)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Todos os itens</SelectItem>
+                            {items.map((item) => (
+                              <SelectItem key={item.id} value={item.id}>
+                                {item.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="multi-selecao"
+                            checked={adicionalFormData.multi_selecao}
+                            onChange={(e) => setAdicionalFormData({...adicionalFormData, multi_selecao: e.target.checked})}
+                            className="rounded"
+                          />
+                          <Label htmlFor="multi-selecao">Permitir múltipla seleção</Label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="obrigatorio"
+                            checked={adicionalFormData.obrigatorio}
+                            onChange={(e) => setAdicionalFormData({...adicionalFormData, obrigatorio: e.target.checked})}
+                            className="rounded"
+                          />
+                          <Label htmlFor="obrigatorio">Obrigatório</Label>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={resetAdicionalForm}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        Cancelar
+                      </Button>
+                      <Button 
+                        onClick={handleSaveAdicional}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                        disabled={!adicionalFormData.nome.trim()}
+                      >
+                        {selectedAdicional ? "Atualizar" : "Criar"} Adicional
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Lista simples de adicionais */}
                 <div className="space-y-4">

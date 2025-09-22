@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import FileUpload from "@/components/FileUpload";
 import { 
   Building2, 
   Clock, 
@@ -387,72 +388,26 @@ export default function ConfiguracaoRestaurante() {
               <ImageIcon className="h-5 w-5 text-purple-600" />
               Imagens do Restaurante
             </CardTitle>
+            <CardDescription>
+              Faça upload das imagens do seu restaurante
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <Label>Logo do Restaurante</Label>
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
-                  {config.logo_url ? (
-                    <div className="text-center">
-                      <img 
-                        src={config.logo_url} 
-                        alt="Logo" 
-                        className="mx-auto max-h-24 object-contain mb-2"
-                      />
-                      <Button variant="outline" size="sm">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Alterar Logo
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <Button variant="outline">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Logo
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                <Input
-                  value={config.logo_url || ''}
-                  onChange={(e) => updateConfig('logo_url', e.target.value)}
-                  placeholder="URL da logo (opcional)"
-                />
-              </div>
-
-              <div className="space-y-4">
-                <Label>Banner/Capa</Label>
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
-                  {config.banner_url ? (
-                    <div className="text-center">
-                      <img 
-                        src={config.banner_url} 
-                        alt="Banner" 
-                        className="mx-auto max-h-24 object-cover w-full rounded mb-2"
-                      />
-                      <Button variant="outline" size="sm">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Alterar Banner
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <Button variant="outline">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Banner
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                <Input
-                  value={config.banner_url || ''}
-                  onChange={(e) => updateConfig('banner_url', e.target.value)}
-                  placeholder="URL do banner (opcional)"
-                />
-              </div>
+              <FileUpload
+                label="Logo do Restaurante"
+                value={config.logo_url}
+                onChange={(url) => updateConfig('logo_url', url)}
+                maxSize={5}
+                preview={true}
+              />
+              <FileUpload
+                label="Banner/Capa do Restaurante"
+                value={config.banner_url}
+                onChange={(url) => updateConfig('banner_url', url)}
+                maxSize={10}
+                preview={true}
+              />
             </div>
           </CardContent>
         </Card>

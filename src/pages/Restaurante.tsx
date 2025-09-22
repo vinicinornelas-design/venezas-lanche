@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import FileUpload from "@/components/FileUpload";
 import { 
   Store, 
   Phone, 
@@ -272,47 +273,25 @@ export default function Restaurante() {
             Imagens
           </CardTitle>
           <CardDescription>
-            URLs das imagens do restaurante
+            Faça upload das imagens do seu restaurante
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="logo">URL do Logo</Label>
-              <Input
-                id="logo"
-                value={config.logo_url}
-                onChange={(e) => updateConfig('logo_url', e.target.value)}
-                placeholder="https://exemplo.com/logo.png"
-              />
-              {config.logo_url && (
-                <div className="mt-2">
-                  <img 
-                    src={config.logo_url} 
-                    alt="Logo preview" 
-                    className="h-16 w-16 object-contain border rounded"
-                  />
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="banner">URL do Banner</Label>
-              <Input
-                id="banner"
-                value={config.banner_url}
-                onChange={(e) => updateConfig('banner_url', e.target.value)}
-                placeholder="https://exemplo.com/banner.jpg"
-              />
-              {config.banner_url && (
-                <div className="mt-2">
-                  <img 
-                    src={config.banner_url} 
-                    alt="Banner preview" 
-                    className="h-16 w-32 object-cover border rounded"
-                  />
-                </div>
-              )}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FileUpload
+              label="Logo do Restaurante"
+              value={config.logo_url}
+              onChange={(url) => updateConfig('logo_url', url)}
+              maxSize={5}
+              preview={true}
+            />
+            <FileUpload
+              label="Banner do Restaurante"
+              value={config.banner_url}
+              onChange={(url) => updateConfig('banner_url', url)}
+              maxSize={10}
+              preview={true}
+            />
           </div>
         </CardContent>
       </Card>

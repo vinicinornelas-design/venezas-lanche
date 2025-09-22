@@ -247,6 +247,9 @@ export default function Pedidos() {
       case 'preparando':
         filtered = filtered.filter(p => p.status === 'PREPARANDO');
         break;
+      case 'prontos':
+        filtered = filtered.filter(p => p.status === 'PRONTO');
+        break;
       case 'finalizados':
         filtered = filtered.filter(p => p.status === 'ENTREGUE');
         break;
@@ -273,10 +276,11 @@ export default function Pedidos() {
   const getStats = () => {
     const total = pedidos.length;
     const emPreparacao = pedidos.filter(p => p.status === 'PREPARANDO').length;
-    const emEntrega = pedidos.filter(p => p.status === 'PRONTO').length;
-    const novos = pedidos.filter(p => p.status === 'PENDENTE').length;
+    const prontos = pedidos.filter(p => p.status === 'PRONTO').length;
+    const emEntrega = pedidos.filter(p => p.status === 'ENTREGUE').length;
+    const cancelados = pedidos.filter(p => p.status === 'CANCELADO').length;
 
-    return { total, emPreparacao, emEntrega, novos };
+    return { total, emPreparacao, prontos, emEntrega, cancelados };
   };
 
   // Função para formatar tempo decorrido
@@ -687,7 +691,7 @@ export default function Pedidos() {
     <div className="p-6 space-y-6">
       {/* Abas principais */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="aberto" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Em aberto
@@ -695,6 +699,10 @@ export default function Pedidos() {
           <TabsTrigger value="preparando" className="flex items-center gap-2">
             <ChefHat className="h-4 w-4" />
             Preparando
+          </TabsTrigger>
+          <TabsTrigger value="prontos" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Prontos
           </TabsTrigger>
           <TabsTrigger value="finalizados" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />
@@ -707,7 +715,7 @@ export default function Pedidos() {
         </TabsList>
 
         {/* Cards de status */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-5 gap-4">
           <Card className="bg-gray-800 text-white">
             <CardContent className="p-4">
               <div className="text-center">
@@ -726,6 +734,15 @@ export default function Pedidos() {
             </CardContent>
           </Card>
           
+          <Card className="bg-blue-500 text-white">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <p className="text-sm opacity-80">Prontos</p>
+                <p className="text-2xl font-bold">{stats.prontos}</p>
+              </div>
+            </CardContent>
+          </Card>
+          
           <Card className="bg-green-500 text-white">
             <CardContent className="p-4">
               <div className="text-center">
@@ -735,11 +752,11 @@ export default function Pedidos() {
             </CardContent>
           </Card>
           
-          <Card className="bg-blue-500 text-white">
+          <Card className="bg-red-500 text-white">
             <CardContent className="p-4">
               <div className="text-center">
-                <p className="text-sm opacity-80">Novos</p>
-                <p className="text-2xl font-bold">{stats.novos}</p>
+                <p className="text-sm opacity-80">Cancelados</p>
+                <p className="text-2xl font-bold">{stats.cancelados}</p>
               </div>
             </CardContent>
           </Card>

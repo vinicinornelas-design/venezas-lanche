@@ -478,6 +478,7 @@ export default function MenuPublico() {
         origem: 'DELIVERY',
         itens: itensPedido,
         taxa_entrega: getTaxaEntrega(),
+        taxa_pagamento: getTaxaPagamento(),
         metodo_pagamento: selectedPaymentMethod?.nome || 'Dinheiro',
         observacoes: customerData.observacoes || undefined,
         status: 'PENDENTE'

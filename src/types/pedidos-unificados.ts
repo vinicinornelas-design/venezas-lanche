@@ -41,6 +41,7 @@ export interface PedidoUnificado {
   // Valores
   subtotal: number;
   taxa_entrega: number;
+  taxa_pagamento: number;
   desconto: number;
   total: number;
 
@@ -81,6 +82,7 @@ export interface CriarPedidoUnificado {
   funcionario_nome?: string;
   itens: PedidoItem[];
   taxa_entrega?: number;
+  taxa_pagamento?: number;
   desconto?: number;
   metodo_pagamento?: string;
   observacoes?: string;
@@ -117,9 +119,9 @@ export const calcularSubtotalItem = (item: PedidoItem): number => {
   return subtotalPrincipal + subtotalAdicionais;
 };
 
-export const calcularTotalPedido = (itens: PedidoItem[], taxaEntrega = 0, desconto = 0): number => {
+export const calcularTotalPedido = (itens: PedidoItem[], taxaEntrega = 0, taxaPagamento = 0, desconto = 0): number => {
   const subtotal = itens.reduce((total, item) => total + calcularSubtotalItem(item), 0);
-  return subtotal + taxaEntrega - desconto;
+  return subtotal + taxaEntrega + taxaPagamento - desconto;
 };
 
 export const formatarStatusPedido = (status: string): string => {

@@ -765,6 +765,7 @@ export type Database = {
           status: string | null
           subtotal: number | null
           taxa_entrega: number | null
+          taxa_pagamento: number | null
           tempo_entrega_estimado: number | null
           tempo_preparo_estimado: number | null
           total: number
@@ -801,6 +802,7 @@ export type Database = {
           status?: string | null
           subtotal?: number | null
           taxa_entrega?: number | null
+          taxa_pagamento?: number | null
           tempo_entrega_estimado?: number | null
           tempo_preparo_estimado?: number | null
           total?: number
@@ -837,6 +839,7 @@ export type Database = {
           status?: string | null
           subtotal?: number | null
           taxa_entrega?: number | null
+          taxa_pagamento?: number | null
           tempo_entrega_estimado?: number | null
           tempo_preparo_estimado?: number | null
           total?: number

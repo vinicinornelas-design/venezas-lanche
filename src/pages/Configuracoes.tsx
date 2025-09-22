@@ -102,6 +102,9 @@ export default function Configuracoes() {
 
       if (error) throw error;
 
+      // Atualizar taxas dos métodos de pagamento
+      await updatePaymentMethodFees();
+
       toast({
         title: "Sucesso",
         description: "Configurações salvas com sucesso",
@@ -115,6 +118,31 @@ export default function Configuracoes() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const updatePaymentMethodFees = async () => {
+    try {
+      // Atualizar taxa do cartão de crédito
+      const { error: creditoError } = await supabase
+        .from('payment_methods')
+        .update({ fee_value: config.taxa_cartao_credito })
+        .eq('nome', 'Cartão de Crédito');
+
+      if (creditoError) throw creditoError;
+
+      // Atualizar taxa do cartão de débito
+      const { error: debitoError } = await supabase
+        .from('payment_methods')
+        .update({ fee_value: config.taxa_cartao_debito })
+        .eq('nome', 'Cartão de Débito');
+
+      if (debitoError) throw debitoError;
+
+      console.log('Taxas de pagamento atualizadas com sucesso');
+    } catch (error) {
+      console.error('Erro ao atualizar taxas de pagamento:', error);
+      throw error;
     }
   };
 

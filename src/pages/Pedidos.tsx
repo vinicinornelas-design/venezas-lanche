@@ -886,6 +886,7 @@ export default function Pedidos() {
                     <TableHead>Realizado</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Tx. Entrega</TableHead>
+                    <TableHead>Tx. Pagamento</TableHead>
                     <TableHead>Total</TableHead>
                     <TableHead>Pagamento</TableHead>
                     <TableHead>Pago</TableHead>
@@ -937,6 +938,12 @@ export default function Pedidos() {
                       <TableCell>
                         <p className="text-sm">
                           {formatCurrency(pedido.taxa_entrega || 0)}
+                        </p>
+                      </TableCell>
+                      
+                      <TableCell>
+                        <p className="text-sm">
+                          {formatCurrency(pedido.taxa_pagamento || 0)}
                         </p>
                       </TableCell>
                       

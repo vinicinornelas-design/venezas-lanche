@@ -8,8 +8,7 @@ CREATE TABLE IF NOT EXISTS opcionais (
     preco_extra DECIMAL(10,2) DEFAULT 0.00,
     multi_selecao BOOLEAN DEFAULT false,
     obrigatorio BOOLEAN DEFAULT false,
-    item_id UUID,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    item_id UUID
 );
 
 -- Inserir adicionais com preços específicos

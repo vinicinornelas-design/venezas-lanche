@@ -215,6 +215,8 @@ export default function LancarPedido() {
         funcionario_id: funcionarioData?.id,
         funcionario_nome: funcionarioData?.nome || userProfile?.nome,
         itens: itensPedido,
+        taxa_entrega: 0, // Pedidos de mesa não têm taxa de entrega
+        taxa_pagamento: 0, // Pedidos de mesa não têm taxa de pagamento
         observacoes: observacoesPedido || undefined,
         status: 'PENDENTE'
       };

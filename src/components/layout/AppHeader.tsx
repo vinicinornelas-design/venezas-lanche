@@ -4,18 +4,23 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/useNotifications";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 type UserRole = 'ADMIN' | 'CAIXA' | 'CHAPEIRO' | 'ATENDENTE' | 'COZINHEIRA' | 'GARCOM';
 
 export function AppHeader() {
-  const [userRole] = useState<UserRole>('ADMIN'); // Sempre admin para acesso total
-  const [userName] = useState('Administrador');
+  const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [userName, setUserName] = useState('');
   const [currentDate, setCurrentDate] = useState('');
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
 
   useEffect(() => {
     updateCurrentDate();
+    loadUserData();
     
     // Atualizar data a cada minuto
     const dateInterval = setInterval(updateCurrentDate, 60000);
@@ -24,6 +29,35 @@ export function AppHeader() {
       clearInterval(dateInterval);
     };
   }, []);
+
+  const loadUserData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        setUser(user);
+        
+        // Buscar dados do perfil
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('nome, papel')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (profile) {
+          setUserName(profile.nome || user.email || 'Usuário');
+          setUserRole(profile.papel as UserRole);
+        } else {
+          setUserName(user.email || 'Usuário');
+          setUserRole('CAIXA'); // Default role
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do usuário:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updateCurrentDate = () => {
     const now = new Date();
@@ -36,14 +70,29 @@ export function AppHeader() {
     setCurrentDate(formattedDate);
   };
 
-  // Função removida - não precisa mais carregar dados do usuário
-
-  const handleLogout = () => {
-    // Redirecionar para a página inicial
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      // Mesmo com erro, redireciona para a página inicial
+      navigate('/');
+    }
   };
 
-  // Removido loading state - sempre renderiza diretamente
+  if (loading) {
+    return (
+      <header className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+          </div>
+          <div className="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm">
@@ -60,7 +109,7 @@ export function AppHeader() {
           </div>
           
           {/* Botão de notificações */}
-          {(userRole === 'ADMIN' || userRole === 'CAIXA') && (
+          {userRole && (userRole === 'ADMIN' || userRole === 'CAIXA') && (
             <Button
               variant="ghost"
               size="sm"
@@ -81,8 +130,8 @@ export function AppHeader() {
           
           {/* Informações do usuário */}
           <div className="text-right">
-            <p className="text-sm font-medium text-gray-900">{userName}</p>
-            <p className="text-xs text-gray-500 capitalize">{userRole.toLowerCase()}</p>
+            <p className="text-sm font-medium text-gray-900">{userName || 'Usuário'}</p>
+            <p className="text-xs text-gray-500 capitalize">{userRole?.toLowerCase() || 'usuário'}</p>
           </div>
           
           <button

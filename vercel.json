@@ -1,6 +1,6 @@
 {
   "framework": "vite",
-  "buildCommand": "node vercel-build.cjs",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm ci"
+  "installCommand": "npm ci && npm install @rollup/rollup-linux-x64-gnu@4.9.6 --save-dev"
 }

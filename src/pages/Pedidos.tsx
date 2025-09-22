@@ -49,6 +49,13 @@ export default function Pedidos() {
   const [endTime, setEndTime] = useState('');
   const [selectedPedidos, setSelectedPedidos] = useState<string[]>([]);
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
   useEffect(() => {
     fetchPedidos();
     setupPolling();
@@ -928,11 +935,13 @@ export default function Pedidos() {
                       </TableCell>
                       
                       <TableCell>
-                        <p className="text-sm">R$ 0,00</p>
+                        <p className="text-sm">
+                          {formatCurrency(pedido.taxa_entrega || 0)}
+                        </p>
                       </TableCell>
                       
                       <TableCell>
-                        <p className="text-sm font-medium">R$ {pedido.total.toFixed(2)}</p>
+                        <p className="text-sm font-medium">{formatCurrency(pedido.total || 0)}</p>
                       </TableCell>
                       
                       <TableCell>

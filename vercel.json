@@ -1,6 +1,6 @@
 {
   "framework": "vite",
-  "buildCommand": "npm run build",
+  "buildCommand": "node vercel-build.cjs",
   "outputDirectory": "dist",
   "installCommand": "npm ci"
 }

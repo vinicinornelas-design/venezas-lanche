@@ -2,87 +2,62 @@
 
 const { execSync } = require('child_process');
 const fs = require('fs');
-const path = require('path');
+const os = require('os');
 
-console.log('🚀 SOLUÇÃO ULTRA DEFINITIVA - Build Definitivo para Vercel...');
+console.log('🚀 Iniciando build para Vercel...');
+console.log(`📋 Plataforma: ${os.platform()} ${os.arch()}`);
 
 try {
   // 1. Configurar ambiente
-  console.log('⚙️ Configurando ambiente...');
   process.env.NODE_OPTIONS = '--max-old-space-size=4096';
+  process.env.VITE_CHUNK_SIZE_WARNING_LIMIT = '0';
 
-  // 2. Limpar TUDO
-  console.log('🧹 Limpando ambiente completamente...');
-  try {
-    execSync('npm cache clean --force', { stdio: 'inherit' });
-  } catch (e) { /* ignore */ }
-  
-  if (fs.existsSync('node_modules')) {
-    execSync('rm -rf node_modules', { stdio: 'inherit' });
-  }
-  if (fs.existsSync('package-lock.json')) {
-    execSync('rm -f package-lock.json', { stdio: 'inherit' });
+  // 2. Instalar dependências se necessário
+  if (!fs.existsSync('node_modules')) {
+    console.log('📦 Instalando dependências...');
+    execSync('npm ci --no-audit --no-fund', { stdio: 'inherit' });
   }
 
-  // 3. Instalar dependências básicas
-  console.log('📦 Instalando dependências básicas...');
-  execSync('npm install --no-audit --no-fund', { stdio: 'inherit' });
-
-  // 4. Instalar Rollup específico para Linux (apenas no Vercel)
-  console.log('🔧 Instalando Rollup para Linux...');
+  // 3. Instalar dependências específicas de plataforma
+  console.log('🔧 Instalando dependências específicas de plataforma...');
   try {
-    // Tentar instalar apenas se estivermos no Linux
-    if (process.platform === 'linux') {
+    if (os.platform() === 'linux' && os.arch() === 'x64') {
+      console.log('🐧 Instalando dependências para Linux x64...');
       execSync('npm install @rollup/rollup-linux-x64-gnu@4.9.6 --save-dev --no-audit --no-fund', { stdio: 'inherit' });
-    } else {
-      console.log('⚠️ Não é Linux, pulando instalação específica do Rollup');
+    } else if (os.platform() === 'darwin' && os.arch() === 'arm64') {
+      console.log('🍎 Instalando dependências para macOS ARM64...');
+      execSync('npm install @rollup/rollup-darwin-arm64@4.52.0 --save-dev --no-audit --no-fund', { stdio: 'inherit' });
+    } else if (os.platform() === 'darwin' && os.arch() === 'x64') {
+      console.log('🍎 Instalando dependências para macOS x64...');
+      execSync('npm install @rollup/rollup-darwin-x64@4.52.0 --save-dev --no-audit --no-fund', { stdio: 'inherit' });
+    } else if (os.platform() === 'win32') {
+      console.log('🪟 Instalando dependências para Windows...');
+      execSync('npm install @rollup/rollup-win32-x64-msvc@4.52.0 --save-dev --no-audit --no-fund', { stdio: 'inherit' });
     }
-  } catch (e) {
-    console.log('⚠️ Erro ao instalar Rollup específico, continuando...');
+  } catch (error) {
+    console.log('⚠️  Aviso: Não foi possível instalar dependências específicas de plataforma');
+    console.log('📝 Continuando com build...');
   }
 
-  // 5. Fazer build com estratégias alternativas
-  console.log('🔨 Executando build com estratégias alternativas...');
-  
-  // Estratégia 1: Build normal
-  try {
-    execSync('npm run build', { stdio: 'inherit' });
-    console.log('✅ Build normal funcionou!');
-  } catch (e) {
-    console.log('⚠️ Build normal falhou, tentando estratégia alternativa...');
-    
-    // Estratégia 2: Build com Vite direto
-    try {
-      execSync('npx vite build --mode production', { stdio: 'inherit' });
-      console.log('✅ Build com Vite direto funcionou!');
-    } catch (e2) {
-      console.log('⚠️ Build com Vite direto falhou, tentando estratégia final...');
-      
-      // Estratégia 3: Build com configuração mínima
-      try {
-        execSync('npx vite build --mode production --minify esbuild', { stdio: 'inherit' });
-        console.log('✅ Build com configuração mínima funcionou!');
-      } catch (e3) {
-        console.log('❌ Todas as estratégias falharam');
-        throw e3;
-      }
-    }
-  }
+  // 4. Executar build
+  console.log('🔨 Executando build...');
+  execSync('npm run build', { stdio: 'inherit' });
 
-  // 6. Verificar se o build foi criado
+  // 5. Verificar se o build foi criado
   if (fs.existsSync('dist/index.html')) {
     console.log('✅ Build concluído com sucesso!');
     console.log('📁 Arquivos gerados:');
     const distFiles = fs.readdirSync('dist');
     distFiles.forEach(file => {
-      const filePath = path.join('dist', file);
-      const stats = fs.statSync(filePath);
+      const stats = fs.statSync(`dist/${file}`);
       if (stats.isFile()) {
-        console.log(`   - ${file} (${(stats.size / 1024).toFixed(2)} KB)`);
+        console.log(`   📄 ${file} (${(stats.size / 1024).toFixed(2)} KB)`);
+      } else {
+        console.log(`   📁 ${file}/`);
       }
     });
   } else {
-    throw new Error('Build falhou - dist/index.html não foi criado');
+    throw new Error('❌ Build falhou - arquivo dist/index.html não encontrado');
   }
 
 } catch (error) {

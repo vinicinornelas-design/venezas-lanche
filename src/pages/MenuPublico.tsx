@@ -107,6 +107,15 @@ export default function MenuPublico() {
     fetchAdicionais();
   }, []);
 
+  // Garantir que os adicionais sejam carregados quando o modal abrir
+  useEffect(() => {
+    if (isAdicionaisDialogOpen) {
+      const localAdicionais = getLocalAdicionais();
+      console.log('useEffect - Carregando adicionais:', localAdicionais.length);
+      setAdicionais(localAdicionais);
+    }
+  }, [isAdicionaisDialogOpen]);
+
 
   const fetchMenuData = async () => {
     try {
@@ -289,8 +298,9 @@ export default function MenuPublico() {
     
     // Sempre carrega os adicionais quando o modal abrir
     const localAdicionais = getLocalAdicionais();
+    console.log('Adicionais locais carregados:', localAdicionais);
     setAdicionais(localAdicionais);
-    console.log('Carregando adicionais locais:', localAdicionais.length);
+    console.log('Estado adicionais atualizado:', localAdicionais.length);
     
     setSelectedItemForAdicionais(item);
     setSelectedAdicionais([]);
@@ -1170,6 +1180,13 @@ export default function MenuPublico() {
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Debug info */}
+              <div className="bg-yellow-50 p-2 rounded text-xs text-gray-600">
+                Debug: Adicionais carregados: {adicionais.length} | 
+                Com preço: {adicionais.filter(adicional => adicional.preco_extra > 0).length} | 
+                Grátis: {adicionais.filter(adicional => adicional.preco_extra === 0).length}
               </div>
 
               {/* Adicionais com preço */}

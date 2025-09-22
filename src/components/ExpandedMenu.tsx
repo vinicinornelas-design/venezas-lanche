@@ -61,11 +61,29 @@ export default function ExpandedMenu() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { toast } = useToast();
   const { exportMenuToPdf, isExporting } = usePdfExport();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchMenuItems();
-    fetchCategories();
-    fetchRestaurantConfig();
+    const initializeComponent = async () => {
+      try {
+        setError(null);
+        await Promise.all([
+          fetchMenuItems(),
+          fetchCategories(),
+          fetchRestaurantConfig()
+        ]);
+      } catch (err) {
+        console.error('Erro ao inicializar componente:', err);
+        setError('Erro ao carregar dados do cardápio');
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar dados do cardápio",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    initializeComponent();
   }, []);
 
   const fetchMenuItems = async () => {
@@ -484,6 +502,30 @@ export default function ExpandedMenu() {
         <div className="space-y-2">
           <h2 className="text-2xl font-bold">Gerenciar Cardápio</h2>
           <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold">Gerenciar Cardápio</h2>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-red-800">
+              <X className="w-5 h-5" />
+              <span className="font-medium">Erro ao carregar dados</span>
+            </div>
+            <p className="text-red-700 mt-2">{error}</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline" 
+              className="mt-3"
+            >
+              Tentar Novamente
+            </Button>
+          </div>
         </div>
       </div>
     );

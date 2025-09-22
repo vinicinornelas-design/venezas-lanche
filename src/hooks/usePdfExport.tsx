@@ -1,7 +1,31 @@
 import { useState } from 'react';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { useToast } from './use-toast';
+
+// Importações dinâmicas para evitar erros de SSR
+let jsPDF: any = null;
+let html2canvas: any = null;
+
+const loadPdfDependencies = async () => {
+  if (!jsPDF) {
+    try {
+      const jsPDFModule = await import('jspdf');
+      jsPDF = jsPDFModule.default;
+    } catch (error) {
+      console.error('Erro ao carregar jsPDF:', error);
+      throw new Error('Erro ao carregar biblioteca de PDF');
+    }
+  }
+  
+  if (!html2canvas) {
+    try {
+      const html2canvasModule = await import('html2canvas');
+      html2canvas = html2canvasModule.default;
+    } catch (error) {
+      console.error('Erro ao carregar html2canvas:', error);
+      throw new Error('Erro ao carregar biblioteca de canvas');
+    }
+  }
+};
 
 interface MenuItem {
   id: string;
@@ -31,6 +55,8 @@ export function usePdfExport() {
     setIsExporting(true);
     
     try {
+      // Carregar dependências dinamicamente
+      await loadPdfDependencies();
       // Criar elemento temporário para renderizar o cardápio
       const tempElement = document.createElement('div');
       tempElement.style.position = 'absolute';

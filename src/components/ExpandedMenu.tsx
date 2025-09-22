@@ -115,6 +115,16 @@ export default function ExpandedMenu() {
     }
   }, [isAdicionaisDialogOpen]);
 
+  // Forçar carregamento dos adicionais padrão na primeira vez
+  useEffect(() => {
+    const hasAdicionais = localStorage.getItem('venezas_adicionais');
+    if (!hasAdicionais) {
+      const defaultAdicionais = getLocalAdicionais();
+      setAdicionais(defaultAdicionais);
+      saveLocalAdicionais(defaultAdicionais);
+    }
+  }, []);
+
   const fetchMenuItems = async () => {
     try {
       const { data, error } = await supabase
@@ -202,11 +212,14 @@ export default function ExpandedMenu() {
       return JSON.parse(stored);
     }
     
-    // Dados padrão se não houver dados salvos
+    // Dados padrão com todos os adicionais solicitados
     return [
+      // Molhos e condimentos
       { id: '1', nome: 'Molho verde adicional', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '2', nome: 'Molho Barbecue', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '3', nome: 'Ketchup e Maionese adicional', preco_extra: 2.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      
+      // Ingredientes básicos
       { id: '4', nome: 'Ovo adicional', preco_extra: 3.00, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '5', nome: 'Abacaxi adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '6', nome: 'Banana adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
@@ -214,16 +227,24 @@ export default function ExpandedMenu() {
       { id: '8', nome: 'Cebola Caramelizada adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '9', nome: 'Presunto adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '10', nome: 'Cebola adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      
+      // Ingredientes premium
       { id: '11', nome: 'Frango adicional', preco_extra: 5.00, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '12', nome: 'Muçarela adicional', preco_extra: 5.00, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '13', nome: 'Bacon adicional', preco_extra: 6.00, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '14', nome: 'Linguiça adicional', preco_extra: 6.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      
+      // Ingredientes artesanais
       { id: '15', nome: 'Bife artesanal adicional', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '16', nome: 'Catupiry adicional', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '17', nome: 'Cheddar adicional no lanche', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '18', nome: 'Costela ao molho barbecue', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      
+      // Adicionais especiais
       { id: '19', nome: 'Cheddar adicional na batata frita', preco_extra: 10.00, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '20', nome: 'Requeijão cremoso adicional', preco_extra: 12.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      
+      // Opções de remoção (sem custo)
       { id: '21', nome: 'Sem Pão', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '22', nome: 'Sem Presunto', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
       { id: '23', nome: 'Sem Mussarela', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
@@ -612,6 +633,23 @@ export default function ExpandedMenu() {
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Novo Adicional
+                  </Button>
+
+                  <Button 
+                    onClick={() => {
+                      const defaultAdicionais = getLocalAdicionais();
+                      setAdicionais(defaultAdicionais);
+                      saveLocalAdicionais(defaultAdicionais);
+                      toast({
+                        title: "Sucesso",
+                        description: "Adicionais padrão carregados com sucesso",
+                      });
+                    }} 
+                    variant="outline" 
+                    className="border-orange-200 text-orange-600 hover:bg-orange-50"
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Carregar Padrão
                   </Button>
                 </div>
 

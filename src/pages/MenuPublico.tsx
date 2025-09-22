@@ -110,9 +110,15 @@ export default function MenuPublico() {
   // Garantir que os adicionais sejam carregados quando o modal abrir
   useEffect(() => {
     if (isAdicionaisDialogOpen) {
+      // Força o carregamento imediato
       const localAdicionais = getLocalAdicionais();
       console.log('useEffect - Carregando adicionais:', localAdicionais.length);
       setAdicionais(localAdicionais);
+      
+      // Força re-render se necessário
+      setTimeout(() => {
+        setAdicionais([...localAdicionais]);
+      }, 100);
     }
   }, [isAdicionaisDialogOpen]);
 
@@ -296,16 +302,26 @@ export default function MenuPublico() {
   const openAdicionaisDialog = (item: MenuItem) => {
     console.log('Abrindo modal de adicionais para:', item.nome);
     
-    // Sempre carrega os adicionais quando o modal abrir
+    // Carrega os adicionais ANTES de abrir o modal
     const localAdicionais = getLocalAdicionais();
-    console.log('Adicionais locais carregados:', localAdicionais);
-    setAdicionais(localAdicionais);
-    console.log('Estado adicionais atualizado:', localAdicionais.length);
+    console.log('Adicionais locais carregados:', localAdicionais.length);
     
+    // Define o item selecionado
     setSelectedItemForAdicionais(item);
     setSelectedAdicionais([]);
     setObservacoes("");
+    
+    // Carrega os adicionais no estado
+    setAdicionais(localAdicionais);
+    
+    // Abre o modal
     setIsAdicionaisDialogOpen(true);
+    
+    // Força re-render após um pequeno delay
+    setTimeout(() => {
+      console.log('Forçando re-render dos adicionais');
+      setAdicionais([...localAdicionais]);
+    }, 50);
   };
 
   const addToCartWithAdicionais = () => {
@@ -1187,6 +1203,19 @@ export default function MenuPublico() {
                 Debug: Adicionais carregados: {adicionais.length} | 
                 Com preço: {adicionais.filter(adicional => adicional.preco_extra > 0).length} | 
                 Grátis: {adicionais.filter(adicional => adicional.preco_extra === 0).length}
+                {adicionais.length === 0 && (
+                  <Button 
+                    onClick={() => {
+                      const localAdicionais = getLocalAdicionais();
+                      setAdicionais(localAdicionais);
+                      console.log('Botão de emergência - Carregando:', localAdicionais.length);
+                    }}
+                    size="sm"
+                    className="ml-2 bg-red-500 hover:bg-red-600"
+                  >
+                    Carregar Agora
+                  </Button>
+                )}
               </div>
 
               {/* Adicionais com preço */}

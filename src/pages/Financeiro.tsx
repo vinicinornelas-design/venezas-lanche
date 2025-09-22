@@ -52,6 +52,8 @@ export default function Financeiro() {
   // Estados para filtro de período
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [isFiltered, setIsFiltered] = useState(false);
   const [filterLoading, setFilterLoading] = useState(false);
   
@@ -85,14 +87,16 @@ export default function Financeiro() {
     }
   };
 
-  const fetchFinancialSummary = async (customStartDate?: string, customEndDate?: string) => {
+  const fetchFinancialSummary = async (customStartDate?: string, customEndDate?: string, customStartTime?: string, customEndTime?: string) => {
     try {
       let startDate, endDate;
       
       if (customStartDate && customEndDate) {
-        // Usar datas personalizadas
-        startDate = new Date(customStartDate + 'T00:00:00');
-        endDate = new Date(customEndDate + 'T23:59:59');
+        // Usar datas e horários personalizados
+        const startTimeStr = customStartTime || '00:00';
+        const endTimeStr = customEndTime || '23:59';
+        startDate = new Date(customStartDate + 'T' + startTimeStr + ':00');
+        endDate = new Date(customEndDate + 'T' + endTimeStr + ':59');
       } else {
         // Usar mês atual como padrão
         const now = new Date();
@@ -257,14 +261,27 @@ export default function Financeiro() {
       return;
     }
 
+    // Validação de horário se ambos estiverem preenchidos
+    if (startTime && endTime) {
+      if (startDate === endDate && startTime > endTime) {
+        toast({
+          title: "Erro",
+          description: "O horário de início deve ser anterior ao horário de fim no mesmo dia",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setFilterLoading(true);
     setIsFiltered(true);
     
     try {
-      await fetchFinancialSummary(startDate, endDate);
+      await fetchFinancialSummary(startDate, endDate, startTime, endTime);
+      const timeInfo = startTime && endTime ? ` das ${startTime} às ${endTime}` : '';
       toast({
         title: "Sucesso",
-        description: `Filtro aplicado para o período de ${formatDate(startDate)} a ${formatDate(endDate)}`,
+        description: `Filtro aplicado para o período de ${formatDate(startDate)} a ${formatDate(endDate)}${timeInfo}`,
       });
     } catch (error) {
       console.error('Error filtering period:', error);
@@ -281,6 +298,8 @@ export default function Financeiro() {
   const handleResetFilter = async () => {
     setStartDate('');
     setEndDate('');
+    setStartTime('');
+    setEndTime('');
     setIsFiltered(false);
     setFilterLoading(true);
     
@@ -443,29 +462,65 @@ export default function Financeiro() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 items-end">
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Data de Início</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="endDate">Data de Fim</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full"
-                />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 items-end">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Data de Início</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">Data de Fim</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
               </div>
             </div>
+            
+            {/* Filtro de Horário */}
+            <div className="border-t pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 items-end">
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startTime">Horário de Início (opcional)</Label>
+                    <Input
+                      id="startTime"
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="endTime">Horário de Fim (opcional)</Label>
+                    <Input
+                      id="endTime"
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                💡 Dica: Use os horários para análise mais precisa (ex: apenas pedidos do almoço das 11h às 14h)
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4 items-end mt-4">
             <div className="flex gap-2">
               <Button 
                 onClick={handleFilterPeriod}

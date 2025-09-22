@@ -11,8 +11,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "vercel-build": "npm install && npm run build",
-    "postinstall": "npm run install-platform-deps",
-    "install-platform-deps": "node -e \"const os = require('os'); const { execSync } = require('child_process'); try { if (os.platform() === 'linux') { execSync('npm install @rollup/rollup-linux-x64-gnu@4.9.6 @swc/core-linux-x64-gnu@1.3.100 --save-dev --no-audit --no-fund', { stdio: 'inherit' }); } else if (os.platform() === 'darwin') { execSync('npm install @rollup/rollup-darwin-arm64@4.52.0 @swc/core-darwin-arm64@1.13.5 --save-dev --no-audit --no-fund', { stdio: 'inherit' }); } } catch(e) { console.log('Platform-specific dependencies already installed or not needed'); }\""
+    "postinstall": "echo 'Dependencies installed successfully'"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

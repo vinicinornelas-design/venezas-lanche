@@ -92,7 +92,6 @@ export default function ExpandedMenu() {
         await Promise.all([
           fetchMenuItems(),
           fetchCategories(),
-          fetchAdicionais(),
           fetchRestaurantConfig()
         ]);
       } catch (err) {
@@ -108,6 +107,13 @@ export default function ExpandedMenu() {
     
     initializeComponent();
   }, []);
+
+  // Carregar adicionais quando o modal abrir
+  useEffect(() => {
+    if (isAdicionaisDialogOpen) {
+      fetchAdicionais();
+    }
+  }, [isAdicionaisDialogOpen]);
 
   const fetchMenuItems = async () => {
     try {
@@ -338,9 +344,15 @@ export default function ExpandedMenu() {
 
   const handleOpenAdicionaisDialog = () => {
     try {
+      console.log('Abrindo modal de adicionais...');
       setIsAdicionaisDialogOpen(true);
+      
       // Carregar adicionais quando abrir o modal
-      fetchAdicionais();
+      setTimeout(() => {
+        fetchAdicionais();
+      }, 100);
+      
+      console.log('Modal de adicionais aberto com sucesso');
     } catch (error) {
       console.error('Error opening adicionais dialog:', error);
       toast({
@@ -552,7 +564,10 @@ export default function ExpandedMenu() {
           </Button>
 
           <Button 
-            onClick={handleOpenAdicionaisDialog} 
+            onClick={() => {
+              console.log('Botão clicado!');
+              setIsAdicionaisDialogOpen(true);
+            }} 
             variant="outline" 
             className="border-green-200 text-green-600 hover:bg-green-50"
           >

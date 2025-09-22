@@ -76,6 +76,9 @@ export default function ExpandedMenu() {
     obrigatorio: false,
     item_id: ""
   });
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
+  const [bulkAdicionais, setBulkAdicionais] = useState("");
+  const [selectedCategoryForBulk, setSelectedCategoryForBulk] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { toast } = useToast();
@@ -164,54 +167,138 @@ export default function ExpandedMenu() {
 
   const fetchAdicionais = async () => {
     try {
-      // Primeiro, verificar se a tabela existe
+      // Tentar buscar da tabela opcionais
       const { data, error } = await supabase
-        .from('opcionais')
-        .select('*')
-        .limit(1);
-
-      if (error) {
-        console.error('Error accessing opcionais table:', error);
-        // Se a tabela não existe, criar dados mock para demonstração
-        const mockAdicionais = [
-          { id: '1', nome: 'Molho verde adicional', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
-          { id: '2', nome: 'Molho Barbecue', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
-          { id: '3', nome: 'Bacon adicional', preco_extra: 6.00, multi_selecao: false, obrigatorio: false, item_id: null },
-          { id: '4', nome: 'Sem Pão', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null }
-        ];
-        setAdicionais(mockAdicionais);
-        toast({
-          title: "Aviso",
-          description: "Tabela de adicionais não encontrada. Exibindo dados de demonstração.",
-          variant: "default",
-        });
-        return;
-      }
-
-      // Se a tabela existe, buscar todos os dados
-      const { data: allData, error: allError } = await supabase
         .from('opcionais')
         .select('*')
         .order('nome');
 
-      if (allError) throw allError;
-      setAdicionais(allData || []);
+      if (error) {
+        console.log('Tabela opcionais não existe, usando dados locais');
+        // Se a tabela não existe, usar dados locais
+        const localAdicionais = getLocalAdicionais();
+        setAdicionais(localAdicionais);
+        return;
+      }
+
+      setAdicionais(data || []);
     } catch (error) {
       console.error('Error fetching adicionais:', error);
-      // Em caso de erro, mostrar dados mock
-      const mockAdicionais = [
-        { id: '1', nome: 'Molho verde adicional', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
-        { id: '2', nome: 'Molho Barbecue', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
-        { id: '3', nome: 'Bacon adicional', preco_extra: 6.00, multi_selecao: false, obrigatorio: false, item_id: null },
-        { id: '4', nome: 'Sem Pão', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null }
-      ];
-      setAdicionais(mockAdicionais);
+      // Em caso de erro, usar dados locais
+      const localAdicionais = getLocalAdicionais();
+      setAdicionais(localAdicionais);
+    }
+  };
+
+  const getLocalAdicionais = (): Adicional[] => {
+    const stored = localStorage.getItem('venezas_adicionais');
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    
+    // Dados padrão se não houver dados salvos
+    return [
+      { id: '1', nome: 'Molho verde adicional', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '2', nome: 'Molho Barbecue', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '3', nome: 'Ketchup e Maionese adicional', preco_extra: 2.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '4', nome: 'Ovo adicional', preco_extra: 3.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '5', nome: 'Abacaxi adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '6', nome: 'Banana adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '7', nome: 'Bife de Hambúrguer adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '8', nome: 'Cebola Caramelizada adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '9', nome: 'Presunto adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '10', nome: 'Cebola adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '11', nome: 'Frango adicional', preco_extra: 5.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '12', nome: 'Muçarela adicional', preco_extra: 5.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '13', nome: 'Bacon adicional', preco_extra: 6.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '14', nome: 'Linguiça adicional', preco_extra: 6.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '15', nome: 'Bife artesanal adicional', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '16', nome: 'Catupiry adicional', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '17', nome: 'Cheddar adicional no lanche', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '18', nome: 'Costela ao molho barbecue', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '19', nome: 'Cheddar adicional na batata frita', preco_extra: 10.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '20', nome: 'Requeijão cremoso adicional', preco_extra: 12.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '21', nome: 'Sem Pão', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '22', nome: 'Sem Presunto', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '23', nome: 'Sem Mussarela', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '24', nome: 'Sem maionese', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '25', nome: 'Sem ketchup', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
+      { id: '26', nome: 'Sem molho verde', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null }
+    ];
+  };
+
+  const saveLocalAdicionais = (adicionais: Adicional[]) => {
+    localStorage.setItem('venezas_adicionais', JSON.stringify(adicionais));
+  };
+
+  const handleBulkAdd = () => {
+    try {
+      const lines = bulkAdicionais.split('\n').filter(line => line.trim());
+      const novosAdicionais = [...adicionais];
+      let addedCount = 0;
+
+      lines.forEach(line => {
+        const [nome, precoStr] = line.split('|').map(s => s.trim());
+        const preco = parseFloat(precoStr) || 0;
+        
+        if (nome) {
+          const novoAdicional = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            nome: nome,
+            preco_extra: preco,
+            multi_selecao: false,
+            obrigatorio: false,
+            item_id: selectedCategoryForBulk || null
+          };
+          novosAdicionais.push(novoAdicional);
+          addedCount++;
+        }
+      });
+
+      setAdicionais(novosAdicionais);
+      saveLocalAdicionais(novosAdicionais);
+      setBulkAdicionais("");
+      setShowBulkAdd(false);
+      
       toast({
-        title: "Aviso",
-        description: "Erro ao carregar adicionais. Exibindo dados de demonstração.",
-        variant: "default",
+        title: "Sucesso",
+        description: `${addedCount} adicionais criados com sucesso`,
+      });
+    } catch (error) {
+      console.error('Error in bulk add:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao adicionar adicionais em massa",
+        variant: "destructive",
       });
     }
+  };
+
+  const handleAddByCategory = (categoryId: string) => {
+    const categoryItems = items.filter(item => item.categoria_id === categoryId);
+    const novosAdicionais = [...adicionais];
+    let addedCount = 0;
+
+    categoryItems.forEach(item => {
+      const adicional = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        nome: `Adicional para ${item.nome}`,
+        preco_extra: 2.00,
+        multi_selecao: false,
+        obrigatorio: false,
+        item_id: item.id
+      };
+      novosAdicionais.push(adicional);
+      addedCount++;
+    });
+
+    setAdicionais(novosAdicionais);
+    saveLocalAdicionais(novosAdicionais);
+    
+    toast({
+      title: "Sucesso",
+      description: `${addedCount} adicionais criados para a categoria`,
+    });
   };
 
   const resetForm = () => {
@@ -320,7 +407,8 @@ export default function ExpandedMenu() {
         return;
       }
 
-      const adicionalData = {
+      const novoAdicional = {
+        id: selectedAdicional ? selectedAdicional.id : Date.now().toString(),
         nome: adicionalFormData.nome.trim(),
         preco_extra: adicionalFormData.preco_extra,
         multi_selecao: adicionalFormData.multi_selecao,
@@ -328,55 +416,34 @@ export default function ExpandedMenu() {
         item_id: adicionalFormData.item_id || null
       };
 
-      // Verificar se a tabela existe antes de tentar salvar
-      const { data: testData, error: testError } = await supabase
-        .from('opcionais')
-        .select('id')
-        .limit(1);
-
-      if (testError) {
-        toast({
-          title: "Aviso",
-          description: "Tabela de adicionais não configurada. Execute o script SQL primeiro.",
-          variant: "default",
-        });
-        return;
-      }
+      let novosAdicionais = [...adicionais];
 
       if (selectedAdicional) {
         // Atualizar adicional existente
-        const { error } = await supabase
-          .from('opcionais')
-          .update(adicionalData)
-          .eq('id', selectedAdicional.id);
-
-        if (error) throw error;
-
+        novosAdicionais = novosAdicionais.map(adicional => 
+          adicional.id === selectedAdicional.id ? novoAdicional : adicional
+        );
         toast({
           title: "Sucesso",
           description: "Adicional atualizado com sucesso",
         });
       } else {
         // Criar novo adicional
-        const { error } = await supabase
-          .from('opcionais')
-          .insert(adicionalData);
-
-        if (error) throw error;
-
+        novosAdicionais.push(novoAdicional);
         toast({
           title: "Sucesso",
           description: "Adicional criado com sucesso",
         });
       }
 
-      await fetchAdicionais();
+      setAdicionais(novosAdicionais);
+      saveLocalAdicionais(novosAdicionais);
       resetAdicionalForm();
     } catch (error) {
       console.error('Error saving adicional:', error);
       toast({
         title: "Erro",
-        description: "Erro ao salvar adicional. Verifique se a tabela 'opcionais' existe.",
+        description: "Erro ao salvar adicional",
         variant: "destructive",
       });
     }
@@ -384,19 +451,14 @@ export default function ExpandedMenu() {
 
   const handleDeleteAdicional = async (adicional: Adicional) => {
     try {
-      const { error } = await supabase
-        .from('opcionais')
-        .delete()
-        .eq('id', adicional.id);
-
-      if (error) throw error;
+      const novosAdicionais = adicionais.filter(adic => adic.id !== adicional.id);
+      setAdicionais(novosAdicionais);
+      saveLocalAdicionais(novosAdicionais);
 
       toast({
         title: "Sucesso",
         description: "Adicional removido com sucesso",
       });
-
-      await fetchAdicionais();
     } catch (error) {
       console.error('Error deleting adicional:', error);
       toast({
@@ -508,20 +570,68 @@ export default function ExpandedMenu() {
               </DialogHeader>
               
               <div className="space-y-6">
-                {/* Aviso sobre configuração */}
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <Settings className="h-5 w-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-blue-900">Configuração Necessária</h4>
-                      <p className="text-sm text-blue-700 mt-1">
-                        Para usar esta funcionalidade, execute o script SQL <code className="bg-blue-100 px-1 rounded">insert_adicionais_simples.sql</code> no Supabase.
-                        <br />
-                        <strong>Arquivo:</strong> <code>insert_adicionais_simples.sql</code>
-                      </p>
+                {/* Ações em massa */}
+                <div className="flex gap-2 flex-wrap">
+                  <Button 
+                    onClick={() => setShowBulkAdd(!showBulkAdd)} 
+                    variant="outline" 
+                    className="border-purple-200 text-purple-600 hover:bg-purple-50"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar em Massa
+                  </Button>
+                  
+                  <Select value={selectedCategoryForBulk} onValueChange={setSelectedCategoryForBulk}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Adicionar por categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {selectedCategoryForBulk && (
+                    <Button 
+                      onClick={() => handleAddByCategory(selectedCategoryForBulk)} 
+                      variant="outline" 
+                      className="border-orange-200 text-orange-600 hover:bg-orange-50"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Criar para Categoria
+                    </Button>
+                  )}
+                </div>
+
+                {/* Formulário de adição em massa */}
+                {showBulkAdd && (
+                  <div className="p-4 border rounded-lg bg-gray-50">
+                    <h3 className="font-semibold mb-3">Adicionar Adicionais em Massa</h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Digite um adicional por linha no formato: <code>Nome do Adicional|Preço</code>
+                      <br />
+                      Exemplo: <code>Molho especial|3.50</code>
+                    </p>
+                    <Textarea
+                      value={bulkAdicionais}
+                      onChange={(e) => setBulkAdicionais(e.target.value)}
+                      placeholder="Molho especial|3.50&#10;Queijo extra|2.00&#10;Bacon crocante|4.00"
+                      rows={6}
+                      className="mb-3"
+                    />
+                    <div className="flex gap-2">
+                      <Button onClick={handleBulkAdd} className="gradient-primary">
+                        Adicionar Todos
+                      </Button>
+                      <Button onClick={() => setShowBulkAdd(false)} variant="outline">
+                        Cancelar
+                      </Button>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Formulário de Adicional */}
                 <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
@@ -614,7 +724,17 @@ export default function ExpandedMenu() {
 
                 {/* Lista de Adicionais */}
                 <div className="space-y-4">
-                  <h3 className="font-semibold">Adicionais Existentes</h3>
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold">Adicionais Existentes</h3>
+                    <div className="flex gap-2 text-sm text-gray-600">
+                      <span>Total: {adicionais?.length || 0}</span>
+                      <span>•</span>
+                      <span>Pagos: {adicionais?.filter(a => a.preco_extra > 0).length || 0}</span>
+                      <span>•</span>
+                      <span>Remoções: {adicionais?.filter(a => a.preco_extra === 0).length || 0}</span>
+                    </div>
+                  </div>
+                  
                   {adicionais && adicionais.length > 0 ? (
                     <div className="grid gap-3">
                       {adicionais.map((adicional) => (

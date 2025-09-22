@@ -107,12 +107,6 @@ export default function MenuPublico() {
     fetchAdicionais();
   }, []);
 
-  // Carregar adicionais quando o modal abrir
-  useEffect(() => {
-    if (isAdicionaisDialogOpen && adicionais.length === 0) {
-      fetchAdicionais();
-    }
-  }, [isAdicionaisDialogOpen]);
 
   const fetchMenuData = async () => {
     try {
@@ -292,14 +286,11 @@ export default function MenuPublico() {
 
   const openAdicionaisDialog = (item: MenuItem) => {
     console.log('Abrindo modal de adicionais para:', item.nome);
-    console.log('Adicionais disponíveis:', adicionais.length);
     
-    // Força o carregamento dos adicionais se não estiverem carregados
-    if (adicionais.length === 0) {
-      const localAdicionais = getLocalAdicionais();
-      setAdicionais(localAdicionais);
-      console.log('Carregando adicionais locais:', localAdicionais.length);
-    }
+    // Sempre carrega os adicionais quando o modal abrir
+    const localAdicionais = getLocalAdicionais();
+    setAdicionais(localAdicionais);
+    console.log('Carregando adicionais locais:', localAdicionais.length);
     
     setSelectedItemForAdicionais(item);
     setSelectedAdicionais([]);
@@ -1190,40 +1181,23 @@ export default function MenuPublico() {
                   </span>
                 </h4>
                 <div className="grid gap-3 max-h-60 overflow-y-auto">
-                  {adicionais.filter(adicional => adicional.preco_extra > 0).length > 0 ? (
-                    adicionais.filter(adicional => adicional.preco_extra > 0).map((adicional) => (
-                      <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                        <div className="flex items-center space-x-3">
-                          <Checkbox
-                            id={adicional.id}
-                            checked={selectedAdicionais.some(sel => sel.id === adicional.id)}
-                            onCheckedChange={() => toggleAdicional(adicional)}
-                          />
-                          <label htmlFor={adicional.id} className="font-medium cursor-pointer">
-                            {adicional.nome}
-                          </label>
-                        </div>
-                        <span className="text-orange-600 font-semibold">
-                          +{formatCurrency(adicional.preco_extra)}
-                        </span>
+                  {adicionais.filter(adicional => adicional.preco_extra > 0).map((adicional) => (
+                    <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id={adicional.id}
+                          checked={selectedAdicionais.some(sel => sel.id === adicional.id)}
+                          onCheckedChange={() => toggleAdicional(adicional)}
+                        />
+                        <label htmlFor={adicional.id} className="font-medium cursor-pointer">
+                          {adicional.nome}
+                        </label>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Carregando adicionais...</p>
-                      <Button 
-                        onClick={() => {
-                          const localAdicionais = getLocalAdicionais();
-                          setAdicionais(localAdicionais);
-                        }}
-                        variant="outline"
-                        className="mt-2"
-                      >
-                        Carregar Adicionais
-                      </Button>
+                      <span className="text-orange-600 font-semibold">
+                        +{formatCurrency(adicional.preco_extra)}
+                      </span>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
 
@@ -1236,27 +1210,21 @@ export default function MenuPublico() {
                   </span>
                 </h4>
                 <div className="grid gap-3 max-h-40 overflow-y-auto">
-                  {adicionais.filter(adicional => adicional.preco_extra === 0).length > 0 ? (
-                    adicionais.filter(adicional => adicional.preco_extra === 0).map((adicional) => (
-                      <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                        <div className="flex items-center space-x-3">
-                          <Checkbox
-                            id={adicional.id}
-                            checked={selectedAdicionais.some(sel => sel.id === adicional.id)}
-                            onCheckedChange={() => toggleAdicional(adicional)}
-                          />
-                          <label htmlFor={adicional.id} className="font-medium cursor-pointer text-red-600">
-                            {adicional.nome}
-                          </label>
-                        </div>
-                        <span className="text-gray-500 text-sm">Grátis</span>
+                  {adicionais.filter(adicional => adicional.preco_extra === 0).map((adicional) => (
+                    <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id={adicional.id}
+                          checked={selectedAdicionais.some(sel => sel.id === adicional.id)}
+                          onCheckedChange={() => toggleAdicional(adicional)}
+                        />
+                        <label htmlFor={adicional.id} className="font-medium cursor-pointer text-red-600">
+                          {adicional.nome}
+                        </label>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-gray-500">
-                      <p>Nenhuma opção de remoção disponível</p>
+                      <span className="text-gray-500 text-sm">Grátis</span>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
 

@@ -107,20 +107,6 @@ export default function MenuPublico() {
     fetchAdicionais();
   }, []);
 
-  // Garantir que os adicionais sejam carregados quando o modal abrir
-  useEffect(() => {
-    if (isAdicionaisDialogOpen) {
-      // Força o carregamento imediato
-      const localAdicionais = getLocalAdicionais();
-      console.log('useEffect - Carregando adicionais:', localAdicionais.length);
-      setAdicionais(localAdicionais);
-      
-      // Força re-render se necessário
-      setTimeout(() => {
-        setAdicionais([...localAdicionais]);
-      }, 100);
-    }
-  }, [isAdicionaisDialogOpen]);
 
 
   const fetchMenuData = async () => {
@@ -302,9 +288,9 @@ export default function MenuPublico() {
   const openAdicionaisDialog = (item: MenuItem) => {
     console.log('Abrindo modal de adicionais para:', item.nome);
     
-    // Carrega os adicionais ANTES de abrir o modal
+    // Carrega os adicionais diretamente
     const localAdicionais = getLocalAdicionais();
-    console.log('Adicionais locais carregados:', localAdicionais.length);
+    console.log('Adicionais carregados:', localAdicionais.length);
     
     // Define o item selecionado
     setSelectedItemForAdicionais(item);
@@ -316,12 +302,6 @@ export default function MenuPublico() {
     
     // Abre o modal
     setIsAdicionaisDialogOpen(true);
-    
-    // Força re-render após um pequeno delay
-    setTimeout(() => {
-      console.log('Forçando re-render dos adicionais');
-      setAdicionais([...localAdicionais]);
-    }, 50);
   };
 
   const addToCartWithAdicionais = () => {
@@ -1168,158 +1148,72 @@ export default function MenuPublico() {
 
       {/* Modal de Adicionais */}
       <Dialog open={isAdicionaisDialogOpen} onOpenChange={setIsAdicionaisDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Personalizar {selectedItemForAdicionais?.nome}
+            <DialogTitle className="text-center text-xl font-bold">
+              {selectedItemForAdicionais?.nome}
             </DialogTitle>
           </DialogHeader>
           
           {selectedItemForAdicionais && (
-            <div className="space-y-6">
-              {/* Informações do item */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-center gap-4">
-                  {selectedItemForAdicionais.foto_url && (
-                    <img 
-                      src={selectedItemForAdicionais.foto_url} 
-                      alt={selectedItemForAdicionais.nome}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                  )}
-                  <div>
-                    <h3 className="font-semibold text-lg">{selectedItemForAdicionais.nome}</h3>
-                    <p className="text-gray-600 text-sm">{selectedItemForAdicionais.descricao}</p>
-                    <p className="text-orange-600 font-bold text-lg">
-                      {formatCurrency(selectedItemForAdicionais.preco)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Debug info */}
-              <div className="bg-yellow-50 p-2 rounded text-xs text-gray-600">
-                Debug: Adicionais carregados: {adicionais.length} | 
-                Com preço: {adicionais.filter(adicional => adicional.preco_extra > 0).length} | 
-                Grátis: {adicionais.filter(adicional => adicional.preco_extra === 0).length}
-                {adicionais.length === 0 && (
-                  <Button 
-                    onClick={() => {
-                      const localAdicionais = getLocalAdicionais();
-                      setAdicionais(localAdicionais);
-                      console.log('Botão de emergência - Carregando:', localAdicionais.length);
-                    }}
-                    size="sm"
-                    className="ml-2 bg-red-500 hover:bg-red-600"
-                  >
-                    Carregar Agora
-                  </Button>
-                )}
-              </div>
-
-              {/* Adicionais com preço */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-lg">
-                  Adicionais (Opcionais) 
-                  <span className="text-sm text-gray-500 ml-2">
-                    ({adicionais.filter(adicional => adicional.preco_extra > 0).length} disponíveis)
-                  </span>
-                </h4>
-                <div className="grid gap-3 max-h-60 overflow-y-auto">
-                  {adicionais.filter(adicional => adicional.preco_extra > 0).map((adicional) => (
-                    <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id={adicional.id}
-                          checked={selectedAdicionais.some(sel => sel.id === adicional.id)}
-                          onCheckedChange={() => toggleAdicional(adicional)}
-                        />
-                        <label htmlFor={adicional.id} className="font-medium cursor-pointer">
-                          {adicional.nome}
-                        </label>
-                      </div>
-                      <span className="text-orange-600 font-semibold">
-                        +{formatCurrency(adicional.preco_extra)}
-                      </span>
+            <div className="space-y-4">
+              {/* Lista de Adicionais */}
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {adicionais.map((adicional) => (
+                  <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        id={adicional.id}
+                        checked={selectedAdicionais.some(sel => sel.id === adicional.id)}
+                        onCheckedChange={() => toggleAdicional(adicional)}
+                      />
+                      <label htmlFor={adicional.id} className="font-medium cursor-pointer">
+                        {adicional.nome}
+                      </label>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Opções de remoção */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-lg">
-                  Remover Ingredientes
-                  <span className="text-sm text-gray-500 ml-2">
-                    ({adicionais.filter(adicional => adicional.preco_extra === 0).length} opções)
-                  </span>
-                </h4>
-                <div className="grid gap-3 max-h-40 overflow-y-auto">
-                  {adicionais.filter(adicional => adicional.preco_extra === 0).map((adicional) => (
-                    <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id={adicional.id}
-                          checked={selectedAdicionais.some(sel => sel.id === adicional.id)}
-                          onCheckedChange={() => toggleAdicional(adicional)}
-                        />
-                        <label htmlFor={adicional.id} className="font-medium cursor-pointer text-red-600">
-                          {adicional.nome}
-                        </label>
-                      </div>
-                      <span className="text-gray-500 text-sm">Grátis</span>
+                    <div className="flex items-center space-x-2">
+                      {adicional.preco_extra > 0 ? (
+                        <span className="text-orange-600 font-semibold">
+                          +{formatCurrency(adicional.preco_extra)}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 text-sm">Grátis</span>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Observações */}
-              <div className="space-y-2">
-                <Label htmlFor="observacoes">Observações especiais</Label>
-                <Textarea
-                  id="observacoes"
-                  value={observacoes}
-                  onChange={(e) => setObservacoes(e.target.value)}
-                  placeholder="Ex: Bem assado, sem cebola, etc..."
-                  rows={3}
-                />
-              </div>
-
-              {/* Resumo do preço */}
-              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold">Preço base: {formatCurrency(selectedItemForAdicionais.preco)}</p>
-                    {selectedAdicionais.length > 0 && (
-                      <p className="text-sm text-gray-600">
-                        Adicionais: {formatCurrency(selectedAdicionais.reduce((total, adicional) => total + adicional.preco_extra, 0))}
-                      </p>
-                    )}
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-orange-600">
-                      {formatCurrency(selectedItemForAdicionais.preco + selectedAdicionais.reduce((total, adicional) => total + adicional.preco_extra, 0))}
-                    </p>
-                    <p className="text-sm text-gray-600">Total</p>
-                  </div>
-                </div>
+                ))}
               </div>
 
-              {/* Botões de ação */}
-              <div className="flex gap-3 justify-end">
+              {/* Contador de quantidade do item principal */}
+              <div className="flex items-center justify-center space-x-4 py-4 border-t">
                 <Button
-                  onClick={() => setIsAdicionaisDialogOpen(false)}
+                  onClick={() => {
+                    // Implementar lógica de quantidade se necessário
+                  }}
                   variant="outline"
+                  size="sm"
                 >
-                  Cancelar
+                  -
                 </Button>
+                <span className="text-lg font-semibold">1</span>
+                <Button
+                  onClick={() => {
+                    // Implementar lógica de quantidade se necessário
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  +
+                </Button>
+              </div>
+
+              {/* Botão de adicionar */}
+              <div className="flex justify-center">
                 <Button
                   onClick={addToCartWithAdicionais}
-                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg font-bold"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adicionar ao Carrinho
+                  Adicionar ({formatCurrency(selectedItemForAdicionais.preco + selectedAdicionais.reduce((total, adicional) => total + adicional.preco_extra, 0))})
                 </Button>
               </div>
             </div>

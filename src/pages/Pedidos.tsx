@@ -402,8 +402,9 @@ export default function Pedidos() {
     setSelectedStatus('');
   };
 
-  const printComanda = () => {
-    if (!selectedPedido) return;
+  const printComanda = (pedido?: PedidoUnificado) => {
+    const pedidoToPrint = pedido || selectedPedido;
+    if (!pedidoToPrint) return;
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -412,7 +413,7 @@ export default function Pedidos() {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Comanda - Pedido #${selectedPedido.numero_pedido}</title>
+          <title>Comanda - Pedido #${pedidoToPrint.numero_pedido}</title>
           <style>
             body { 
               font-family: 'Courier New', monospace; 
@@ -520,18 +521,18 @@ export default function Pedidos() {
           <div class="header">
             <div class="logo">🍔 VENEZA'S LANCHE</div>
             <div class="subtitle">LANCHONETE</div>
-            <div class="order-number">Pedido #${selectedPedido.numero_pedido}</div>
-            <div class="order-date">Realizado em: ${new Date(selectedPedido.created_at).toLocaleDateString('pt-BR')} - ${new Date(selectedPedido.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+            <div class="order-number">Pedido #${pedidoToPrint.numero_pedido}</div>
+            <div class="order-date">Realizado em: ${new Date(pedidoToPrint.created_at).toLocaleDateString('pt-BR')} - ${new Date(pedidoToPrint.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
           </div>
           
           <div class="section">
             <div class="section-title">Itens do Pedido</div>
-            ${selectedPedido.itens && Array.isArray(selectedPedido.itens) ? selectedPedido.itens.map((item, index) => `
+            ${pedidoToPrint.itens && Array.isArray(pedidoToPrint.itens) ? pedidoToPrint.itens.map((item, index) => `
               <div class="item">
                 <div class="item-name">${item.quantidade || 1}x ${item.nome || 'Item'}</div>
                 <div class="item-details">R$ ${(item.preco || 0).toFixed(2)} cada</div>
                 ${item.observacoes ? `<div class="item-obs">Obs: ${item.observacoes}</div>` : ''}
-                ${index < selectedPedido.itens.length - 1 ? '<div class="separator"></div>' : ''}
+                ${index < pedidoToPrint.itens.length - 1 ? '<div class="separator"></div>' : ''}
               </div>
             `).join('') : '<p>Nenhum item encontrado</p>'}
           </div>
@@ -539,33 +540,33 @@ export default function Pedidos() {
           <div class="price-summary">
             <div class="price-line">
               <span>Valor dos produtos:</span>
-              <span>R$ ${selectedPedido.total.toFixed(2)}</span>
+              <span>R$ ${pedidoToPrint.total.toFixed(2)}</span>
             </div>
             <div class="total-line">
               <span>TOTAL:</span>
-              <span>R$ ${selectedPedido.total.toFixed(2)}</span>
+              <span>R$ ${pedidoToPrint.total.toFixed(2)}</span>
             </div>
           </div>
           
-          ${selectedPedido.observacoes ? `
+          ${pedidoToPrint.observacoes ? `
             <div class="observations">
               <div class="section-title">Observações</div>
-              <p>${selectedPedido.observacoes}</p>
+              <p>${pedidoToPrint.observacoes}</p>
             </div>
           ` : ''}
           
-          ${selectedPedido.observacoes_cozinha ? `
+          ${pedidoToPrint.observacoes_cozinha ? `
             <div class="observations">
               <div class="section-title">Observações da Cozinha</div>
-              <p>${selectedPedido.observacoes_cozinha}</p>
+              <p>${pedidoToPrint.observacoes_cozinha}</p>
             </div>
           ` : ''}
           
           <div class="delivery-info">
-            <div class="section-title">${formatarOrigemPedido(selectedPedido.origem)}</div>
-            <p><strong>Cliente:</strong> ${selectedPedido.cliente_nome || 'N/A'}</p>
-            <p><strong>Telefone:</strong> ${selectedPedido.cliente_telefone || 'N/A'}</p>
-            ${selectedPedido.mesa_numero ? `<p><strong>Mesa:</strong> ${selectedPedido.mesa_numero}</p>` : ''}
+            <div class="section-title">${formatarOrigemPedido(pedidoToPrint.origem)}</div>
+            <p><strong>Cliente:</strong> ${pedidoToPrint.cliente_nome || 'N/A'}</p>
+            <p><strong>Telefone:</strong> ${pedidoToPrint.cliente_telefone || 'N/A'}</p>
+            ${pedidoToPrint.mesa_numero ? `<p><strong>Mesa:</strong> ${pedidoToPrint.mesa_numero}</p>` : ''}
           </div>
           
           <div class="footer">
@@ -945,10 +946,22 @@ export default function Pedidos() {
                       
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0"
+                            onClick={() => openOrderModal(pedido)}
+                            title="Editar pedido"
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0"
+                            onClick={() => printComanda(pedido)}
+                            title="Imprimir comanda"
+                          >
                             <Printer className="h-4 w-4" />
                           </Button>
                         </div>

@@ -25,6 +25,7 @@ import Remarketing from "@/pages/Remarketing";
 import PainelColaborador from "@/pages/PainelColaborador";
 import AtendimentoMesas from "@/pages/AtendimentoMesas";
 import Notificacoes from "@/pages/Notificacoes";
+import TestUploadPage from "@/pages/TestUploadPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -122,6 +123,11 @@ const App = () => (
             <Route path="/notificacoes" element={
               <ProtectedRoute allowedRoles={['ADMIN', 'CAIXA']}>
                 <AppLayout><Notificacoes /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/test-upload" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AppLayout><TestUploadPage /></AppLayout>
               </ProtectedRoute>
             } />
             

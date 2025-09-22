@@ -1,8 +1,9 @@
 # Build scripts
 build-*.cjs
 build-*.js
-vercel-build*.cjs
-vercel-build*.js
+vercel-build-final.cjs
+vercel-build-ultimate.cjs
+vercel-build.js
 vercel-build.sh
 
 # SQL Scripts

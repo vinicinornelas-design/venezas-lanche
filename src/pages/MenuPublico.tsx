@@ -175,7 +175,11 @@ export default function MenuPublico() {
         .select('*')
         .single();
 
-      if (data) setRestaurantConfig(data);
+      if (data) {
+        console.log('Restaurant config carregado:', data);
+        console.log('Logo URL:', data.logo_url);
+        setRestaurantConfig(data);
+      }
     } catch (error) {
       console.error('Error fetching restaurant config:', error);
     }
@@ -794,6 +798,8 @@ export default function MenuPublico() {
                     src={restaurantConfig?.logo_url || "/restaurant-logo.jpg"} 
                     alt="Logo" 
                     className="w-28 h-28 object-contain rounded-3xl mx-auto shadow-2xl border-4 border-white transform group-hover:scale-105 transition-transform duration-300"
+                    onLoad={() => console.log('Logo carregada com sucesso:', restaurantConfig?.logo_url)}
+                    onError={(e) => console.log('Erro ao carregar logo:', e, 'URL:', restaurantConfig?.logo_url)}
                   />
                   <div className="absolute -top-3 -right-3 w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center shadow-xl animate-bounce">
                     <Award className="w-5 h-5 text-white" />

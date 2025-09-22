@@ -242,11 +242,10 @@ export default function Pedidos() {
 
     switch (activeTab) {
       case 'aberto':
-        filtered = filtered.filter(p => p.status === 'PENDENTE' || p.status === 'PREPARANDO');
-        break;
-      case 'agendados':
-        // Aqui você pode implementar lógica para pedidos agendados
         filtered = filtered.filter(p => p.status === 'PENDENTE');
+        break;
+      case 'preparando':
+        filtered = filtered.filter(p => p.status === 'PREPARANDO');
         break;
       case 'finalizados':
         filtered = filtered.filter(p => p.status === 'ENTREGUE');
@@ -693,9 +692,9 @@ export default function Pedidos() {
             <Clock className="h-4 w-4" />
             Em aberto
           </TabsTrigger>
-          <TabsTrigger value="agendados" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Agendados
+          <TabsTrigger value="preparando" className="flex items-center gap-2">
+            <ChefHat className="h-4 w-4" />
+            Preparando
           </TabsTrigger>
           <TabsTrigger value="finalizados" className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4" />

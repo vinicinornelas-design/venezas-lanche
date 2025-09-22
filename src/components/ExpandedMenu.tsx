@@ -164,19 +164,52 @@ export default function ExpandedMenu() {
 
   const fetchAdicionais = async () => {
     try {
+      // Primeiro, verificar se a tabela existe
       const { data, error } = await supabase
+        .from('opcionais')
+        .select('*')
+        .limit(1);
+
+      if (error) {
+        console.error('Error accessing opcionais table:', error);
+        // Se a tabela não existe, criar dados mock para demonstração
+        const mockAdicionais = [
+          { id: '1', nome: 'Molho verde adicional', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
+          { id: '2', nome: 'Molho Barbecue', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
+          { id: '3', nome: 'Bacon adicional', preco_extra: 6.00, multi_selecao: false, obrigatorio: false, item_id: null },
+          { id: '4', nome: 'Sem Pão', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null }
+        ];
+        setAdicionais(mockAdicionais);
+        toast({
+          title: "Aviso",
+          description: "Tabela de adicionais não encontrada. Exibindo dados de demonstração.",
+          variant: "default",
+        });
+        return;
+      }
+
+      // Se a tabela existe, buscar todos os dados
+      const { data: allData, error: allError } = await supabase
         .from('opcionais')
         .select('*')
         .order('nome');
 
-      if (error) throw error;
-      setAdicionais(data || []);
+      if (allError) throw allError;
+      setAdicionais(allData || []);
     } catch (error) {
       console.error('Error fetching adicionais:', error);
+      // Em caso de erro, mostrar dados mock
+      const mockAdicionais = [
+        { id: '1', nome: 'Molho verde adicional', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
+        { id: '2', nome: 'Molho Barbecue', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
+        { id: '3', nome: 'Bacon adicional', preco_extra: 6.00, multi_selecao: false, obrigatorio: false, item_id: null },
+        { id: '4', nome: 'Sem Pão', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null }
+      ];
+      setAdicionais(mockAdicionais);
       toast({
-        title: "Erro",
-        description: "Erro ao carregar adicionais",
-        variant: "destructive",
+        title: "Aviso",
+        description: "Erro ao carregar adicionais. Exibindo dados de demonstração.",
+        variant: "default",
       });
     }
   };
@@ -295,6 +328,21 @@ export default function ExpandedMenu() {
         item_id: adicionalFormData.item_id || null
       };
 
+      // Verificar se a tabela existe antes de tentar salvar
+      const { data: testData, error: testError } = await supabase
+        .from('opcionais')
+        .select('id')
+        .limit(1);
+
+      if (testError) {
+        toast({
+          title: "Aviso",
+          description: "Tabela de adicionais não configurada. Execute o script SQL primeiro.",
+          variant: "default",
+        });
+        return;
+      }
+
       if (selectedAdicional) {
         // Atualizar adicional existente
         const { error } = await supabase
@@ -328,7 +376,7 @@ export default function ExpandedMenu() {
       console.error('Error saving adicional:', error);
       toast({
         title: "Erro",
-        description: "Erro ao salvar adicional",
+        description: "Erro ao salvar adicional. Verifique se a tabela 'opcionais' existe.",
         variant: "destructive",
       });
     }
@@ -460,6 +508,21 @@ export default function ExpandedMenu() {
               </DialogHeader>
               
               <div className="space-y-6">
+                {/* Aviso sobre configuração */}
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Settings className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-900">Configuração Necessária</h4>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Para usar esta funcionalidade, execute o script SQL <code className="bg-blue-100 px-1 rounded">insert_adicionais_simples.sql</code> no Supabase.
+                        <br />
+                        <strong>Arquivo:</strong> <code>insert_adicionais_simples.sql</code>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Formulário de Adicional */}
                 <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
                   <h3 className="font-semibold">

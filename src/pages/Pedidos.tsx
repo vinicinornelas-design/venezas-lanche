@@ -314,6 +314,82 @@ export default function Pedidos() {
     }
   };
 
+  const handleNovoPedidoBalcao = () => {
+    // Redirecionar para página de atendimento de mesas
+    window.location.href = '/atendimento-mesas';
+  };
+
+  const handleFinalizarPedidos = async () => {
+    if (selectedPedidos.length === 0) {
+      alert('Selecione pelo menos um pedido para finalizar');
+      return;
+    }
+
+    if (!confirm(`Deseja finalizar ${selectedPedidos.length} pedido(s) selecionado(s)?`)) {
+      return;
+    }
+
+    try {
+      // Atualizar status dos pedidos selecionados para FINALIZADO
+      const { error } = await supabase
+        .from('pedidos_unificados')
+        .update({ status: 'FINALIZADO' })
+        .in('id', selectedPedidos);
+
+      if (error) throw error;
+
+      // Recarregar pedidos
+      await fetchPedidos();
+      
+      // Limpar seleção
+      setSelectedPedidos([]);
+      
+      alert(`${selectedPedidos.length} pedido(s) finalizado(s) com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao finalizar pedidos:', error);
+      alert('Erro ao finalizar pedidos. Tente novamente.');
+    }
+  };
+
+  const handleConfigurarColunas = () => {
+    alert('Funcionalidade de configuração de colunas será implementada em breve!');
+  };
+
+  const handleExportar = () => {
+    const filteredPedidos = getFilteredPedidosByTab();
+    
+    if (filteredPedidos.length === 0) {
+      alert('Nenhum pedido para exportar');
+      return;
+    }
+
+    // Criar CSV
+    const headers = ['Código', 'Cliente', 'Telefone', 'Total', 'Status', 'Data', 'Origem'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredPedidos.map(pedido => [
+        pedido.numero_pedido || '',
+        pedido.cliente_nome || '',
+        pedido.cliente_telefone || '',
+        `R$ ${pedido.total?.toFixed(2) || '0,00'}`,
+        pedido.status || '',
+        new Date(pedido.created_at).toLocaleDateString('pt-BR'),
+        pedido.origem || ''
+      ].join(','))
+    ].join('\n');
+
+    // Download do arquivo
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `pedidos_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const openOrderModal = (pedido: PedidoUnificado) => {
     setSelectedPedido(pedido);
     setSelectedStatus(pedido.status || 'PENDENTE');
@@ -647,17 +723,27 @@ export default function Pedidos() {
 
         {/* Botões de ação */}
         <div className="flex justify-end gap-3">
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={() => window.open('/menu-publico', '_blank')}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Novo Pedido
           </Button>
-          <Button className="bg-orange-600 hover:bg-orange-700 text-white">
+          <Button 
+            className="bg-orange-600 hover:bg-orange-700 text-white"
+            onClick={handleNovoPedidoBalcao}
+          >
             <Utensils className="h-4 w-4 mr-2" />
             Novo Pedido Balcão
           </Button>
-          <Button className="bg-red-600 hover:bg-red-700 text-white">
+          <Button 
+            className="bg-red-600 hover:bg-red-700 text-white"
+            onClick={handleFinalizarPedidos}
+            disabled={selectedPedidos.length === 0}
+          >
             <CheckCircle className="h-4 w-4 mr-2" />
-            Finalizar Pedidos
+            Finalizar Pedidos ({selectedPedidos.length})
           </Button>
         </div>
 
@@ -711,11 +797,19 @@ export default function Pedidos() {
           {/* Controles da tabela */}
           <div className="flex justify-between items-center">
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleConfigurarColunas}
+              >
                 <Settings className="h-4 w-4 mr-2" />
                 Configurar Colunas
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleExportar}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Exportar
               </Button>

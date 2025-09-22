@@ -14,12 +14,23 @@ import {
   Bell, 
   Shield,
   Save,
-  RefreshCw
+  RefreshCw,
+  Plus,
+  Edit,
+  Trash2,
+  MapPin
 } from "lucide-react";
 
 interface Configuracao {
   chave: string;
   valor: any;
+}
+
+interface BairroEntrega {
+  id: string;
+  nome: string;
+  valor_entrega: number;
+  ativo: boolean;
 }
 
 interface ConfiguracoesData {
@@ -32,6 +43,7 @@ interface ConfiguracoesData {
   tempo_preparo_padrao: number;
   aceita_dinheiro_troco: boolean;
   limite_tempo_cancelamento: number;
+  bairros_entrega?: BairroEntrega[];
 }
 
 const DEFAULT_CONFIG: ConfiguracoesData = {
@@ -43,13 +55,21 @@ const DEFAULT_CONFIG: ConfiguracoesData = {
   pedido_minimo_delivery: 15.0,
   tempo_preparo_padrao: 30,
   aceita_dinheiro_troco: true,
-  limite_tempo_cancelamento: 10
+  limite_tempo_cancelamento: 10,
+  bairros_entrega: []
 };
 
 export default function Configuracoes() {
   const [config, setConfig] = useState<ConfiguracoesData>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showBairroForm, setShowBairroForm] = useState(false);
+  const [editingBairro, setEditingBairro] = useState<BairroEntrega | null>(null);
+  const [bairroForm, setBairroForm] = useState({
+    nome: '',
+    valor_entrega: 0,
+    ativo: true
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -158,6 +178,104 @@ export default function Configuracoes() {
     });
   };
 
+  // Funções para gerenciar bairros
+  const resetBairroForm = () => {
+    setBairroForm({
+      nome: '',
+      valor_entrega: 0,
+      ativo: true
+    });
+    setEditingBairro(null);
+    setShowBairroForm(false);
+  };
+
+  const handleAddBairro = () => {
+    resetBairroForm();
+    setShowBairroForm(true);
+  };
+
+  const handleEditBairro = (bairro: BairroEntrega) => {
+    setBairroForm({
+      nome: bairro.nome,
+      valor_entrega: bairro.valor_entrega,
+      ativo: bairro.ativo
+    });
+    setEditingBairro(bairro);
+    setShowBairroForm(true);
+  };
+
+  const handleSaveBairro = () => {
+    if (!bairroForm.nome.trim()) {
+      toast({
+        title: "Erro",
+        description: "Nome do bairro é obrigatório",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (bairroForm.valor_entrega < 0) {
+      toast({
+        title: "Erro",
+        description: "Valor da entrega deve ser maior ou igual a zero",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const bairros = config.bairros_entrega || [];
+    let novosBairros = [...bairros];
+
+    if (editingBairro) {
+      // Editar bairro existente
+      novosBairros = novosBairros.map(b => 
+        b.id === editingBairro.id 
+          ? { ...bairroForm, id: editingBairro.id }
+          : b
+      );
+    } else {
+      // Adicionar novo bairro
+      const novoBairro: BairroEntrega = {
+        id: Date.now().toString(),
+        ...bairroForm
+      };
+      novosBairros.push(novoBairro);
+    }
+
+    setConfig({
+      ...config,
+      bairros_entrega: novosBairros
+    });
+
+    resetBairroForm();
+    toast({
+      title: "Sucesso",
+      description: editingBairro ? "Bairro atualizado" : "Bairro adicionado",
+    });
+  };
+
+  const handleDeleteBairro = (bairroId: string) => {
+    const bairros = config.bairros_entrega || [];
+    const novosBairros = bairros.filter(b => b.id !== bairroId);
+    
+    setConfig({
+      ...config,
+      bairros_entrega: novosBairros
+    });
+
+    toast({
+      title: "Sucesso",
+      description: "Bairro removido",
+    });
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -250,6 +368,122 @@ export default function Configuracoes() {
               onChange={(e) => updateConfig('tempo_preparo_padrao', parseInt(e.target.value) || 0)}
               className="w-48"
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bairros de Entrega */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Bairros de Entrega
+          </CardTitle>
+          <CardDescription>
+            Configure os bairros onde você entrega e os valores cobrados
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-muted-foreground">
+              Adicione bairros para configurar valores específicos de entrega
+            </p>
+            <Button onClick={handleAddBairro} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Bairro
+            </Button>
+          </div>
+
+          {/* Formulário de Bairro */}
+          {showBairroForm && (
+            <div className="p-4 border rounded-lg bg-blue-50">
+              <h3 className="font-semibold text-blue-800 mb-4">
+                {editingBairro ? 'Editar Bairro' : 'Novo Bairro'}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label>Nome do Bairro</Label>
+                  <Input
+                    value={bairroForm.nome}
+                    onChange={(e) => setBairroForm({...bairroForm, nome: e.target.value})}
+                    placeholder="Ex: Centro, Savassi, Pampulha"
+                  />
+                </div>
+                <div>
+                  <Label>Valor da Entrega (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={bairroForm.valor_entrega}
+                    onChange={(e) => setBairroForm({...bairroForm, valor_entrega: parseFloat(e.target.value) || 0})}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="bairro-ativo"
+                    checked={bairroForm.ativo}
+                    onChange={(e) => setBairroForm({...bairroForm, ativo: e.target.checked})}
+                    className="rounded"
+                  />
+                  <Label htmlFor="bairro-ativo">Bairro ativo</Label>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button onClick={handleSaveBairro} className="bg-blue-600 hover:bg-blue-700">
+                  <Save className="h-4 w-4 mr-2" />
+                  {editingBairro ? 'Atualizar' : 'Adicionar'}
+                </Button>
+                <Button onClick={resetBairroForm} variant="outline">
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Lista de Bairros */}
+          <div className="space-y-2">
+            {config.bairros_entrega && config.bairros_entrega.length > 0 ? (
+              <div className="grid gap-2">
+                {config.bairros_entrega.map((bairro) => (
+                  <div key={bairro.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded-full ${bairro.ativo ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      <div>
+                        <span className="font-medium">{bairro.nome}</span>
+                        <div className="text-sm text-gray-600">
+                          {formatCurrency(bairro.valor_entrega)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        onClick={() => handleEditBairro(bairro)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteBairro(bairro.id)}
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Nenhum bairro configurado</p>
+                <p className="text-sm">Adicione bairros para configurar valores de entrega</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

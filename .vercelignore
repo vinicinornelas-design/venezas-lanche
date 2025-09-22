@@ -17,6 +17,12 @@ node_modules/
 .npm
 .pnpm-debug.log*
 
+# Platform-specific dependencies
+node_modules/@rollup/rollup-darwin-arm64/
+node_modules/@swc/core-darwin-arm64/
+node_modules/@rollup/rollup-linux-x64-gnu/
+node_modules/@swc/core-linux-x64-gnu/
+
 # Environment files
 .env.local
 .env.development.local

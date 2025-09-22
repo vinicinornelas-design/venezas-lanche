@@ -31,14 +31,26 @@ interface Category {
   ativo: boolean;
 }
 
+interface Adicional {
+  id: string;
+  nome: string;
+  preco_extra: number;
+  item_id?: string;
+  multi_selecao?: boolean;
+  obrigatorio?: boolean;
+}
+
 export default function ExpandedMenu() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [adicionais, setAdicionais] = useState<Adicional[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isAdicionaisDialogOpen, setIsAdicionaisDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedAdicional, setSelectedAdicional] = useState<Adicional | null>(null);
   const [restaurantConfig, setRestaurantConfig] = useState({
     nome_restaurante: "Veneza's Lanches",
     telefone: "(31) 99999-0000",
@@ -57,6 +69,13 @@ export default function ExpandedMenu() {
     nome: "",
     ativo: true
   });
+  const [adicionalFormData, setAdicionalFormData] = useState({
+    nome: "",
+    preco_extra: 0,
+    multi_selecao: false,
+    obrigatorio: false,
+    item_id: ""
+  });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { toast } = useToast();
@@ -70,6 +89,7 @@ export default function ExpandedMenu() {
         await Promise.all([
           fetchMenuItems(),
           fetchCategories(),
+          fetchAdicionais(),
           fetchRestaurantConfig()
         ]);
       } catch (err) {
@@ -142,6 +162,28 @@ export default function ExpandedMenu() {
     }
   };
 
+  const fetchAdicionais = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('opcionais')
+        .select(`
+          *,
+          itens_cardapio (nome)
+        `)
+        .order('nome');
+
+      if (error) throw error;
+      setAdicionais(data || []);
+    } catch (error) {
+      console.error('Error fetching adicionais:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar adicionais",
+        variant: "destructive",
+      });
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       nome: "",
@@ -163,6 +205,18 @@ export default function ExpandedMenu() {
     });
     setSelectedCategory(null);
     setIsCategoryDialogOpen(false);
+  };
+
+  const resetAdicionalForm = () => {
+    setAdicionalFormData({
+      nome: "",
+      preco_extra: 0,
+      multi_selecao: false,
+      obrigatorio: false,
+      item_id: ""
+    });
+    setSelectedAdicional(null);
+    setIsAdicionaisDialogOpen(false);
   };
 
   const editCategory = (category: Category) => {
@@ -187,6 +241,110 @@ export default function ExpandedMenu() {
     });
     setPreviewImage(item.foto_url || null);
     setIsDialogOpen(true);
+  };
+
+  const editAdicional = (adicional: Adicional) => {
+    setSelectedAdicional(adicional);
+    setAdicionalFormData({
+      nome: adicional.nome,
+      preco_extra: adicional.preco_extra,
+      multi_selecao: adicional.multi_selecao || false,
+      obrigatorio: adicional.obrigatorio || false,
+      item_id: adicional.item_id || ""
+    });
+    setIsAdicionaisDialogOpen(true);
+  };
+
+  const handleSaveAdicional = async () => {
+    try {
+      if (!adicionalFormData.nome.trim()) {
+        toast({
+          title: "Erro",
+          description: "Nome do adicional é obrigatório",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (adicionalFormData.preco_extra < 0) {
+        toast({
+          title: "Erro",
+          description: "Preço deve ser maior ou igual a zero",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const adicionalData = {
+        nome: adicionalFormData.nome.trim(),
+        preco_extra: adicionalFormData.preco_extra,
+        multi_selecao: adicionalFormData.multi_selecao,
+        obrigatorio: adicionalFormData.obrigatorio,
+        item_id: adicionalFormData.item_id || null
+      };
+
+      if (selectedAdicional) {
+        // Atualizar adicional existente
+        const { error } = await supabase
+          .from('opcionais')
+          .update(adicionalData)
+          .eq('id', selectedAdicional.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Adicional atualizado com sucesso",
+        });
+      } else {
+        // Criar novo adicional
+        const { error } = await supabase
+          .from('opcionais')
+          .insert(adicionalData);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Adicional criado com sucesso",
+        });
+      }
+
+      await fetchAdicionais();
+      resetAdicionalForm();
+    } catch (error) {
+      console.error('Error saving adicional:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar adicional",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAdicional = async (adicional: Adicional) => {
+    try {
+      const { error } = await supabase
+        .from('opcionais')
+        .delete()
+        .eq('id', adicional.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Adicional removido com sucesso",
+      });
+
+      await fetchAdicionais();
+    } catch (error) {
+      console.error('Error deleting adicional:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remover adicional",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -270,6 +428,172 @@ export default function ExpandedMenu() {
             <FileText className="h-4 w-4 mr-2" />
             {isExporting ? 'Exportando...' : 'Exportar PDF'}
           </Button>
+
+          <Button 
+            onClick={() => setIsAdicionaisDialogOpen(true)} 
+            variant="outline" 
+            className="border-green-200 text-green-600 hover:bg-green-50"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Gerenciar Adicionais
+          </Button>
+
+          <Dialog open={isAdicionaisDialogOpen} onOpenChange={setIsAdicionaisDialogOpen}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Gerenciar Adicionais
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-6">
+                {/* Formulário de Adicional */}
+                <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+                  <h3 className="font-semibold">
+                    {selectedAdicional ? "Editar Adicional" : "Novo Adicional"}
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Nome do Adicional</Label>
+                      <Input
+                        value={adicionalFormData.nome}
+                        onChange={(e) => setAdicionalFormData({...adicionalFormData, nome: e.target.value})}
+                        placeholder="Ex: Molho verde adicional"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Preço Extra (R$)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={adicionalFormData.preco_extra}
+                        onChange={(e) => setAdicionalFormData({...adicionalFormData, preco_extra: parseFloat(e.target.value) || 0})}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Item Específico (Opcional)</Label>
+                      <Select 
+                        value={adicionalFormData.item_id} 
+                        onValueChange={(value) => setAdicionalFormData({...adicionalFormData, item_id: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um item específico" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Todos os itens</SelectItem>
+                          {items.map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="multi-selecao"
+                          checked={adicionalFormData.multi_selecao}
+                          onChange={(e) => setAdicionalFormData({...adicionalFormData, multi_selecao: e.target.checked})}
+                          className="rounded"
+                        />
+                        <Label htmlFor="multi-selecao">Permitir múltipla seleção</Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="obrigatorio"
+                          checked={adicionalFormData.obrigatorio}
+                          onChange={(e) => setAdicionalFormData({...adicionalFormData, obrigatorio: e.target.checked})}
+                          className="rounded"
+                        />
+                        <Label htmlFor="obrigatorio">Obrigatório</Label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={resetAdicionalForm}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      onClick={handleSaveAdicional}
+                      className="flex-1 gradient-primary"
+                    >
+                      {selectedAdicional ? "Atualizar" : "Criar"} Adicional
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Lista de Adicionais */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold">Adicionais Existentes</h3>
+                  {adicionais.length > 0 ? (
+                    <div className="grid gap-3">
+                      {adicionais.map((adicional) => (
+                        <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div>
+                              <span className="font-medium">{adicional.nome}</span>
+                              <div className="text-sm text-muted-foreground">
+                                {formatCurrency(adicional.preco_extra)}
+                                {adicional.item_id && (
+                                  <span className="ml-2 text-blue-600">
+                                    • {adicional.item_id}
+                                  </span>
+                                )}
+                                {adicional.multi_selecao && (
+                                  <Badge variant="secondary" className="ml-2">Múltipla seleção</Badge>
+                                )}
+                                {adicional.obrigatorio && (
+                                  <Badge variant="destructive" className="ml-2">Obrigatório</Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => editAdicional(adicional)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              onClick={() => handleDeleteAdicional(adicional)}
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Nenhum adicional encontrado</p>
+                      <p className="text-sm">Crie seu primeiro adicional acima</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
             <DialogTrigger asChild>

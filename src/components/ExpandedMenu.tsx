@@ -751,8 +751,12 @@ export default function ExpandedMenu() {
 
           <Button 
             onClick={() => {
-              console.log('Botão clicado!');
-              setIsAdicionaisDialogOpen(true);
+              try {
+                console.log('Abrindo modal de adicionais...');
+                setIsAdicionaisDialogOpen(true);
+              } catch (error) {
+                console.error('Erro ao abrir modal:', error);
+              }
             }} 
             variant="outline" 
             className="border-green-200 text-green-600 hover:bg-green-50"
@@ -775,8 +779,12 @@ export default function ExpandedMenu() {
                 <div className="flex gap-2 flex-wrap">
                   <Button 
                     onClick={() => {
-                      console.log('Clicou em Adicionar em Massa, showBulkAdd:', showBulkAdd);
-                      setShowBulkAdd(!showBulkAdd);
+                      try {
+                        console.log('Clicou em Adicionar em Massa, showBulkAdd:', showBulkAdd);
+                        setShowBulkAdd(!showBulkAdd);
+                      } catch (error) {
+                        console.error('Erro ao alternar adicionar em massa:', error);
+                      }
                     }} 
                     variant="outline" 
                     className="border-purple-200 text-purple-600 hover:bg-purple-50"
@@ -787,9 +795,13 @@ export default function ExpandedMenu() {
                   
                   <Button 
                     onClick={() => {
-                      console.log('Clicou em Novo Adicional');
-                      resetAdicionalForm();
-                      setShowBulkAdd(false);
+                      try {
+                        console.log('Clicou em Novo Adicional');
+                        resetAdicionalForm();
+                        setShowBulkAdd(false);
+                      } catch (error) {
+                        console.error('Erro ao criar novo adicional:', error);
+                      }
                     }} 
                     variant="outline" 
                     className="border-blue-200 text-blue-600 hover:bg-blue-50"
@@ -799,7 +811,25 @@ export default function ExpandedMenu() {
                   </Button>
 
                   <Button 
-                    onClick={handleLoadDefaultAdicionais}
+                    onClick={() => {
+                      try {
+                        console.log('Clicou em Carregar Padrão');
+                        const defaultAdicionais = getDefaultAdicionais();
+                        setAdicionais(defaultAdicionais);
+                        saveLocalAdicionais(defaultAdicionais);
+                        toast({
+                          title: "Sucesso",
+                          description: "Adicionais padrão carregados com sucesso",
+                        });
+                      } catch (error) {
+                        console.error('Erro ao carregar padrão:', error);
+                        toast({
+                          title: "Erro",
+                          description: "Erro ao carregar adicionais padrão",
+                          variant: "destructive",
+                        });
+                      }
+                    }} 
                     variant="outline" 
                     className="border-orange-200 text-orange-600 hover:bg-orange-50"
                   >
@@ -817,7 +847,13 @@ export default function ExpandedMenu() {
                         <Label className="text-sm font-medium">Formato: Nome do Adicional | Preço</Label>
                         <Textarea
                           value={bulkAdicionais}
-                          onChange={(e) => setBulkAdicionais(e.target.value)}
+                          onChange={(e) => {
+                            try {
+                              setBulkAdicionais(e.target.value);
+                            } catch (error) {
+                              console.error('Erro ao atualizar textarea:', error);
+                            }
+                          }}
                           placeholder="Exemplo:&#10;Bacon adicional | 6.00&#10;Queijo adicional | 4.00&#10;Tomate adicional | 2.00"
                           rows={6}
                           className="mt-1"
@@ -825,7 +861,13 @@ export default function ExpandedMenu() {
                       </div>
                       <div className="flex gap-2">
                         <Button 
-                          onClick={handleBulkAdd}
+                          onClick={() => {
+                            try {
+                              handleBulkAdd();
+                            } catch (error) {
+                              console.error('Erro ao adicionar em massa:', error);
+                            }
+                          }}
                           className="bg-purple-600 hover:bg-purple-700"
                           disabled={!bulkAdicionais.trim()}
                         >
@@ -833,8 +875,12 @@ export default function ExpandedMenu() {
                         </Button>
                         <Button 
                           onClick={() => {
-                            setShowBulkAdd(false);
-                            setBulkAdicionais("");
+                            try {
+                              setShowBulkAdd(false);
+                              setBulkAdicionais("");
+                            } catch (error) {
+                              console.error('Erro ao cancelar:', error);
+                            }
                           }}
                           variant="outline"
                         >
@@ -857,7 +903,13 @@ export default function ExpandedMenu() {
                         <Label>Nome do Adicional</Label>
                         <Input
                           value={adicionalFormData.nome}
-                          onChange={(e) => setAdicionalFormData({...adicionalFormData, nome: e.target.value})}
+                          onChange={(e) => {
+                            try {
+                              setAdicionalFormData({...adicionalFormData, nome: e.target.value});
+                            } catch (error) {
+                              console.error('Erro ao atualizar nome:', error);
+                            }
+                          }}
                           placeholder="Ex: Bacon adicional"
                         />
                       </div>
@@ -868,66 +920,40 @@ export default function ExpandedMenu() {
                           type="number"
                           step="0.01"
                           value={adicionalFormData.preco_extra}
-                          onChange={(e) => setAdicionalFormData({...adicionalFormData, preco_extra: parseFloat(e.target.value) || 0})}
+                          onChange={(e) => {
+                            try {
+                              setAdicionalFormData({...adicionalFormData, preco_extra: parseFloat(e.target.value) || 0});
+                            } catch (error) {
+                              console.error('Erro ao atualizar preço:', error);
+                            }
+                          }}
                           placeholder="0.00"
                         />
-                      </div>
-                      
-                      <div>
-                        <Label>Item Específico (Opcional)</Label>
-                        <Select
-                          value={adicionalFormData.item_id}
-                          onValueChange={(value) => setAdicionalFormData({...adicionalFormData, item_id: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um item (deixe vazio para todos)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">Todos os itens</SelectItem>
-                            {items.map((item) => (
-                              <SelectItem key={item.id} value={item.id}>
-                                {item.nome}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="multi-selecao"
-                            checked={adicionalFormData.multi_selecao}
-                            onChange={(e) => setAdicionalFormData({...adicionalFormData, multi_selecao: e.target.checked})}
-                            className="rounded"
-                          />
-                          <Label htmlFor="multi-selecao">Permitir múltipla seleção</Label>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="obrigatorio"
-                            checked={adicionalFormData.obrigatorio}
-                            onChange={(e) => setAdicionalFormData({...adicionalFormData, obrigatorio: e.target.checked})}
-                            className="rounded"
-                          />
-                          <Label htmlFor="obrigatorio">Obrigatório</Label>
-                        </div>
                       </div>
                     </div>
                     
                     <div className="flex gap-2">
                       <Button 
-                        onClick={resetAdicionalForm}
+                        onClick={() => {
+                          try {
+                            resetAdicionalForm();
+                          } catch (error) {
+                            console.error('Erro ao resetar formulário:', error);
+                          }
+                        }}
                         variant="outline"
                         className="flex-1"
                       >
                         Cancelar
                       </Button>
                       <Button 
-                        onClick={handleSaveAdicional}
+                        onClick={() => {
+                          try {
+                            handleSaveAdicional();
+                          } catch (error) {
+                            console.error('Erro ao salvar adicional:', error);
+                          }
+                        }}
                         className="flex-1 bg-blue-600 hover:bg-blue-700"
                         disabled={!adicionalFormData.nome.trim()}
                       >
@@ -953,14 +979,26 @@ export default function ExpandedMenu() {
                           </div>
                           <div className="flex gap-1">
                             <Button
-                              onClick={() => editAdicional(adicional)}
+                              onClick={() => {
+                                try {
+                                  editAdicional(adicional);
+                                } catch (error) {
+                                  console.error('Erro ao editar adicional:', error);
+                                }
+                              }}
                               variant="outline"
                               size="sm"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
-                              onClick={() => handleDeleteAdicional(adicional)}
+                              onClick={() => {
+                                try {
+                                  handleDeleteAdicional(adicional);
+                                } catch (error) {
+                                  console.error('Erro ao deletar adicional:', error);
+                                }
+                              }}
                               variant="outline"
                               size="sm"
                               className="text-red-600 hover:text-red-700"

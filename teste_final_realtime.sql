@@ -1,4 +1,4 @@
--- Teste simples do Realtime
+-- Teste final do Realtime
 -- Execute este script no Supabase SQL Editor
 
 -- 1. Verificar se a tabela está na publicação
@@ -8,7 +8,7 @@ SELECT EXISTS (
    AND tablename = 'pedidos_unificados'
 ) as notificacoes_habilitadas;
 
--- 2. Inserir pedido de teste
+-- 2. Inserir pedido de teste com número aleatório
 INSERT INTO pedidos_unificados (
     id,
     numero_pedido,
@@ -27,31 +27,31 @@ INSERT INTO pedidos_unificados (
     pago
 ) VALUES (
     gen_random_uuid(),
-    10004,
+    (SELECT COALESCE(MAX(numero_pedido), 0) + 1 FROM pedidos_unificados),
     '[
         {
-            "nome": "Teste Simples",
+            "nome": "Teste Final Realtime",
             "categoria": "TRADICIONAIS",
             "adicionais": [],
             "quantidade": 1,
-            "preco_unitario": 30
+            "preco_unitario": 35
         }
     ]'::jsonb,
     'DELIVERY',
     'pix',
-    'Cliente Teste Simples',
-    '(11) 22222-2222',
-    'Rua Teste, 456',
+    'Cliente Teste Final',
+    '(11) 55555-5555',
+    'Rua Teste Final, 999',
     'Centro',
     '5.00',
     '0.00',
-    '30.00',
     '35.00',
+    '40.00',
     'PENDENTE',
     false
 );
 
--- 3. Verificar se o pedido foi inserido
+-- 3. Verificar últimos 3 pedidos
 SELECT 
     numero_pedido,
     cliente_nome,
@@ -60,4 +60,5 @@ SELECT
     status,
     created_at
 FROM pedidos_unificados 
-WHERE numero_pedido = 10004;
+ORDER BY created_at DESC 
+LIMIT 3;

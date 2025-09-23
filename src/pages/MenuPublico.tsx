@@ -372,12 +372,17 @@ export default function MenuPublico() {
 
     setIsSubmitting(true);
     
-    // Criar pedido com estrutura compatível com o sistema de gestão
-    const codigoPedido = Math.floor(Math.random() * 9000) + 1000; // Código entre 1000-9999
+    // Criar pedido com estrutura compatível com o sistema de gestão REAL
     const pedido = {
       id: `cardapio_publico_${Date.now()}`,
-      codigo: codigoPedido,
-      itens: cart,
+      numero_pedido: Math.floor(Math.random() * 9000) + 1000, // Código entre 1000-9999
+      itens: cart.map(item => ({
+        nome: item.nome,
+        categoria: item.categoria,
+        adicionais: item.adicionais || [],
+        quantidade: item.quantidade,
+        preco_unitario: item.preco_unitario
+      })),
       origem: 'DELIVERY',
       observacoes: checkoutForm.observacoes || '',
       metodo_pagamento: checkoutForm.metodoPagamento,
@@ -385,13 +390,28 @@ export default function MenuPublico() {
       cliente_telefone: checkoutForm.telefone,
       cliente_endereco: checkoutForm.endereco,
       cliente_bairro: checkoutForm.bairro,
-      taxa_entrega: getTaxaEntrega(),
-      taxa_pagamento: getTaxaPagamento(),
-      subtotal: getTotalPrice(),
-      total: getTotalComTaxas(),
+      taxa_entrega: getTaxaEntrega().toString(),
+      desconto: "0.00",
+      subtotal: getTotalPrice().toString(),
+      total: getTotalComTaxas().toString(),
       status: 'PENDENTE',
       pago: false,
-      tipo_pedido: 'DELIVERY',
+      troco_para: null,
+      valor_pago: null,
+      observacoes_cozinha: null,
+      observacoes_entrega: null,
+      tempo_preparo_estimado: null,
+      tempo_entrega_estimado: null,
+      iniciado_preparo_em: null,
+      finalizado_preparo_em: null,
+      entregue_em: null,
+      avaliacao_nota: null,
+      avaliacao_comentario: null,
+      avaliacao_em: null,
+      mesa_numero: null,
+      mesa_etiqueta: null,
+      funcionario_id: null,
+      funcionario_nome: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -425,7 +445,7 @@ export default function MenuPublico() {
         console.log('✅ Pedido salvo no Supabase com sucesso!');
         console.log('📊 Dados retornados:', data);
         console.log('🆔 ID do pedido:', data?.[0]?.id);
-        console.log('🔢 Código do pedido:', data?.[0]?.codigo);
+        console.log('🔢 Número do pedido:', data?.[0]?.numero_pedido);
         pedidoEnviado = true;
         
         // Verificar se o pedido aparece no sistema
@@ -433,8 +453,8 @@ export default function MenuPublico() {
           try {
             const { data: verificacao } = await supabase
               .from('pedidos_unificados')
-              .select('codigo, cliente_nome, status, origem')
-              .eq('codigo', codigoPedido)
+              .select('numero_pedido, cliente_nome, status, origem')
+              .eq('numero_pedido', pedido.numero_pedido)
               .single();
             
             if (verificacao) {
@@ -455,7 +475,7 @@ export default function MenuPublico() {
 
         toast({
           title: "Pedido realizado!",
-          description: `Pedido #${data?.[0]?.codigo || pedido.codigo} enviado para o sistema. Aguarde o contato!`,
+          description: `Pedido #${data?.[0]?.numero_pedido || pedido.numero_pedido} enviado para o sistema. Aguarde o contato!`,
         });
         
         break; // Sucesso, sair do loop

@@ -60,6 +60,34 @@ export default function FileUpload({
       const localPreview = URL.createObjectURL(file);
       setPreviewUrl(localPreview);
 
+      // Verificar se o bucket existe
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      
+      if (bucketsError) {
+        console.error('Error listing buckets:', bucketsError);
+        throw new Error('Erro ao acessar o storage');
+      }
+
+      const bucketExists = buckets?.some(bucket => bucket.id === 'restaurant-images');
+      
+      if (!bucketExists) {
+        // Se o bucket não existe, criar um fallback usando localStorage
+        console.warn('Bucket restaurant-images não encontrado. Usando fallback local.');
+        
+        // Converter arquivo para base64 para armazenamento local
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const base64 = e.target?.result as string;
+          onChange(base64);
+          toast({
+            title: "Sucesso",
+            description: "Imagem salva localmente (configure o Supabase Storage para persistência)",
+          });
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+
       // Upload para Supabase Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
@@ -70,7 +98,8 @@ export default function FileUpload({
         .upload(filePath, file);
 
       if (uploadError) {
-        throw uploadError;
+        console.error('Upload error:', uploadError);
+        throw new Error(`Erro no upload: ${uploadError.message}`);
       }
 
       // Obter URL pública
@@ -89,7 +118,7 @@ export default function FileUpload({
       console.error('Error uploading file:', error);
       toast({
         title: "Erro",
-        description: "Erro ao enviar imagem. Tente novamente.",
+        description: error instanceof Error ? error.message : "Erro ao enviar imagem. Tente novamente.",
         variant: "destructive",
       });
       setPreviewUrl(null);

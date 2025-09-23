@@ -150,9 +150,34 @@ export default function Restaurante() {
     }
   };
 
-  const updateConfig = (field: string, value: any) => {
+  const updateConfig = async (field: string, value: any) => {
     if (!config) return;
-    setConfig(prev => prev ? { ...prev, [field]: value } : null);
+    const newConfig = { ...config, [field]: value };
+    setConfig(newConfig);
+    
+    // Salvar automaticamente quando a imagem for alterada
+    if (field === 'logo_url' || field === 'banner_url') {
+      try {
+        const { error } = await supabase
+          .from('restaurant_config')
+          .update({ [field]: value })
+          .eq('id', config.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Imagem salva automaticamente. Recarregue o cardápio público para ver a mudança.",
+        });
+      } catch (error) {
+        console.error('Error saving image:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao salvar imagem",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const updateHorario = (day: string, horario: string) => {

@@ -842,7 +842,10 @@ export default function MenuPublico() {
       </div>
 
       {/* Banner Personalizado Veneza's Lanches */}
-      <VenezaBanner className="h-80 md:h-96" />
+      <VenezaBanner 
+        className="h-80 md:h-96" 
+        bannerUrl={restaurantConfig?.banner_url}
+      />
 
       {/* Search and Filter Bar */}
       <div className="bg-gradient-to-r from-white/95 to-orange-50/95 backdrop-blur-sm border-b border-orange-200 sticky top-0 z-20 shadow-lg">

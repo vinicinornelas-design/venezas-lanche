@@ -158,13 +158,25 @@ export default function Restaurante() {
     // Salvar automaticamente quando a imagem for alterada
     if (field === 'logo_url' || field === 'banner_url') {
       try {
-        const { error } = await supabase
+        console.log('=== SALVANDO IMAGEM ===');
+        console.log('Campo:', field);
+        console.log('Valor (primeiros 100 chars):', value ? value.substring(0, 100) + '...' : 'null');
+        console.log('ID da config:', config.id);
+        
+        const { data, error } = await supabase
           .from('restaurant_config')
           .update({ [field]: value })
-          .eq('id', config.id);
+          .eq('id', config.id)
+          .select();
 
-        if (error) throw error;
+        console.log('Resultado do update:', { data, error });
 
+        if (error) {
+          console.error('Erro do Supabase:', error);
+          throw error;
+        }
+
+        console.log('Imagem salva com sucesso!');
         toast({
           title: "Sucesso",
           description: "Imagem salva automaticamente. Recarregue o cardápio público para ver a mudança.",
@@ -173,7 +185,7 @@ export default function Restaurante() {
         console.error('Error saving image:', error);
         toast({
           title: "Erro",
-          description: "Erro ao salvar imagem",
+          description: `Erro ao salvar imagem: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
           variant: "destructive",
         });
       }

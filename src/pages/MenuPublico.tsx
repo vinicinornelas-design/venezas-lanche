@@ -144,12 +144,16 @@ export default function MenuPublico() {
 
   const fetchAdicionais = async () => {
     try {
+      console.log('=== BUSCANDO ADICIONAIS ===');
       const { data, error } = await supabase
         .from('opcionais')
         .select('*');
 
+      console.log('Resultado da busca de adicionais:', { data, error });
+
       if (error) throw error;
       setAdicionais((data as Adicional[]) || []);
+      console.log('Adicionais carregados:', data?.length || 0);
     } catch (error) {
       console.error('Error fetching adicionais:', error);
     }

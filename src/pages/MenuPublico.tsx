@@ -423,21 +423,33 @@ export default function MenuPublico() {
     console.log('💰 Total Calculado:', getTotalComTaxas());
     console.log('🚚 Taxa Entrega:', getTaxaEntrega());
     console.log('💳 Taxa Pagamento:', getTaxaPagamento());
+    console.log('🔍 Tentando inserir na tabela pedidos_unificados...');
 
     let pedidoEnviado = false;
     
     // Tentar enviar para Supabase até 3 vezes
     for (let tentativa = 1; tentativa <= 3; tentativa++) {
       try {
-        console.log(`Tentativa ${tentativa} de envio para Supabase...`);
+        console.log(`🔄 Tentativa ${tentativa} de envio para Supabase...`);
+        console.log(`📤 Dados sendo enviados:`, JSON.stringify(pedido, null, 2));
         
         const { data, error } = await supabase
           .from('pedidos_unificados')
           .insert([pedido])
           .select();
 
+        console.log(`📥 Resposta do Supabase (tentativa ${tentativa}):`);
+        console.log(`✅ Data:`, data);
+        console.log(`❌ Error:`, error);
+
         if (error) {
-          console.error(`Erro Supabase (tentativa ${tentativa}):`, error);
+          console.error(`❌ Erro Supabase (tentativa ${tentativa}):`, error);
+          console.error(`🔍 Detalhes do erro:`, {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
           if (tentativa === 3) throw error; // Última tentativa
           continue;
         }

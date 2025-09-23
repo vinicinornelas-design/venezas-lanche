@@ -1218,20 +1218,35 @@ export default function MenuPublico() {
                         </SelectItem>
                       ))
                     ) : (
-                      // Fallback com métodos padrão
-                      [
-                        { nome: 'Dinheiro', taxa: 0 },
-                        { nome: 'Débito', taxa: 0 },
-                        { nome: 'Crédito', taxa: 0 },
-                        { nome: 'VR', taxa: 0 },
-                        { nome: 'Sodexo', taxa: 0 },
-                        { nome: 'Ticket', taxa: 0 },
-                        { nome: 'Alelo', taxa: 0 }
-                      ].map((forma) => (
-                        <SelectItem key={forma.nome} value={forma.nome}>
-                          {forma.nome} {forma.taxa > 0 && `(+${formatCurrency(forma.taxa)})`}
+                      // Métodos de pagamento organizados por categoria
+                      <>
+                        {/* Dinheiro */}
+                        <SelectItem value="Dinheiro">
+                          💵 Dinheiro
                         </SelectItem>
-                      ))
+                        
+                        {/* Cartões */}
+                        <SelectItem value="Débito">
+                          💳 Débito
+                        </SelectItem>
+                        <SelectItem value="Crédito">
+                          💳 Crédito
+                        </SelectItem>
+                        
+                        {/* Vale Refeição */}
+                        <SelectItem value="VR">
+                          🍽️ VR
+                        </SelectItem>
+                        <SelectItem value="Sodexo">
+                          🍽️ Sodexo
+                        </SelectItem>
+                        <SelectItem value="Ticket">
+                          🍽️ Ticket
+                        </SelectItem>
+                        <SelectItem value="Alelo">
+                          🍽️ Alelo
+                        </SelectItem>
+                      </>
                     )}
                   </SelectContent>
                 </Select>

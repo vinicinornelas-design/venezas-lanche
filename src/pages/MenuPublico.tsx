@@ -372,9 +372,10 @@ export default function MenuPublico() {
 
     setIsSubmitting(true);
     
-    // Criar pedido simplificado
+    // Criar pedido com estrutura compatível com o sistema de gestão
     const pedido = {
       id: `pedido_${Date.now()}`,
+      codigo: Math.floor(Math.random() * 1000) + 100, // Código numérico como no sistema
       itens: cart,
       origem: 'DELIVERY',
       observacoes: checkoutForm.observacoes || '',
@@ -388,11 +389,19 @@ export default function MenuPublico() {
       subtotal: getTotalPrice(),
       total: getTotalComTaxas(),
       status: 'PENDENTE',
-      created_at: new Date().toISOString()
+      pago: false, // Adicionar campo pago
+      tipo_pedido: 'DELIVERY', // Tipo do pedido
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
-    console.log('=== ENVIANDO PEDIDO ===');
-    console.log('Pedido:', pedido);
+    console.log('=== ENVIANDO PEDIDO PARA O SISTEMA ===');
+    console.log('📋 Dados do Pedido:', pedido);
+    console.log('📦 Itens do Carrinho:', cart);
+    console.log('📝 Formulário:', checkoutForm);
+    console.log('💰 Total Calculado:', getTotalComTaxas());
+    console.log('🚚 Taxa Entrega:', getTaxaEntrega());
+    console.log('💳 Taxa Pagamento:', getTaxaPagamento());
 
     let pedidoEnviado = false;
     
@@ -412,7 +421,10 @@ export default function MenuPublico() {
           continue;
         }
 
-        console.log('Pedido salvo no Supabase:', data);
+        console.log('✅ Pedido salvo no Supabase com sucesso!');
+        console.log('📊 Dados retornados:', data);
+        console.log('🆔 ID do pedido:', data?.[0]?.id);
+        console.log('🔢 Código do pedido:', data?.[0]?.codigo);
         pedidoEnviado = true;
         
         // Salvar também no localStorage como backup
@@ -422,7 +434,7 @@ export default function MenuPublico() {
 
         toast({
           title: "Pedido realizado!",
-          description: "Seu pedido foi enviado com sucesso. Aguarde o contato!",
+          description: `Pedido #${data?.[0]?.codigo || pedido.codigo} enviado para o sistema. Aguarde o contato!`,
         });
         
         break; // Sucesso, sair do loop

@@ -201,6 +201,8 @@ export default function MenuPublico() {
       if (data) {
         console.log('Restaurant config carregado:', data);
         console.log('Logo URL:', data.logo_url);
+        console.log('Bairros de entrega:', data.bairros_entrega);
+        console.log('Formas de pagamento:', data.formas_pagamento);
         setRestaurantConfig(data);
       }
     } catch (error) {
@@ -293,15 +295,37 @@ export default function MenuPublico() {
   };
 
   const getTaxaEntrega = () => {
-    if (!restaurantConfig?.bairros_entrega || !checkoutForm.bairro) return 0;
-    const bairro = restaurantConfig.bairros_entrega.find(b => b.nome === checkoutForm.bairro);
+    if (!checkoutForm.bairro) return 0;
+    
+    // Buscar no banco primeiro
+    if (restaurantConfig?.bairros_entrega?.length > 0) {
+      const bairro = restaurantConfig.bairros_entrega.find(b => b.nome === checkoutForm.bairro);
+      if (bairro) return bairro.taxa_entrega || 0;
+    }
+    
+    // Fallback com bairros padrão
+    const bairrosPadrao = [
+      { nome: 'Centro', taxa_entrega: 5.00 },
+      { nome: 'Zona Norte', taxa_entrega: 7.00 },
+      { nome: 'Zona Sul', taxa_entrega: 6.00 },
+      { nome: 'Zona Leste', taxa_entrega: 8.00 },
+      { nome: 'Zona Oeste', taxa_entrega: 7.50 }
+    ];
+    const bairro = bairrosPadrao.find(b => b.nome === checkoutForm.bairro);
     return bairro?.taxa_entrega || 0;
   };
 
   const getTaxaPagamento = () => {
-    if (!restaurantConfig?.formas_pagamento || !checkoutForm.metodoPagamento) return 0;
-    const forma = restaurantConfig.formas_pagamento.find(f => f.nome === checkoutForm.metodoPagamento);
-    return forma?.taxa || 0;
+    if (!checkoutForm.metodoPagamento) return 0;
+    
+    // Buscar no banco primeiro
+    if (restaurantConfig?.formas_pagamento?.length > 0) {
+      const forma = restaurantConfig.formas_pagamento.find(f => f.nome === checkoutForm.metodoPagamento);
+      if (forma) return forma.taxa || 0;
+    }
+    
+    // Fallback com métodos padrão (todos sem taxa)
+    return 0;
   };
 
   const getTotalComTaxas = () => {
@@ -1032,11 +1056,26 @@ export default function MenuPublico() {
                     <SelectValue placeholder="Selecione seu bairro" />
                   </SelectTrigger>
                   <SelectContent>
-                    {restaurantConfig?.bairros_entrega?.map((bairro) => (
-                      <SelectItem key={bairro.nome} value={bairro.nome}>
-                        {bairro.nome} - {formatCurrency(bairro.taxa_entrega)}
-                      </SelectItem>
-                    ))}
+                    {restaurantConfig?.bairros_entrega?.length > 0 ? (
+                      restaurantConfig.bairros_entrega.map((bairro) => (
+                        <SelectItem key={bairro.nome} value={bairro.nome}>
+                          {bairro.nome} - {formatCurrency(bairro.taxa_entrega)}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      // Fallback com bairros padrão
+                      [
+                        { nome: 'Centro', taxa_entrega: 5.00 },
+                        { nome: 'Zona Norte', taxa_entrega: 7.00 },
+                        { nome: 'Zona Sul', taxa_entrega: 6.00 },
+                        { nome: 'Zona Leste', taxa_entrega: 8.00 },
+                        { nome: 'Zona Oeste', taxa_entrega: 7.50 }
+                      ].map((bairro) => (
+                        <SelectItem key={bairro.nome} value={bairro.nome}>
+                          {bairro.nome} - {formatCurrency(bairro.taxa_entrega)}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -1048,11 +1087,28 @@ export default function MenuPublico() {
                     <SelectValue placeholder="Selecione o método de pagamento" />
                   </SelectTrigger>
                   <SelectContent>
-                    {restaurantConfig?.formas_pagamento?.map((forma) => (
-                      <SelectItem key={forma.nome} value={forma.nome}>
-                        {forma.nome} {forma.taxa > 0 && `(+${formatCurrency(forma.taxa)})`}
-                      </SelectItem>
-                    ))}
+                    {restaurantConfig?.formas_pagamento?.length > 0 ? (
+                      restaurantConfig.formas_pagamento.map((forma) => (
+                        <SelectItem key={forma.nome} value={forma.nome}>
+                          {forma.nome} {forma.taxa > 0 && `(+${formatCurrency(forma.taxa)})`}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      // Fallback com métodos padrão
+                      [
+                        { nome: 'Dinheiro', taxa: 0 },
+                        { nome: 'Débito', taxa: 0 },
+                        { nome: 'Crédito', taxa: 0 },
+                        { nome: 'VR', taxa: 0 },
+                        { nome: 'Sodexo', taxa: 0 },
+                        { nome: 'Ticket', taxa: 0 },
+                        { nome: 'Alelo', taxa: 0 }
+                      ].map((forma) => (
+                        <SelectItem key={forma.nome} value={forma.nome}>
+                          {forma.nome} {forma.taxa > 0 && `(+${formatCurrency(forma.taxa)})`}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>

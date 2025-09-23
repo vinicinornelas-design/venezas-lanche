@@ -372,10 +372,14 @@ export default function MenuPublico() {
 
     setIsSubmitting(true);
     try {
+      console.log('=== ENVIANDO PEDIDO ===');
+      console.log('Carrinho:', cart);
+      console.log('Formulário:', checkoutForm);
+      
       const pedido = {
         itens: cart as any,
         origem: 'DELIVERY',
-        observacoes: checkoutForm.observacoes,
+        observacoes: checkoutForm.observacoes || '',
         metodo_pagamento: checkoutForm.metodoPagamento,
         cliente_nome: checkoutForm.nome,
         cliente_telefone: checkoutForm.telefone,
@@ -384,15 +388,24 @@ export default function MenuPublico() {
         taxa_entrega: getTaxaEntrega(),
         taxa_pagamento: getTaxaPagamento(),
         subtotal: getTotalPrice(),
-        total: getTotalComTaxas()
+        total: getTotalComTaxas(),
+        status: 'PENDENTE',
+        created_at: new Date().toISOString()
       };
+
+      console.log('Pedido a ser enviado:', pedido);
 
       const { data, error } = await supabase
         .from('pedidos_unificados')
         .insert([pedido])
         .select();
 
-      if (error) throw error;
+      console.log('Resposta do Supabase:', { data, error });
+
+      if (error) {
+        console.error('Erro detalhado:', error);
+        throw error;
+      }
 
       toast({
         title: "Pedido realizado!",
@@ -407,7 +420,7 @@ export default function MenuPublico() {
       console.error('Error submitting order:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível realizar o pedido. Tente novamente.",
+        description: `Não foi possível realizar o pedido: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive",
       });
     } finally {

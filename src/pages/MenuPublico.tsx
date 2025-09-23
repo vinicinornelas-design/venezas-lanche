@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import VenezaBanner from "@/components/VenezaBanner";
 import { 
   ShoppingCart, 
   Plus, 
@@ -840,21 +841,8 @@ export default function MenuPublico() {
         </div>
       </div>
 
-      {/* Banner */}
-      {restaurantConfig?.banner_url && (
-        <div className="relative h-64 overflow-hidden">
-          <img 
-            src={restaurantConfig.banner_url} 
-            alt="Banner" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-          <div className="absolute bottom-4 left-4 text-white">
-            <h2 className="text-2xl font-bold mb-1">Sabor que conquista!</h2>
-            <p className="text-sm opacity-90">Os melhores lanches da região</p>
-          </div>
-        </div>
-      )}
+      {/* Banner Personalizado Veneza's Lanches */}
+      <VenezaBanner className="h-80 md:h-96" />
 
       {/* Search and Filter Bar */}
       <div className="bg-gradient-to-r from-white/95 to-orange-50/95 backdrop-blur-sm border-b border-orange-200 sticky top-0 z-20 shadow-lg">

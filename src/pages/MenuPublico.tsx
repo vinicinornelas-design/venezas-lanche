@@ -323,7 +323,7 @@ export default function MenuPublico() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-red-50 to-amber-100">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-red-50 to-amber-100" data-theme="venezian" style={{colorScheme: 'light'}} data-version="2.0">
       {/* Header */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-amber-900 via-red-900 to-amber-800"></div>

@@ -4,6 +4,7 @@ import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 import { UserDebugInfo } from "../UserDebugInfo";
 import { NotificationProvider } from "../NotificationProvider";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -11,6 +12,9 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   console.log('AppLayout rendering');
+
+  // Habilitar notificações em tempo real globalmente
+  const { enableSound, disableSound, isSoundEnabled } = useRealtimeNotifications(true);
 
   return (
     <SidebarProvider>

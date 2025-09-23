@@ -38,12 +38,9 @@ interface DashboardStats {
   }>;
 }
 
-import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import DashboardCharts from "@/components/DashboardCharts";
 
 export default function AdminDashboard() {
-  // Enable notifications for admin dashboard
-  const { enableSound, disableSound, isSoundEnabled } = useRealtimeNotifications(true);
   const [stats, setStats] = useState<DashboardStats>({
     totalPedidos: 0,
     pedidosPendentes: 0,

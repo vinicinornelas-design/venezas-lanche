@@ -675,6 +675,92 @@ export default function ExpandedMenu() {
     }).format(value);
   };
 
+  const handleSaveItem = async () => {
+    try {
+      // Validações básicas
+      if (!formData.nome.trim()) {
+        toast({
+          title: "Erro",
+          description: "Nome do item é obrigatório",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!formData.categoria_id) {
+        toast({
+          title: "Erro",
+          description: "Selecione uma categoria",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (formData.preco <= 0) {
+        toast({
+          title: "Erro",
+          description: "Preço deve ser maior que zero",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const itemData = {
+        nome: formData.nome.trim(),
+        preco: formData.preco,
+        descricao: formData.descricao.trim(),
+        foto_url: formData.foto_url,
+        categoria_id: formData.categoria_id,
+        ativo: formData.ativo
+      };
+
+      console.log('=== SALVANDO ITEM ===');
+      console.log('Dados:', itemData);
+      console.log('Modo:', selectedItem ? 'Atualizar' : 'Criar');
+
+      if (selectedItem) {
+        // Atualizar item existente
+        const { error } = await supabase
+          .from('itens_cardapio')
+          .update(itemData)
+          .eq('id', selectedItem.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Item atualizado com sucesso!",
+        });
+      } else {
+        // Criar novo item
+        const { error } = await supabase
+          .from('itens_cardapio')
+          .insert([itemData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Item criado com sucesso!",
+        });
+      }
+
+      // Recarregar lista de itens
+      await fetchMenuItems();
+      
+      // Fechar modal e limpar formulário
+      resetForm();
+
+    } catch (error) {
+      console.error('Error saving item:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar item. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleExportPdf = async () => {
     const menuItemsForPdf = items
       .filter(item => item.ativo)
@@ -1216,6 +1302,7 @@ export default function ExpandedMenu() {
                   Cancelar
                 </Button>
                 <Button 
+                  onClick={handleSaveItem}
                   className="flex-1 gradient-primary"
                 >
                   {selectedItem ? "Atualizar Item" : "Criar Item"}

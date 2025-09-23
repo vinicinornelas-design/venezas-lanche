@@ -26,6 +26,7 @@ import PainelColaborador from "@/pages/PainelColaborador";
 import AtendimentoMesas from "@/pages/AtendimentoMesas";
 import Notificacoes from "@/pages/Notificacoes";
 import TestUploadPage from "@/pages/TestUploadPage";
+import TestColors from "@/pages/TestColors";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -125,11 +126,12 @@ const App = () => (
                 <AppLayout><Notificacoes /></AppLayout>
               </ProtectedRoute>
             } />
-            <Route path="/test-upload" element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AppLayout><TestUploadPage /></AppLayout>
-              </ProtectedRoute>
-            } />
+        <Route path="/test-upload" element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <AppLayout><TestUploadPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/test-colors" element={<TestColors />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

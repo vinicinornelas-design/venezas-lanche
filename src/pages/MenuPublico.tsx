@@ -144,18 +144,24 @@ export default function MenuPublico() {
 
   const fetchAdicionais = async () => {
     try {
-      console.log('=== BUSCANDO ADICIONAIS ===');
+      console.log('=== BUSCANDO ADICIONAIS DA TABELA OPCIONAIS ===');
       const { data, error } = await supabase
         .from('opcionais')
-        .select('*');
+        .select('*')
+        .order('nome');
 
       console.log('Resultado da busca de adicionais:', { data, error });
 
-      if (error) throw error;
-      setAdicionais((data as Adicional[]) || []);
+      if (error) {
+        console.error('Erro ao buscar adicionais:', error);
+        throw error;
+      }
+      
       console.log('Adicionais carregados:', data?.length || 0);
+      setAdicionais((data as Adicional[]) || []);
     } catch (error) {
       console.error('Error fetching adicionais:', error);
+      setAdicionais([]);
     }
   };
 
@@ -689,39 +695,10 @@ export default function MenuPublico() {
                     </div>
                   ))}
               
-              {/* Fallback com adicionais padrão se não houver dados */}
+              {/* Mensagem se não houver adicionais */}
               {adicionais.filter(adicional => adicional.item_id === selectedItem?.id).length === 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm text-amber-700">Adicionais disponíveis:</p>
-                  {[
-                    { id: 'queijo-extra', nome: 'Queijo Extra', preco_extra: 3.00 },
-                    { id: 'bacon-extra', nome: 'Bacon Extra', preco_extra: 4.00 },
-                    { id: 'sem-cebola', nome: 'Sem Cebola', preco_extra: 0.00 },
-                    { id: 'sem-alface', nome: 'Sem Alface', preco_extra: 0.00 },
-                    { id: 'sem-tomate', nome: 'Sem Tomate', preco_extra: 0.00 }
-                  ].map(adicional => (
-                    <div key={adicional.id} className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-200">
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id={adicional.id}
-                          checked={selectedAdicionais[adicional.id] || false}
-                          onCheckedChange={(checked) => 
-                            setSelectedAdicionais(prev => ({
-                              ...prev,
-                              [adicional.id]: checked as boolean
-                            }))
-                          }
-                          className="border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
-                        />
-                        <Label htmlFor={adicional.id} className="text-amber-900 font-semibold cursor-pointer">
-                          {adicional.nome}
-                        </Label>
-                      </div>
-                      <div className="text-amber-600 font-bold">
-                        {adicional.preco_extra > 0 ? `+${formatCurrency(adicional.preco_extra)}` : 'Grátis'}
-                      </div>
-                    </div>
-                  ))}
+                <div className="text-center p-6 bg-amber-50 rounded-xl border border-amber-200">
+                  <p className="text-amber-700">Nenhum adicional disponível para este item.</p>
                 </div>
               )}
               </div>

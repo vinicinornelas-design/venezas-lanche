@@ -144,32 +144,32 @@ export function AppSidebar() {
   const getNavClassName = ({ isActive }: { isActive: boolean }) =>
     `w-full justify-start transition-all duration-200 flex items-center gap-2 px-3 py-2 rounded-md ${
       isActive 
-        ? "bg-orange-500 text-white" 
-        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+        ? "bg-gradient-to-r from-amber-500 to-red-500 text-white" 
+        : "text-amber-800 hover:bg-amber-100 hover:text-amber-900"
     }`;
 
   // Removido loading state - sempre renderiza diretamente
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 shadow-md h-full">
-      <div className="p-4 border-b border-gray-200">
+    <div className="w-64 bg-gradient-to-b from-amber-50 to-white border-r border-amber-200 shadow-md h-full">
+      <div className="p-4 border-b border-amber-200">
         <div className="flex items-center gap-3">
           <button 
             onClick={handleLogoClick}
-            className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center hover:bg-orange-600 transition-colors cursor-pointer"
+            className="w-8 h-8 bg-gradient-to-r from-amber-500 to-red-500 rounded-lg flex items-center justify-center hover:from-amber-600 hover:to-red-600 transition-colors cursor-pointer"
             title="Ir para página inicial"
           >
             <ChefHat className="w-4 h-4 text-white" />
           </button>
           <div>
-            <h2 className="font-semibold text-gray-900">LancheFlow</h2>
-            <p className="text-xs text-gray-500">Sistema de Gestão</p>
+            <h2 className="font-semibold text-amber-900">Veneza's Lanches</h2>
+            <p className="text-xs text-amber-600">Sistema de Gestão</p>
           </div>
         </div>
       </div>
 
       <div className="p-4">
-        <h3 className="text-sm font-medium text-gray-500 mb-3">Navegação</h3>
+        <h3 className="text-sm font-medium text-amber-700 mb-3">Navegação</h3>
         <nav className="space-y-1">
           {filteredItems.map((item) => (
             <NavLink 

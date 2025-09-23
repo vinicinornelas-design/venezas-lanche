@@ -34,7 +34,7 @@ export default function WelcomePage() {
     <div className="min-h-screen bg-gradient-subtle">
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-screen flex items-center">
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-red-500/20" />
         
         <div className="relative container mx-auto px-4 py-16">
           <div className="text-center space-y-8">
@@ -42,7 +42,7 @@ export default function WelcomePage() {
             <div className="space-y-6">
               {/* Logo Principal */}
               <div className="relative">
-                <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-2xl">
+                <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-amber-500 to-red-500 flex items-center justify-center shadow-2xl">
                   <img 
                     src="/venezas-logo.png" 
                     alt="Veneza's Lanches" 
@@ -59,14 +59,14 @@ export default function WelcomePage() {
               
               {/* Nome da Marca */}
               <div className="space-y-3">
-                <h1 className="text-5xl sm:text-6xl md:text-7xl font-black bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 bg-clip-text text-transparent mb-2 tracking-tight">
+                <h1 className="text-5xl sm:text-6xl md:text-7xl font-black bg-gradient-to-r from-amber-500 via-red-500 to-amber-600 bg-clip-text text-transparent mb-2 tracking-tight">
                   VENEZA'S
                 </h1>
-                <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-2">
+                <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-red-600 to-amber-600 bg-clip-text text-transparent mb-2">
                   LANCHES
                 </h2>
-                <div className="w-16 sm:w-24 h-1 bg-gradient-to-r from-orange-500 to-red-500 mx-auto rounded-full"></div>
-                <p className="text-lg sm:text-xl text-muted-foreground font-medium max-w-2xl mx-auto">
+                <div className="w-16 sm:w-24 h-1 bg-gradient-to-r from-amber-500 to-red-500 mx-auto rounded-full"></div>
+                <p className="text-lg sm:text-xl text-amber-700 font-medium max-w-2xl mx-auto">
                   Sabores únicos que conquistam o seu paladar
                 </p>
               </div>
@@ -76,14 +76,14 @@ export default function WelcomePage() {
             <div className="space-y-4">
               <Button 
                 onClick={handleMenuClick}
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-xl px-12 py-6 h-auto rounded-xl shadow-2xl transform transition-all duration-300 hover:scale-105"
+                className="bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white text-xl px-12 py-6 h-auto rounded-xl shadow-2xl transform transition-all duration-300 hover:scale-105"
               >
                 <MenuIcon className="mr-3 h-6 w-6" />
                 Ver Cardápio Completo
                 <ArrowRight className="ml-3 h-6 w-6" />
               </Button>
               
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-amber-600">
                 Confira nossos deliciosos lanches e faça seu pedido!
               </div>
             </div>
@@ -93,26 +93,26 @@ export default function WelcomePage() {
               <CardContent className="p-8 space-y-6">
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="flex items-center gap-3">
-                    <MapPin className="h-5 w-5 text-orange-500" />
+                    <MapPin className="h-5 w-5 text-amber-500" />
                     <div className="text-left">
                       <p className="font-semibold">Endereço</p>
-                      <p className="text-sm text-muted-foreground">Rua das Delícias, 123</p>
+                      <p className="text-sm text-amber-600">Rua das Delícias, 123</p>
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-3">
-                    <Phone className="h-5 w-5 text-orange-500" />
+                    <Phone className="h-5 w-5 text-amber-500" />
                     <div className="text-left">
                       <p className="font-semibold">Telefone</p>
-                      <p className="text-sm text-muted-foreground">(31) 99999-9999</p>
+                      <p className="text-sm text-amber-600">(31) 99999-9999</p>
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-orange-500" />
+                    <Clock className="h-5 w-5 text-amber-500" />
                     <div className="text-left">
                       <p className="font-semibold">Horário</p>
-                      <p className="text-sm text-muted-foreground">18:00 - 23:00</p>
+                      <p className="text-sm text-amber-600">18:00 - 23:00</p>
                     </div>
                   </div>
                 </div>
@@ -123,38 +123,38 @@ export default function WelcomePage() {
       </section>
 
       {/* Highlights Section */}
-      <section className="py-16 bg-background/50">
+      <section className="py-16 bg-gradient-to-b from-amber-50/50 to-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+          <h2 className="text-4xl font-bold text-center mb-12 bg-gradient-to-r from-amber-600 to-red-600 bg-clip-text text-transparent">
             Por que escolher o Veneza's?
           </h2>
           
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="text-center hover:shadow-lg transition-shadow">
+            <Card className="text-center hover:shadow-lg transition-shadow border-amber-200">
               <CardContent className="p-8 space-y-4">
-                <ChefHat className="h-16 w-16 mx-auto text-orange-500" />
-                <h3 className="text-xl font-bold">Ingredientes Frescos</h3>
-                <p className="text-muted-foreground">
+                <ChefHat className="h-16 w-16 mx-auto text-amber-500" />
+                <h3 className="text-xl font-bold text-amber-900">Ingredientes Frescos</h3>
+                <p className="text-amber-700">
                   Utilizamos apenas ingredientes selecionados e frescos para garantir o melhor sabor.
                 </p>
               </CardContent>
             </Card>
             
-            <Card className="text-center hover:shadow-lg transition-shadow">
+            <Card className="text-center hover:shadow-lg transition-shadow border-amber-200">
               <CardContent className="p-8 space-y-4">
-                <Star className="h-16 w-16 mx-auto text-orange-500" />
-                <h3 className="text-xl font-bold">Qualidade Premium</h3>
-                <p className="text-muted-foreground">
+                <Star className="h-16 w-16 mx-auto text-amber-500" />
+                <h3 className="text-xl font-bold text-amber-900">Qualidade Premium</h3>
+                <p className="text-amber-700">
                   Receitas exclusivas desenvolvidas com paixão e dedicação para sua satisfação.
                 </p>
               </CardContent>
             </Card>
             
-            <Card className="text-center hover:shadow-lg transition-shadow">
+            <Card className="text-center hover:shadow-lg transition-shadow border-amber-200">
               <CardContent className="p-8 space-y-4">
-                <Clock className="h-16 w-16 mx-auto text-orange-500" />
-                <h3 className="text-xl font-bold">Entrega Rápida</h3>
-                <p className="text-muted-foreground">
+                <Clock className="h-16 w-16 mx-auto text-amber-500" />
+                <h3 className="text-xl font-bold text-amber-900">Entrega Rápida</h3>
+                <p className="text-amber-700">
                   Preparamos seus pedidos com agilidade para você receber quentinho em casa.
                 </p>
               </CardContent>
@@ -167,17 +167,17 @@ export default function WelcomePage() {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-amber-600 to-red-600 bg-clip-text text-transparent">
               Nossos Favoritos
             </h2>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-xl text-amber-700">
               Os lanches mais pedidos pelos nossos clientes
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105">
-              <div className="aspect-video bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
+            <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 border-amber-200">
+              <div className="aspect-video bg-gradient-to-br from-amber-100 to-red-100 flex items-center justify-center">
                 <img 
                   src="/src/assets/smash-burger.jpg" 
                   alt="Smash Clássico" 
@@ -185,28 +185,28 @@ export default function WelcomePage() {
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                     const placeholder = document.createElement('div');
-                    placeholder.innerHTML = '<div class="flex items-center justify-center w-full h-full"><ChefHat class="h-16 w-16 text-orange-500" /></div>';
+                    placeholder.innerHTML = '<div class="flex items-center justify-center w-full h-full"><ChefHat class="h-16 w-16 text-amber-500" /></div>';
                     e.currentTarget.parentElement?.appendChild(placeholder);
                   }}
                 />
               </div>
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-bold">Smash Clássico</h3>
-                  <Badge className="bg-success/10 text-success">
+                  <h3 className="text-xl font-bold text-amber-900">Smash Clássico</h3>
+                  <Badge className="bg-gradient-to-r from-amber-100 to-red-100 text-amber-800 border-amber-300">
                     <Star className="h-3 w-3 mr-1" />
                     4.9
                   </Badge>
                 </div>
-                <p className="text-muted-foreground mb-3">
+                <p className="text-amber-700 mb-3">
                   Hambúrguer artesanal bovino esmagado na chapa com queijo no pão brioche.
                 </p>
-                <p className="text-2xl font-bold text-primary">R$ 18,00</p>
+                <p className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-red-600 bg-clip-text text-transparent">R$ 18,00</p>
               </CardContent>
             </Card>
 
-            <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105">
-              <div className="aspect-video bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
+            <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 border-amber-200">
+              <div className="aspect-video bg-gradient-to-br from-amber-100 to-red-100 flex items-center justify-center">
                 <img 
                   src="/src/assets/bacon-cheddar-burger.jpg" 
                   alt="X Tudo" 
@@ -214,28 +214,28 @@ export default function WelcomePage() {
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                     const placeholder = document.createElement('div');
-                    placeholder.innerHTML = '<div class="flex items-center justify-center w-full h-full"><ChefHat class="h-16 w-16 text-orange-500" /></div>';
+                    placeholder.innerHTML = '<div class="flex items-center justify-center w-full h-full"><ChefHat class="h-16 w-16 text-amber-500" /></div>';
                     e.currentTarget.parentElement?.appendChild(placeholder);
                   }}
                 />
               </div>
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-bold">X Tudo</h3>
-                  <Badge className="bg-success/10 text-success">
+                  <h3 className="text-xl font-bold text-amber-900">X Tudo</h3>
+                  <Badge className="bg-gradient-to-r from-amber-100 to-red-100 text-amber-800 border-amber-300">
                     <Star className="h-3 w-3 mr-1" />
                     4.8
                   </Badge>
                 </div>
-                <p className="text-muted-foreground mb-3">
+                <p className="text-amber-700 mb-3">
                   O campeão de vendas com bife, ovo, mussarela, presunto e bacon.
                 </p>
-                <p className="text-2xl font-bold text-primary">R$ 23,00</p>
+                <p className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-red-600 bg-clip-text text-transparent">R$ 23,00</p>
               </CardContent>
             </Card>
 
-            <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105">
-              <div className="aspect-video bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
+            <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-105 border-amber-200">
+              <div className="aspect-video bg-gradient-to-br from-amber-100 to-red-100 flex items-center justify-center">
                 <img 
                   src="/src/assets/acai-bowl.jpg" 
                   alt="Açaí no Copo" 
@@ -243,23 +243,23 @@ export default function WelcomePage() {
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                     const placeholder = document.createElement('div');
-                    placeholder.innerHTML = '<div class="flex items-center justify-center w-full h-full"><ChefHat class="h-16 w-16 text-orange-500" /></div>';
+                    placeholder.innerHTML = '<div class="flex items-center justify-center w-full h-full"><ChefHat class="h-16 w-16 text-amber-500" /></div>';
                     e.currentTarget.parentElement?.appendChild(placeholder);
                   }}
                 />
               </div>
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-bold">Açaí no Copo</h3>
-                  <Badge className="bg-success/10 text-success">
+                  <h3 className="text-xl font-bold text-amber-900">Açaí no Copo</h3>
+                  <Badge className="bg-gradient-to-r from-amber-100 to-red-100 text-amber-800 border-amber-300">
                     <Star className="h-3 w-3 mr-1" />
                     4.7
                   </Badge>
                 </div>
-                <p className="text-muted-foreground mb-3">
+                <p className="text-amber-700 mb-3">
                   200ml de açaí puro com fios de leite condensado cremoso.
                 </p>
-                <p className="text-2xl font-bold text-primary">R$ 10,00</p>
+                <p className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-red-600 bg-clip-text text-transparent">R$ 10,00</p>
               </CardContent>
             </Card>
           </div>
@@ -268,7 +268,7 @@ export default function WelcomePage() {
             <Button 
               onClick={handleMenuClick}
               variant="outline" 
-              className="text-lg px-8 py-4 h-auto"
+              className="text-lg px-8 py-4 h-auto border-amber-400 text-amber-600 hover:bg-amber-50"
             >
               Ver Cardápio Completo
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -278,10 +278,10 @@ export default function WelcomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-muted/50 py-8">
+      <footer className="bg-gradient-to-r from-amber-50 to-red-50 py-8">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4">
-            <p className="text-muted-foreground">
+            <p className="text-amber-700">
               © 2024 Veneza's Lanches. Todos os direitos reservados.
             </p>
             

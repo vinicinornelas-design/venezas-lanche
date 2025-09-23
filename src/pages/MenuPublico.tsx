@@ -371,61 +371,85 @@ export default function MenuPublico() {
     }
 
     setIsSubmitting(true);
+    
+    // Criar pedido simplificado
+    const pedido = {
+      id: `pedido_${Date.now()}`,
+      itens: cart,
+      origem: 'DELIVERY',
+      observacoes: checkoutForm.observacoes || '',
+      metodo_pagamento: checkoutForm.metodoPagamento,
+      cliente_nome: checkoutForm.nome,
+      cliente_telefone: checkoutForm.telefone,
+      cliente_endereco: checkoutForm.endereco,
+      cliente_bairro: checkoutForm.bairro,
+      taxa_entrega: getTaxaEntrega(),
+      taxa_pagamento: getTaxaPagamento(),
+      subtotal: getTotalPrice(),
+      total: getTotalComTaxas(),
+      status: 'PENDENTE',
+      created_at: new Date().toISOString()
+    };
+
+    console.log('=== ENVIANDO PEDIDO ===');
+    console.log('Pedido:', pedido);
+
     try {
-      console.log('=== ENVIANDO PEDIDO ===');
-      console.log('Carrinho:', cart);
-      console.log('Formulário:', checkoutForm);
-      
-      const pedido = {
-        itens: cart as any,
-        origem: 'DELIVERY',
-        observacoes: checkoutForm.observacoes || '',
-        metodo_pagamento: checkoutForm.metodoPagamento,
-        cliente_nome: checkoutForm.nome,
-        cliente_telefone: checkoutForm.telefone,
-        cliente_endereco: checkoutForm.endereco,
-        cliente_bairro: checkoutForm.bairro,
-        taxa_entrega: getTaxaEntrega(),
-        taxa_pagamento: getTaxaPagamento(),
-        subtotal: getTotalPrice(),
-        total: getTotalComTaxas(),
-        status: 'PENDENTE',
-        created_at: new Date().toISOString()
-      };
-
-      console.log('Pedido a ser enviado:', pedido);
-
+      // Tentar enviar para Supabase primeiro
       const { data, error } = await supabase
         .from('pedidos_unificados')
         .insert([pedido])
         .select();
 
-      console.log('Resposta do Supabase:', { data, error });
-
       if (error) {
-        console.error('Erro detalhado:', error);
+        console.error('Erro Supabase:', error);
         throw error;
       }
+
+      console.log('Pedido salvo no Supabase:', data);
+      
+      // Salvar também no localStorage como backup
+      const pedidosLocais = JSON.parse(localStorage.getItem('pedidos_locais') || '[]');
+      pedidosLocais.push(pedido);
+      localStorage.setItem('pedidos_locais', JSON.stringify(pedidosLocais));
 
       toast({
         title: "Pedido realizado!",
         description: "Seu pedido foi enviado com sucesso. Aguarde o contato!",
       });
 
-      setCart([]);
-      setShowCart(false);
-      setShowCheckout(false);
-      resetCheckoutForm();
     } catch (error) {
-      console.error('Error submitting order:', error);
-      toast({
-        title: "Erro",
-        description: `Não foi possível realizar o pedido: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+      console.error('Erro ao enviar para Supabase:', error);
+      
+      // Fallback: salvar apenas no localStorage
+      try {
+        const pedidosLocais = JSON.parse(localStorage.getItem('pedidos_locais') || '[]');
+        pedidosLocais.push(pedido);
+        localStorage.setItem('pedidos_locais', JSON.stringify(pedidosLocais));
+        
+        console.log('Pedido salvo no localStorage como backup');
+        
+        toast({
+          title: "Pedido salvo localmente!",
+          description: "Seu pedido foi salvo. Entre em contato pelo WhatsApp para confirmar.",
+        });
+      } catch (localError) {
+        console.error('Erro ao salvar no localStorage:', localError);
+        toast({
+          title: "Erro",
+          description: "Não foi possível salvar o pedido. Tente novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
+
+    // Limpar formulário e carrinho
+    setCart([]);
+    setShowCart(false);
+    setShowCheckout(false);
+    resetCheckoutForm();
+    setIsSubmitting(false);
   };
 
   if (isLoading) {

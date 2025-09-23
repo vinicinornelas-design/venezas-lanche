@@ -94,6 +94,15 @@ export default function MenuPublico() {
   const [quantidade, setQuantidade] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [checkoutForm, setCheckoutForm] = useState({
+    nome: '',
+    telefone: '',
+    endereco: '',
+    bairro: '',
+    metodoPagamento: 'dinheiro',
+    observacoes: ''
+  });
   const { toast } = useToast();
 
   // Paleta de cores venezianas
@@ -276,6 +285,40 @@ export default function MenuPublico() {
     return cart.reduce((total, item) => total + (item.preco_unitario * item.quantidade), 0);
   };
 
+  const getTaxaEntrega = () => {
+    if (!restaurantConfig?.bairros_entrega || !checkoutForm.bairro) return 0;
+    const bairro = restaurantConfig.bairros_entrega.find(b => b.nome === checkoutForm.bairro);
+    return bairro?.taxa_entrega || 0;
+  };
+
+  const getTaxaPagamento = () => {
+    if (!restaurantConfig?.formas_pagamento || !checkoutForm.metodoPagamento) return 0;
+    const forma = restaurantConfig.formas_pagamento.find(f => f.nome === checkoutForm.metodoPagamento);
+    return forma?.taxa || 0;
+  };
+
+  const getTotalComTaxas = () => {
+    const subtotal = getTotalPrice();
+    const taxaEntrega = getTaxaEntrega();
+    const taxaPagamento = getTaxaPagamento();
+    return subtotal + taxaEntrega + taxaPagamento;
+  };
+
+  const handleCheckoutFormChange = (field: string, value: string) => {
+    setCheckoutForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const resetCheckoutForm = () => {
+    setCheckoutForm({
+      nome: '',
+      telefone: '',
+      endereco: '',
+      bairro: '',
+      metodoPagamento: 'dinheiro',
+      observacoes: ''
+    });
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -286,13 +329,31 @@ export default function MenuPublico() {
   const submitOrder = async () => {
     if (cart.length === 0) return;
 
+    // Validar campos obrigatórios
+    if (!checkoutForm.nome || !checkoutForm.telefone || !checkoutForm.endereco || !checkoutForm.bairro) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha nome, telefone, endereço e bairro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const pedido = {
-        itens: cart as any, // Converter para Json
-        origem: 'BALCAO',
-        observacoes: "",
-        metodo_pagamento: "dinheiro"
+        itens: cart as any,
+        origem: 'DELIVERY',
+        observacoes: checkoutForm.observacoes,
+        metodo_pagamento: checkoutForm.metodoPagamento,
+        cliente_nome: checkoutForm.nome,
+        cliente_telefone: checkoutForm.telefone,
+        cliente_endereco: checkoutForm.endereco,
+        cliente_bairro: checkoutForm.bairro,
+        taxa_entrega: getTaxaEntrega(),
+        taxa_pagamento: getTaxaPagamento(),
+        subtotal: getTotalPrice(),
+        total: getTotalComTaxas()
       };
 
       const { data, error } = await supabase
@@ -304,11 +365,13 @@ export default function MenuPublico() {
 
       toast({
         title: "Pedido realizado!",
-        description: "Seu pedido foi enviado com sucesso.",
+        description: "Seu pedido foi enviado com sucesso. Aguarde o contato!",
       });
 
       setCart([]);
       setShowCart(false);
+      setShowCheckout(false);
+      resetCheckoutForm();
     } catch (error) {
       console.error('Error submitting order:', error);
       toast({
@@ -848,14 +911,183 @@ export default function MenuPublico() {
                 Continuar Comprando
                 </Button>
                 <Button
-                onClick={submitOrder}
-                disabled={isSubmitting || cart.length === 0}
+                onClick={() => setShowCheckout(true)}
+                disabled={cart.length === 0}
                 className="flex-1 bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-bold text-lg py-3"
                 >
-                {isSubmitting ? "Processando..." : "🚀 Finalizar Pedido"}
+                🚀 Finalizar Pedido
                 </Button>
               </div>
             </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Checkout Dialog */}
+      <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
+        <DialogContent className="max-w-2xl max-h-[90vh] bg-white/95 backdrop-blur-sm border-0 shadow-2xl overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="text-2xl font-bold text-amber-900 text-center">
+              Finalizar Pedido
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto space-y-6 px-1">
+            {/* Resumo do Pedido */}
+            <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+              <h3 className="text-lg font-bold text-amber-900 mb-3">Resumo do Pedido</h3>
+              {cart.map((item, index) => (
+                <div key={index} className="flex justify-between items-center py-2 border-b border-amber-200 last:border-b-0">
+                  <div>
+                    <span className="font-medium text-amber-800">{item.nome}</span>
+                    {item.adicionais.length > 0 && (
+                      <div className="text-sm text-amber-600">
+                        + {item.adicionais.map(adicional => adicional.nome).join(', ')}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <span className="text-amber-700">{item.quantidade}x {formatCurrency(item.preco_unitario)}</span>
+                  </div>
+                </div>
+              ))}
+              <div className="mt-3 pt-3 border-t border-amber-300">
+                <div className="flex justify-between text-lg font-bold text-amber-900">
+                  <span>Subtotal:</span>
+                  <span>{formatCurrency(getTotalPrice())}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Formulário de Dados */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-amber-900">Dados para Entrega</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="nome" className="text-amber-800 font-medium">Nome *</Label>
+                  <Input
+                    id="nome"
+                    value={checkoutForm.nome}
+                    onChange={(e) => handleCheckoutFormChange('nome', e.target.value)}
+                    className="border-amber-300 focus:border-amber-500"
+                    placeholder="Seu nome completo"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="telefone" className="text-amber-800 font-medium">Telefone *</Label>
+                  <Input
+                    id="telefone"
+                    value={checkoutForm.telefone}
+                    onChange={(e) => handleCheckoutFormChange('telefone', e.target.value)}
+                    className="border-amber-300 focus:border-amber-500"
+                    placeholder="(11) 99999-9999"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="endereco" className="text-amber-800 font-medium">Endereço *</Label>
+                <Input
+                  id="endereco"
+                  value={checkoutForm.endereco}
+                  onChange={(e) => handleCheckoutFormChange('endereco', e.target.value)}
+                  className="border-amber-300 focus:border-amber-500"
+                  placeholder="Rua, número, complemento"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="bairro" className="text-amber-800 font-medium">Bairro *</Label>
+                <Select value={checkoutForm.bairro} onValueChange={(value) => handleCheckoutFormChange('bairro', value)}>
+                  <SelectTrigger className="border-amber-300 focus:border-amber-500">
+                    <SelectValue placeholder="Selecione seu bairro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {restaurantConfig?.bairros_entrega?.map((bairro) => (
+                      <SelectItem key={bairro.nome} value={bairro.nome}>
+                        {bairro.nome} - {formatCurrency(bairro.taxa_entrega)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="metodoPagamento" className="text-amber-800 font-medium">Método de Pagamento *</Label>
+                <Select value={checkoutForm.metodoPagamento} onValueChange={(value) => handleCheckoutFormChange('metodoPagamento', value)}>
+                  <SelectTrigger className="border-amber-300 focus:border-amber-500">
+                    <SelectValue placeholder="Selecione o método de pagamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {restaurantConfig?.formas_pagamento?.map((forma) => (
+                      <SelectItem key={forma.nome} value={forma.nome}>
+                        {forma.nome} {forma.taxa > 0 && `(+${formatCurrency(forma.taxa)})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="observacoes" className="text-amber-800 font-medium">Observações</Label>
+                <Textarea
+                  id="observacoes"
+                  value={checkoutForm.observacoes}
+                  onChange={(e) => handleCheckoutFormChange('observacoes', e.target.value)}
+                  className="border-amber-300 focus:border-amber-500"
+                  placeholder="Alguma observação especial para seu pedido?"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            {/* Resumo Final */}
+            <div className="bg-gradient-to-r from-amber-100 to-red-100 rounded-xl p-4 border border-amber-200">
+              <h3 className="text-lg font-bold text-amber-900 mb-3">Resumo Final</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-amber-800">Subtotal:</span>
+                  <span className="text-amber-700">{formatCurrency(getTotalPrice())}</span>
+                </div>
+                {getTaxaEntrega() > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-amber-800">Taxa de Entrega:</span>
+                    <span className="text-amber-700">{formatCurrency(getTaxaEntrega())}</span>
+                  </div>
+                )}
+                {getTaxaPagamento() > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-amber-800">Taxa de Pagamento:</span>
+                    <span className="text-amber-700">{formatCurrency(getTaxaPagamento())}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-xl font-bold text-amber-900 pt-2 border-t border-amber-300">
+                  <span>Total:</span>
+                  <span>{formatCurrency(getTotalComTaxas())}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex-shrink-0 border-t border-amber-200 pt-4 bg-white">
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowCheckout(false)}
+                className="flex-1 border-amber-400 text-amber-600 hover:bg-amber-50"
+              >
+                Voltar ao Carrinho
+              </Button>
+              <Button
+                onClick={submitOrder}
+                disabled={isSubmitting}
+                className="flex-1 bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-bold text-lg py-3"
+              >
+                {isSubmitting ? "Processando..." : "🚀 Confirmar Pedido"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

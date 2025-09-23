@@ -28,6 +28,7 @@ import Notificacoes from "@/pages/Notificacoes";
 import TestUploadPage from "@/pages/TestUploadPage";
 import DebugNotificacoes from "@/pages/DebugNotificacoes";
 import TesteRealtime from "@/pages/TesteRealtime";
+import TesteTabelaPedidos from "@/pages/TesteTabelaPedidos";
 import TestColors from "@/pages/TestColors";
 import TestBanner from "@/pages/TestBanner";
 import NotFound from "@/pages/NotFound";
@@ -142,6 +143,11 @@ const App = () => (
         <Route path="/teste-realtime" element={
           <ProtectedRoute allowedRoles={['ADMIN']}>
             <AppLayout><TesteRealtime /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/teste-tabela-pedidos" element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <AppLayout><TesteTabelaPedidos /></AppLayout>
           </ProtectedRoute>
         } />
         <Route path="/test-colors" element={<TestColors />} />

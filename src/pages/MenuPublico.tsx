@@ -374,7 +374,7 @@ export default function MenuPublico() {
     
     // Criar pedido com estrutura compatível com o sistema de gestão REAL
     const pedido = {
-      id: `cardapio_publico_${Date.now()}`,
+      id: crypto.randomUUID(), // Gerar UUID válido
       numero_pedido: Math.floor(Math.random() * 9000) + 1000, // Código entre 1000-9999
       itens: cart.map(item => ({
         nome: item.nome,

@@ -1,19 +1,18 @@
--- Script para testar inserção de pedido do cardápio público
+-- Script SIMPLES para testar inserção de pedido
 -- Execute este script no Supabase SQL Editor
 
 -- 1. Verificar estrutura da tabela
-SELECT column_name, data_type, is_nullable, column_default
+SELECT column_name, data_type, is_nullable
 FROM information_schema.columns 
 WHERE table_name = 'pedidos_unificados' 
 ORDER BY ordinal_position;
 
--- 2. Tentar inserir pedido de teste
+-- 2. Inserir pedido de teste (apenas campos obrigatórios)
 INSERT INTO pedidos_unificados (
     id,
     numero_pedido,
     itens,
     origem,
-    observacoes,
     metodo_pagamento,
     cliente_nome,
     cliente_telefone,
@@ -24,39 +23,20 @@ INSERT INTO pedidos_unificados (
     subtotal,
     total,
     status,
-    pago,
-    troco_para,
-    valor_pago,
-    observacoes_cozinha,
-    observacoes_entrega,
-    tempo_preparo_estimado,
-    tempo_entrega_estimado,
-    iniciado_preparo_em,
-    finalizado_preparo_em,
-    entregue_em,
-    avaliacao_nota,
-    avaliacao_comentario,
-    avaliacao_em,
-    mesa_numero,
-    mesa_etiqueta,
-    funcionario_id,
-    funcionario_nome
+    pago
 ) VALUES (
     gen_random_uuid(),
-    9998,
+    9997,
     '[
         {
             "nome": "Hambúrguer Teste",
             "categoria": "TRADICIONAIS",
-            "adicionais": [
-                {"nome": "Queijo Extra", "preco": 3.00, "quantidade": 1}
-            ],
+            "adicionais": [],
             "quantidade": 1,
             "preco_unitario": 25
         }
     ]'::jsonb,
     'DELIVERY',
-    'Pedido de teste do cardápio público',
     'dinheiro',
     'Cliente Teste',
     '(11) 99999-9999',
@@ -64,26 +44,10 @@ INSERT INTO pedidos_unificados (
     'Centro',
     '5.00',
     '0.00',
-    '28.00',
-    '33.00',
+    '25.00',
+    '30.00',
     'PENDENTE',
-    false,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null
+    false
 );
 
 -- 3. Verificar se foi inserido
@@ -95,7 +59,7 @@ SELECT
     status,
     created_at
 FROM pedidos_unificados 
-WHERE numero_pedido = 9998;
+WHERE numero_pedido = 9997;
 
 -- 4. Verificar últimos pedidos
 SELECT 

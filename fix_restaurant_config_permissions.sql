@@ -20,7 +20,6 @@ CREATE POLICY "Enable insert for authenticated users only" ON restaurant_config
 
 CREATE POLICY "Enable update for authenticated users only" ON restaurant_config
     FOR UPDATE USING (auth.role() = 'authenticated');
-
 CREATE POLICY "Enable delete for authenticated users only" ON restaurant_config
     FOR DELETE USING (auth.role() = 'authenticated');
 
@@ -48,7 +47,7 @@ INSERT INTO restaurant_config (
     banner_url,
     horario_funcionamento
 ) VALUES (
-    'default-config',
+    gen_random_uuid(),
     'Veneza''s Lanches',
     '31 99549-2713',
     'Rua Laguna, 145A - Veneza',

@@ -666,11 +666,11 @@ export default function MenuPublico() {
               
               {/* Debug info */}
               <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
-                Debug: {adicionais.length} adicionais carregados, {adicionais.filter(a => a.item_id === selectedItem?.id).length} para este item
+                Debug: {adicionais.length} adicionais carregados, {adicionais.filter(a => a.item_id === selectedItem?.id || a.item_id === null).length} disponíveis para este item
               </div>
               
               {adicionais
-                .filter(adicional => adicional.item_id === selectedItem?.id)
+                .filter(adicional => adicional.item_id === selectedItem?.id || adicional.item_id === null)
                 .map(adicional => (
                   <div key={adicional.id} className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-200">
                       <div className="flex items-center space-x-3">
@@ -696,7 +696,7 @@ export default function MenuPublico() {
                   ))}
               
               {/* Mensagem se não houver adicionais */}
-              {adicionais.filter(adicional => adicional.item_id === selectedItem?.id).length === 0 && (
+              {adicionais.filter(adicional => adicional.item_id === selectedItem?.id || adicional.item_id === null).length === 0 && (
                 <div className="text-center p-6 bg-amber-50 rounded-xl border border-amber-200">
                   <p className="text-amber-700">Nenhum adicional disponível para este item.</p>
                 </div>

@@ -48,134 +48,134 @@ interface Adicional {
   id: string;
   nome: string;
   preco_extra: number;
-  multi_selecao?: boolean;
-  obrigatorio?: boolean;
-  item_id?: string;
+  multi_selecao: boolean;
+  obrigatorio: boolean;
+  item_id: string;
 }
 
-interface CartItem extends MenuItem {
-  quantidade: number;
-  observacoes?: string;
-  adicionais?: Adicional[];
-  preco_total?: number;
+interface Categoria {
+  id: string;
+  nome: string;
 }
 
 interface RestaurantConfig {
+  id: string;
   nome_restaurante: string;
-  logo_url: string;
-  banner_url: string;
   telefone: string;
   endereco: string;
-  horario_funcionamento: any;
+  logo_url: string;
+  banner_url: string;
+  taxa_entrega: number;
+  tempo_entrega: number;
+  formas_pagamento: string[];
+  bairros_entrega: Array<{
+    nome: string;
+    valor: number;
+  }>;
 }
 
 export default function MenuPublico() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [showCart, setShowCart] = useState(false);
+  const [adicionais, setAdicionais] = useState<Adicional[]>([]);
+  const [categories, setCategories] = useState<Categoria[]>([]);
   const [restaurantConfig, setRestaurantConfig] = useState<RestaurantConfig | null>(null);
-  const [bairros, setBairros] = useState<any[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("name");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [sortBy, setSortBy] = useState("name");
+  const [cart, setCart] = useState<PedidoItem[]>([]);
+  const [showCart, setShowCart] = useState(false);
+  const [showAdicionaisDialog, setShowAdicionaisDialog] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [selectedAdicionais, setSelectedAdicionais] = useState<{ [key: string]: boolean }>({});
+  const [quantidade, setQuantidade] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  // Estados para popup de adicionais
-  const [adicionais, setAdicionais] = useState<Adicional[]>([]);
-  const [isAdicionaisDialogOpen, setIsAdicionaisDialogOpen] = useState(false);
-  const [selectedItemForAdicionais, setSelectedItemForAdicionais] = useState<MenuItem | null>(null);
-  const [selectedAdicionais, setSelectedAdicionais] = useState<Adicional[]>([]);
-  const [observacoes, setObservacoes] = useState("");
-
-  // Customer form data
-  const [customerData, setCustomerData] = useState({
-    nome: '',
-    telefone: '',
-    endereco: '',
-    bairro_id: '',
-    metodo_pagamento_id: '',
-    observacoes: ''
-  });
+  // Paleta de cores venezianas
+  const venezaColors = {
+    primary: 'from-amber-900 via-red-900 to-amber-800',
+    secondary: 'from-amber-100 to-amber-50',
+    accent: 'from-yellow-400 to-amber-400',
+    text: 'text-amber-900',
+    textLight: 'text-amber-800',
+    textMuted: 'text-amber-700',
+    border: 'border-amber-300',
+    bg: 'bg-amber-50',
+    bgCard: 'bg-white/90',
+    shadow: 'shadow-amber-200',
+    hover: 'hover:from-amber-600 hover:via-red-600 hover:to-amber-600'
+  };
 
   useEffect(() => {
-    fetchMenuData();
-    fetchRestaurantConfig();
-    fetchBairros();
-    fetchPaymentMethods();
+    fetchMenuItems();
     fetchAdicionais();
+    fetchCategories();
+    fetchRestaurantConfig();
   }, []);
 
-
-
-  const fetchMenuData = async () => {
+  const fetchMenuItems = async () => {
     try {
-      // Fetch categories
-      const { data: categoriesData } = await supabase
-        .from('categorias')
-        .select('*')
-        .eq('ativo', true)
-        .order('ordem');
-
-      // Fetch menu items with categories and ratings
-      const { data: itemsData } = await supabase
+      const { data, error } = await supabase
         .from('itens_cardapio')
         .select(`
           *,
-          categorias (
-            nome
-          )
+          categorias(nome)
         `)
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+
+      const items = data?.map(item => ({
+        ...item,
+        categoria_nome: item.categorias?.nome
+      })) || [];
+
+      setMenuItems(items);
+    } catch (error) {
+      console.error('Error fetching menu items:', error);
+    }
+  };
+
+  const fetchAdicionais = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('opcionais')
+        .select('*')
         .eq('ativo', true);
 
-      if (categoriesData) setCategories(categoriesData);
-      
-      if (itemsData) {
-        // Fetch ratings for each item
-        const itemsWithRatings = await Promise.all(
-          itemsData.map(async (item) => {
-            const { data: ratingsData } = await supabase
-              .from('avaliacoes')
-              .select('nota')
-              .eq('item_cardapio_id', item.id);
-
-            const totalRatings = ratingsData?.length || 0;
-            const averageRating = totalRatings > 0 
-              ? ratingsData.reduce((sum, r) => sum + r.nota, 0) / totalRatings 
-              : 0;
-
-            return {
-              ...item,
-              categoria_nome: item.categorias?.nome,
-              average_rating: averageRating,
-              total_ratings: totalRatings
-            };
-          })
-        );
-        
-        setMenuItems(itemsWithRatings);
-      }
+      if (error) throw error;
+      setAdicionais(data || []);
     } catch (error) {
-      console.error('Error fetching menu:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar cardápio",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      console.error('Error fetching adicionais:', error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categorias')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
     }
   };
 
   const fetchRestaurantConfig = async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('restaurant_config')
         .select('*')
         .single();
 
+      if (error) throw error;
+      
       if (data) {
         console.log('Restaurant config carregado:', data);
         console.log('Logo URL:', data.logo_url);
@@ -183,217 +183,84 @@ export default function MenuPublico() {
       }
     } catch (error) {
       console.error('Error fetching restaurant config:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const fetchBairros = async () => {
-    try {
-      const { data } = await supabase
-        .from('bairros')
-        .select('*')
-        .eq('ativo', true);
-
-      if (data) setBairros(data);
-    } catch (error) {
-      console.error('Error fetching neighborhoods:', error);
+  const filteredItems = menuItems.filter(item => {
+    const matchesSearch = item.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || item.categoria_id === selectedCategory;
+    return matchesSearch && matchesCategory;
+  }).sort((a, b) => {
+    switch (sortBy) {
+      case 'name':
+        return a.nome.localeCompare(b.nome);
+      case 'price-low':
+        return a.preco - b.preco;
+      case 'price-high':
+        return b.preco - a.preco;
+      case 'rating':
+        return (b.average_rating || 0) - (a.average_rating || 0);
+      default:
+        return 0;
     }
-  };
-
-  const fetchPaymentMethods = async () => {
-    try {
-      const { data } = await supabase
-        .from('payment_methods')
-        .select('*')
-        .eq('ativo', true);
-
-      if (data) setPaymentMethods(data);
-    } catch (error) {
-      console.error('Error fetching payment methods:', error);
-    }
-  };
-
-  const fetchAdicionais = async () => {
-    try {
-      // Primeiro tenta buscar do Supabase
-      const { data, error } = await supabase
-        .from('opcionais')
-        .select('*')
-        .order('nome');
-
-      if (error) {
-        console.log('Tabela opcionais não existe, usando dados locais');
-        // Se não existir, usa dados do localStorage
-        const localAdicionais = getLocalAdicionais();
-        setAdicionais(localAdicionais);
-        // Salva no localStorage para persistência
-        localStorage.setItem('venezas_adicionais', JSON.stringify(localAdicionais));
-      } else {
-        setAdicionais(data || []);
-        // Salva no localStorage para backup
-        localStorage.setItem('venezas_adicionais', JSON.stringify(data || []));
-      }
-    } catch (error) {
-      console.log('Erro ao buscar adicionais, usando dados locais:', error);
-      // Em caso de erro, usa dados do localStorage
-      const localAdicionais = getLocalAdicionais();
-      setAdicionais(localAdicionais);
-      // Salva no localStorage para persistência
-      localStorage.setItem('venezas_adicionais', JSON.stringify(localAdicionais));
-    }
-  };
-
-  const getLocalAdicionais = (): Adicional[] => {
-    const stored = localStorage.getItem('venezas_adicionais');
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    
-    // Dados padrão com todos os adicionais solicitados
-    return [
-      // Molhos e condimentos
-      { id: '1', nome: 'Molho verde adicional', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '2', nome: 'Molho Barbecue', preco_extra: 1.50, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '3', nome: 'Ketchup e Maionese adicional', preco_extra: 2.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      
-      // Ingredientes básicos
-      { id: '4', nome: 'Ovo adicional', preco_extra: 3.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '5', nome: 'Abacaxi adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '6', nome: 'Banana adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '7', nome: 'Bife de Hambúrguer adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '8', nome: 'Cebola Caramelizada adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '9', nome: 'Presunto adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '10', nome: 'Cebola adicional', preco_extra: 4.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      
-      // Ingredientes premium
-      { id: '11', nome: 'Frango adicional', preco_extra: 5.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '12', nome: 'Muçarela adicional', preco_extra: 5.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '13', nome: 'Bacon adicional', preco_extra: 6.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '14', nome: 'Linguiça adicional', preco_extra: 6.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      
-      // Ingredientes artesanais
-      { id: '15', nome: 'Bife artesanal adicional', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '16', nome: 'Catupiry adicional', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '17', nome: 'Cheddar adicional no lanche', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '18', nome: 'Costela ao molho barbecue', preco_extra: 8.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      
-      // Adicionais especiais
-      { id: '19', nome: 'Cheddar adicional na batata frita', preco_extra: 10.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '20', nome: 'Requeijão cremoso adicional', preco_extra: 12.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      
-      // Opções de remoção (sem custo)
-      { id: '21', nome: 'Sem Pão', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '22', nome: 'Sem Presunto', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '23', nome: 'Sem Mussarela', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '24', nome: 'Sem maionese', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '25', nome: 'Sem ketchup', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null },
-      { id: '26', nome: 'Sem molho verde', preco_extra: 0.00, multi_selecao: false, obrigatorio: false, item_id: null }
-    ];
-  };
+  });
 
   const openAdicionaisDialog = (item: MenuItem) => {
-    // Carrega os adicionais diretamente
-    const localAdicionais = getLocalAdicionais();
-    
-    // Define o item selecionado
-    setSelectedItemForAdicionais(item);
-    setSelectedAdicionais([]);
-    setObservacoes("");
-    
-    // Carrega os adicionais no estado
-    setAdicionais(localAdicionais);
-    
-    // Abre o modal
-    setIsAdicionaisDialogOpen(true);
+    setSelectedItem(item);
+    setSelectedAdicionais({});
+    setQuantidade(1);
+    setShowAdicionaisDialog(true);
   };
 
-  const addToCartWithAdicionais = () => {
-    if (!selectedItemForAdicionais) return;
+  const addToCart = () => {
+    if (!selectedItem) return;
 
-    const precoAdicionais = selectedAdicionais.reduce((total, adicional) => total + adicional.preco_extra, 0);
-    const precoTotal = selectedItemForAdicionais.preco + precoAdicionais;
+    const itemAdicionais = adicionais.filter(adicional => 
+      selectedAdicionais[adicional.id] && adicional.item_id === selectedItem.id
+    );
 
-    const cartItem: CartItem = {
-      ...selectedItemForAdicionais,
-      quantidade: 1,
-      adicionais: selectedAdicionais,
-      observacoes: observacoes,
-      preco_total: precoTotal
+    const totalPreco = selectedItem.preco + itemAdicionais.reduce((sum, adicional) => sum + adicional.preco_extra, 0);
+
+    const cartItem: PedidoItem = {
+      item_id: selectedItem.id,
+      nome: selectedItem.nome,
+      preco: totalPreco,
+      quantidade: quantidade,
+      adicionais: itemAdicionais.map(adicional => ({
+        id: adicional.id,
+        nome: adicional.nome,
+        preco_extra: adicional.preco_extra
+      }))
     };
 
-    setCart(prev => {
-      const existingItem = prev.find(cartItem => 
-        cartItem.id === selectedItemForAdicionais.id && 
-        JSON.stringify(cartItem.adicionais) === JSON.stringify(selectedAdicionais) &&
-        cartItem.observacoes === observacoes
-      );
-      
-      if (existingItem) {
-        return prev.map(cartItem =>
-          cartItem.id === selectedItemForAdicionais.id && 
-          JSON.stringify(cartItem.adicionais) === JSON.stringify(selectedAdicionais) &&
-          cartItem.observacoes === observacoes
-            ? { ...cartItem, quantidade: cartItem.quantidade + 1 }
-            : cartItem
-        );
-      }
-      return [...prev, cartItem];
-    });
-
-    setIsAdicionaisDialogOpen(false);
-    setSelectedItemForAdicionais(null);
-    setSelectedAdicionais([]);
-    setObservacoes("");
-
-    toast({
-      title: "Item adicionado ao carrinho",
-      description: `${selectedItemForAdicionais.nome} foi adicionado com sucesso!`,
-    });
-  };
-
-  const toggleAdicional = (adicional: Adicional) => {
-    setSelectedAdicionais(prev => {
-      const isSelected = prev.some(sel => sel.id === adicional.id);
-      if (isSelected) {
-        return prev.filter(sel => sel.id !== adicional.id);
-      } else {
-        return [...prev, adicional];
-      }
-    });
-  };
-
-  const updateCartItemQuantity = (itemId: string, newQuantity: number) => {
-    if (newQuantity === 0) {
-      setCart(prev => prev.filter(item => item.id !== itemId));
-    } else {
-      setCart(prev =>
-        prev.map(item =>
-          item.id === itemId ? { ...item, quantidade: newQuantity } : item
-        )
-      );
-    }
-  };
-
-  const getCartTotal = () => {
-    return cart.reduce((total, item) => total + (item.preco * item.quantidade), 0);
-  };
-
-  const getTaxaEntrega = () => {
-    const selectedBairro = bairros.find(b => b.id === customerData.bairro_id);
-    return selectedBairro ? selectedBairro.taxa_entrega : 0;
-  };
-
-  const getTaxaPagamento = () => {
-    const selectedMethod = paymentMethods.find(m => m.id === customerData.metodo_pagamento_id);
-    if (!selectedMethod) return 0;
+    setCart(prev => [...prev, cartItem]);
+    setShowAdicionaisDialog(false);
     
-    const subtotal = getCartTotal();
-    return selectedMethod.fee_type === 'percentage' 
-      ? (subtotal * selectedMethod.fee_value / 100)
-      : selectedMethod.fee_value;
+    toast({
+      title: "Adicionado ao carrinho!",
+      description: `${selectedItem.nome} foi adicionado ao seu pedido.`,
+    });
   };
 
-  const getFinalTotal = () => {
-    return getCartTotal() + getTaxaEntrega() + getTaxaPagamento();
+  const removeFromCart = (index: number) => {
+    setCart(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateQuantity = (index: number, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      removeFromCart(index);
+      return;
+    }
+    setCart(prev => prev.map((item, i) => 
+      i === index ? { ...item, quantidade: newQuantity } : item
+    ));
+  };
+
+  const getTotalPrice = () => {
+    return cart.reduce((total, item) => total + (item.preco * item.quantidade), 0);
   };
 
   const formatCurrency = (value: number) => {
@@ -403,438 +270,109 @@ export default function MenuPublico() {
     }).format(value);
   };
 
-  // Filter and sort items
-  const getFilteredItems = () => {
-    let filtered = menuItems;
+  const submitOrder = async () => {
+    if (cart.length === 0) return;
 
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(item =>
-        item.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.descricao.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filter by category
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(item => item.categoria_id === selectedCategory);
-    }
-
-    // Sort items
-    switch (sortBy) {
-      case "price-low":
-        filtered = filtered.sort((a, b) => a.preco - b.preco);
-        break;
-      case "price-high":
-        filtered = filtered.sort((a, b) => b.preco - a.preco);
-        break;
-      case "rating":
-        filtered = filtered.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
-        break;
-      default:
-        filtered = filtered.sort((a, b) => a.nome.localeCompare(b.nome));
-    }
-
-    return filtered;
-  };
-
-  const filteredItems = getFilteredItems();
-
-  const handleSubmitOrder = async () => {
-    if (cart.length === 0) {
-      toast({
-        title: "Carrinho vazio",
-        description: "Adicione itens ao carrinho antes de finalizar",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!customerData.nome || !customerData.telefone || !customerData.endereco || !customerData.bairro_id || !customerData.metodo_pagamento_id) {
-      toast({
-        title: "Dados incompletos",
-        description: "Preencha todos os campos obrigatórios",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    setIsSubmitting(true);
     try {
-      // Get the payment method name
-      const selectedPaymentMethod = paymentMethods.find(m => m.id === customerData.metodo_pagamento_id);
-      const selectedBairro = bairros.find(b => b.id === customerData.bairro_id);
-      
-      // Prepare items for unified table
-      const itensPedido: PedidoItem[] = cart.map(item => ({
-        nome: item.nome,
-        preco_unitario: item.preco,
-        quantidade: item.quantidade,
-        observacoes: item.observacoes || undefined,
-        categoria: item.categoria_nome || undefined,
-        adicionais: [] // No additional items for now
-      }));
-
-      // Create unified pedido
-      const pedidoData: CriarPedidoUnificado = {
-        cliente_nome: customerData.nome,
-        cliente_telefone: customerData.telefone,
-        cliente_endereco: customerData.endereco,
-        cliente_bairro: selectedBairro?.nome,
-        origem: 'DELIVERY',
-        itens: itensPedido,
-        taxa_entrega: getTaxaEntrega(),
-        taxa_pagamento: getTaxaPagamento(),
-        metodo_pagamento: selectedPaymentMethod?.nome || 'Dinheiro',
-        observacoes: customerData.observacoes || undefined,
-        status: 'PENDENTE'
+      const pedido: CriarPedidoUnificado = {
+        itens: cart,
+        total: getTotalPrice(),
+        observacoes: "",
+        forma_pagamento: "dinheiro",
+        endereco_entrega: "",
+        telefone: "",
+        nome_cliente: ""
       };
 
-      const { data: pedidoUnificado, error: orderError } = await supabase
+      const { data, error } = await supabase
         .from('pedidos_unificados')
-        .insert(pedidoData)
-        .select()
-        .single();
+        .insert([pedido])
+        .select();
 
-      if (orderError) throw orderError;
-
-      // Clear cart and form
-      setCart([]);
-      setCustomerData({
-        nome: '',
-        telefone: '',
-        endereco: '',
-        bairro_id: '',
-        metodo_pagamento_id: '',
-        observacoes: ''
-      });
-      setShowCart(false);
+      if (error) throw error;
 
       toast({
         title: "Pedido realizado!",
-        description: `Pedido #${pedidoUnificado.numero_pedido} foi enviado com sucesso. Aguarde o contato do restaurante.`,
+        description: "Seu pedido foi enviado com sucesso.",
       });
 
+      setCart([]);
+      setShowCart(false);
     } catch (error) {
       console.error('Error submitting order:', error);
       toast({
-        title: "Erro ao finalizar pedido",
-        description: "Tente novamente em alguns instantes",
+        title: "Erro",
+        description: "Não foi possível realizar o pedido. Tente novamente.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-orange-200 to-red-200 rounded-full opacity-20 animate-pulse"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-pink-200 to-orange-200 rounded-full opacity-20 animate-pulse" style={{animationDelay: '1s'}}></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-gradient-to-br from-yellow-200 to-orange-200 rounded-full opacity-10 animate-pulse" style={{animationDelay: '2s'}}></div>
-        </div>
-        
-        <div className="text-center space-y-8 relative z-10">
-          <div className="relative">
-            <div className="w-24 h-24 rounded-3xl bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 flex items-center justify-center mx-auto animate-bounce shadow-2xl">
-              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-orange-500" />
-              </div>
-            </div>
-            <div className="absolute -top-3 -right-3 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg animate-ping">
-              <Award className="w-4 h-4 text-white" />
-            </div>
-            <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-green-400 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-              <Zap className="w-3 h-3 text-white" />
-            </div>
-          </div>
-          <div className="space-y-4">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent animate-pulse">
-              Preparando Delícias
-            </h2>
-            <p className="text-lg text-gray-700 font-medium">Os melhores sabores estão chegando...</p>
-            <div className="flex justify-center space-x-2">
-              <div className="w-3 h-3 bg-orange-500 rounded-full animate-bounce"></div>
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-              <div className="w-3 h-3 bg-pink-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (showCart) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
-        {/* Header */}
-        <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-orange-100 sticky top-0 z-40">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <img src={restaurantConfig?.logo_url || "/restaurant-logo.jpg"} alt="Logo" className="w-12 h-12 object-contain rounded-xl shadow-md" />
-                <div>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                    {restaurantConfig?.nome_restaurante || 'Veneza\'s Lanches'}
-                  </h1>
-                  <p className="text-sm text-gray-600">Seu pedido</p>
-                </div>
-              </div>
-              <Button 
-                variant="outline" 
-                onClick={() => setShowCart(false)}
-                className="border-orange-200 text-orange-600 hover:bg-orange-50"
-              >
-                ← Voltar ao Cardápio
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="container mx-auto px-4 py-6 max-w-2xl">
-          <div className="space-y-6">
-            {/* Cart Items */}
-            <Card className="border-orange-200 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-t-lg">
-                <CardTitle className="flex items-center gap-2">
-                  <ShoppingCart className="w-5 h-5" />
-                  Seus Itens ({cart.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 p-6">
-                {cart.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-4 border border-orange-100 rounded-xl bg-gradient-to-r from-orange-50 to-red-50">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800">{item.nome}</h4>
-                      <p className="text-sm text-orange-600 font-medium">{formatCurrency(item.preco)}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateCartItemQuantity(item.id, item.quantidade - 1)}
-                        className="border-orange-200 text-orange-600 hover:bg-orange-50"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </Button>
-                      <span className="w-8 text-center font-semibold text-gray-800">{item.quantidade}</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateCartItemQuantity(item.id, item.quantidade + 1)}
-                        className="border-orange-200 text-orange-600 hover:bg-orange-50"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                
-                {cart.length === 0 && (
-                  <div className="text-center py-12">
-                    <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-lg">Seu carrinho está vazio</p>
-                    <p className="text-gray-400 text-sm">Adicione alguns itens deliciosos!</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Customer Data Form */}
-            {cart.length > 0 && (
-              <Card className="border-orange-200 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-t-lg">
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="w-5 h-5" />
-                    Dados de Entrega
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="nome" className="text-gray-700 font-medium">Nome Completo *</Label>
-                      <Input
-                        id="nome"
-                        value={customerData.nome}
-                        onChange={(e) => setCustomerData(prev => ({ ...prev, nome: e.target.value }))}
-                        placeholder="Seu nome completo"
-                        className="border-orange-200 focus:border-orange-400"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="telefone" className="text-gray-700 font-medium">Telefone *</Label>
-                      <Input
-                        id="telefone"
-                        value={customerData.telefone}
-                        onChange={(e) => setCustomerData(prev => ({ ...prev, telefone: e.target.value }))}
-                        placeholder="(31) 99999-9999"
-                        className="border-orange-200 focus:border-orange-400"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="endereco" className="text-gray-700 font-medium">Endereço Completo *</Label>
-                    <Input
-                      id="endereco"
-                      value={customerData.endereco}
-                      onChange={(e) => setCustomerData(prev => ({ ...prev, endereco: e.target.value }))}
-                      placeholder="Rua, número, bairro, complemento"
-                      className="border-orange-200 focus:border-orange-400"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="bairro" className="text-gray-700 font-medium">Bairro *</Label>
-                      <Select value={customerData.bairro_id} onValueChange={(value) => setCustomerData(prev => ({ ...prev, bairro_id: value }))}>
-                        <SelectTrigger className="border-orange-200 focus:border-orange-400">
-                          <SelectValue placeholder="Selecione o bairro" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {bairros.map((bairro) => (
-                            <SelectItem key={bairro.id} value={bairro.id}>
-                              {bairro.nome} - {formatCurrency(bairro.taxa_entrega)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="pagamento" className="text-gray-700 font-medium">Forma de Pagamento *</Label>
-                      <Select value={customerData.metodo_pagamento_id} onValueChange={(value) => setCustomerData(prev => ({ ...prev, metodo_pagamento_id: value }))}>
-                        <SelectTrigger className="border-orange-200 focus:border-orange-400">
-                          <SelectValue placeholder="Selecione o pagamento" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {paymentMethods.map((method) => (
-                            <SelectItem key={method.id} value={method.id}>
-                              {method.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="observacoes" className="text-gray-700 font-medium">Observações</Label>
-                    <Textarea
-                      id="observacoes"
-                      value={customerData.observacoes}
-                      onChange={(e) => setCustomerData(prev => ({ ...prev, observacoes: e.target.value }))}
-                      placeholder="Observações adicionais (opcional)"
-                      rows={3}
-                      className="border-orange-200 focus:border-orange-400"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Order Summary */}
-            {cart.length > 0 && (
-              <Card className="border-green-200 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-t-lg">
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="w-5 h-5" />
-                    Resumo do Pedido
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 p-6">
-                  <div className="flex justify-between text-gray-700">
-                    <span>Subtotal</span>
-                    <span className="font-semibold">{formatCurrency(getCartTotal())}</span>
-                  </div>
-                  {getTaxaEntrega() > 0 && (
-                    <div className="flex justify-between text-gray-700">
-                      <span>Taxa de Entrega</span>
-                      <span className="font-semibold">{formatCurrency(getTaxaEntrega())}</span>
-                    </div>
-                  )}
-                  {getTaxaPagamento() > 0 && (
-                    <div className="flex justify-between text-gray-700">
-                      <span>Taxa de Pagamento</span>
-                      <span className="font-semibold">{formatCurrency(getTaxaPagamento())}</span>
-                    </div>
-                  )}
-                  <div className="border-t border-green-200 pt-3 flex justify-between font-bold text-xl">
-                    <span className="text-gray-800">Total</span>
-                    <span className="text-green-600">{formatCurrency(getFinalTotal())}</span>
-                  </div>
-                  
-                  <Button 
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 mt-4 py-3 text-lg font-semibold"
-                    onClick={handleSubmitOrder}
-                  >
-                    <Zap className="w-5 h-5 mr-2" />
-                    Finalizar Pedido
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-red-50 to-amber-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-amber-300 border-t-amber-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-amber-800 text-lg font-semibold">Carregando cardápio...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
-      {/* Header with Restaurant Info */}
-      <div className="relative bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 overflow-hidden">
-        {/* Animated background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSI0Ii8+PC9nPjwvZz48L3N2Zz4=')] animate-pulse"></div>
-        </div>
-        
-        <div className="relative bg-white/95 backdrop-blur-sm shadow-2xl sticky top-0 z-30">
-          <div className="container mx-auto px-4 py-8">
-            <div className="text-center space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-red-50 to-amber-100">
+      {/* Header */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-900 via-red-900 to-amber-800"></div>
+        <div className="relative z-10 container mx-auto px-4 py-12">
+          <div className="text-center">
+            <div className="mb-8">
               <div className="relative inline-block group">
-                <div className="absolute -inset-4 bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
-                <div className="relative">
-                  <img 
-                    src={restaurantConfig?.logo_url || "/restaurant-logo.jpg"} 
+                <div className="absolute -inset-4 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                <div className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-6 shadow-2xl border border-amber-300/30">
+                  <img
+                    src={restaurantConfig?.logo_url || "/restaurant-logo.jpg"}
                     alt="Logo" 
-                    className="w-28 h-28 object-contain rounded-3xl mx-auto shadow-2xl border-4 border-white transform group-hover:scale-105 transition-transform duration-300"
+                    className="w-28 h-28 object-contain rounded-3xl mx-auto shadow-2xl border-4 border-amber-200 transform group-hover:scale-105 transition-transform duration-300"
                     onLoad={() => console.log('Logo carregada com sucesso:', restaurantConfig?.logo_url)}
                     onError={(e) => console.log('Erro ao carregar logo:', e, 'URL:', restaurantConfig?.logo_url)}
                   />
-                  <div className="absolute -top-3 -right-3 w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center shadow-xl animate-bounce">
-                    <Award className="w-5 h-5 text-white" />
+                  <div className="absolute -top-3 -right-3 w-10 h-10 bg-gradient-to-r from-yellow-400 to-amber-400 rounded-full flex items-center justify-center shadow-xl animate-bounce">
+                    <Award className="w-5 h-5 text-amber-900" />
                   </div>
-                  <div className="absolute -bottom-2 -left-2 w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                  <div className="absolute -bottom-2 -left-2 w-8 h-8 bg-gradient-to-r from-amber-400 to-red-400 rounded-full flex items-center justify-center shadow-lg animate-pulse">
                     <Zap className="w-4 h-4 text-white" />
                   </div>
                 </div>
               </div>
+            </div>
+            
+            <div className="space-y-4">
+              <h1 className="text-5xl font-black bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-300 bg-clip-text text-transparent drop-shadow-lg animate-pulse">
+                {restaurantConfig?.nome_restaurante || 'Veneza\'s Lanches'}
+              </h1>
+              <p className="text-xl text-amber-100 font-semibold">🍔 Sabor que conquista, qualidade que encanta ✨</p>
               
-              <div className="space-y-4">
-                <h1 className="text-5xl font-black bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent drop-shadow-lg animate-pulse">
-                  {restaurantConfig?.nome_restaurante || 'Veneza\'s Lanches'}
-                </h1>
-                <p className="text-xl text-gray-700 font-semibold">🍔 Sabor que conquista, qualidade que encanta ✨</p>
-                
-                <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
-                  {restaurantConfig?.telefone && (
-                    <div className="flex items-center gap-3 bg-gradient-to-r from-orange-100 to-red-100 px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group">
-                      <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
-                        <Phone className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="font-bold text-gray-800 group-hover:text-orange-600 transition-colors">{restaurantConfig.telefone}</span>
+              <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
+                {restaurantConfig?.telefone && (
+                  <div className="flex items-center gap-3 bg-gradient-to-r from-amber-100/20 to-red-100/20 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group border border-amber-300/30">
+                    <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-red-500 rounded-full flex items-center justify-center">
+                      <Phone className="w-5 h-5 text-white" />
                     </div>
-                  )}
-                  {restaurantConfig?.endereco && (
-                    <div className="flex items-center gap-3 bg-gradient-to-r from-red-100 to-pink-100 px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group">
-                      <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center">
-                        <MapPin className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="font-bold text-gray-800 group-hover:text-red-600 transition-colors">{restaurantConfig.endereco}</span>
+                    <span className="font-bold text-amber-100 group-hover:text-amber-200 transition-colors">{restaurantConfig.telefone}</span>
+                  </div>
+                )}
+                {restaurantConfig?.endereco && (
+                  <div className="flex items-center gap-3 bg-gradient-to-r from-red-100/20 to-amber-100/20 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group border border-red-300/30">
+                    <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-amber-500 rounded-full flex items-center justify-center">
+                      <MapPin className="w-5 h-5 text-white" />
                     </div>
-                  )}
-                </div>
+                    <span className="font-bold text-amber-100 group-hover:text-amber-200 transition-colors">{restaurantConfig.endereco}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -848,29 +386,29 @@ export default function MenuPublico() {
       />
 
       {/* Search and Filter Bar */}
-      <div className="bg-gradient-to-r from-white/95 to-orange-50/95 backdrop-blur-sm border-b border-orange-200 sticky top-0 z-20 shadow-lg">
+      <div className="bg-gradient-to-r from-white/95 to-amber-50/95 backdrop-blur-sm border-b border-amber-200 sticky top-0 z-20 shadow-lg">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col lg:flex-row gap-6 items-center">
             <div className="flex-1 relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 to-red-400 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-amber-500 w-5 h-5" />
                 <Input
                   placeholder="🔍 Buscar por nome ou descrição..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 pr-4 py-3 border-2 border-orange-200 focus:border-orange-400 rounded-2xl bg-white/80 backdrop-blur-sm shadow-lg focus:shadow-xl transition-all duration-300 text-lg"
+                  className="pl-12 pr-4 py-3 border-2 border-amber-200 focus:border-amber-400 rounded-2xl bg-white/80 backdrop-blur-sm shadow-lg focus:shadow-xl transition-all duration-300 text-lg"
                 />
               </div>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 to-red-400 rounded-xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
                 <div className="relative">
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-48 border-2 border-blue-200 focus:border-blue-400 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 py-3">
-                      <Filter className="w-5 h-5 mr-2 text-blue-500" />
+                    <SelectTrigger className="w-48 border-2 border-amber-200 focus:border-amber-400 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 py-3">
+                      <Filter className="w-5 h-5 mr-2 text-amber-500" />
                       <SelectValue placeholder="📂 Categoria" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl shadow-2xl border-0">
@@ -886,11 +424,11 @@ export default function MenuPublico() {
               </div>
               
               <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-red-400 to-amber-400 rounded-xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
                 <div className="relative">
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-48 border-2 border-green-200 focus:border-green-400 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 py-3">
-                      <Sparkles className="w-5 h-5 mr-2 text-green-500" />
+                    <SelectTrigger className="w-48 border-2 border-red-200 focus:border-red-400 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 py-3">
+                      <Sparkles className="w-5 h-5 mr-2 text-red-500" />
                       <SelectValue placeholder="⚡ Ordenar" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl shadow-2xl border-0">
@@ -910,16 +448,16 @@ export default function MenuPublico() {
       {/* Fixed Cart Button */}
       {cart.length > 0 && (
         <div className="fixed bottom-6 right-6 z-50 group">
-          <div className="absolute -inset-2 bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+          <div className="absolute -inset-2 bg-gradient-to-r from-amber-400 via-red-400 to-amber-400 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
           <Button 
             onClick={() => setShowCart(true)}
-            className="relative bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-600 hover:via-red-600 hover:to-pink-600 shadow-2xl hover:shadow-3xl rounded-full w-20 h-20 flex items-center justify-center animate-bounce hover:scale-110 transition-all duration-300"
+            className="relative bg-gradient-to-r from-amber-500 via-red-500 to-amber-500 hover:from-amber-600 hover:via-red-600 hover:to-amber-600 shadow-2xl hover:shadow-3xl rounded-full w-20 h-20 flex items-center justify-center animate-bounce hover:scale-110 transition-all duration-300"
             size="lg"
           >
             <div className="text-center">
               <ShoppingCart className="w-8 h-8 mx-auto text-white drop-shadow-lg" />
               <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-xs font-black text-yellow-900">{cart.length}</span>
+                <span className="text-xs font-black text-amber-900">{cart.length}</span>
               </div>
             </div>
           </Button>
@@ -932,16 +470,16 @@ export default function MenuPublico() {
           // Show all items in a grid
           <div className="space-y-8">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-2">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-red-600 bg-clip-text text-transparent mb-2">
                 Cardápio Completo
               </h2>
-              <p className="text-gray-600">Deliciosos sabores esperando por você</p>
+              <p className="text-amber-700">Deliciosos sabores esperando por você</p>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {filteredItems.map((item, index) => (
                 <Card key={item.id} className="group border-0 shadow-2xl hover:shadow-3xl transition-all duration-500 overflow-hidden bg-white/90 backdrop-blur-sm transform hover:-translate-y-2 hover:scale-105" style={{animationDelay: `${index * 0.1}s`}}>
-                  <div className="absolute -inset-1 bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-red-400 to-amber-400 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
                   <div className="relative">
                     {item.foto_url && (
                       <div className="relative h-48 overflow-hidden">
@@ -953,14 +491,14 @@ export default function MenuPublico() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                         <div className="absolute top-3 right-3">
                           {item.total_ratings > 0 && (
-                            <Badge className="bg-gradient-to-r from-yellow-400 to-orange-400 text-yellow-900 border-0 shadow-xl backdrop-blur-sm">
+                            <Badge className="bg-gradient-to-r from-yellow-400 to-amber-400 text-amber-900 border-0 shadow-xl backdrop-blur-sm">
                               <Star className="w-4 h-4 mr-1 fill-current" />
                               {item.average_rating?.toFixed(1)}
                             </Badge>
                           )}
                         </div>
                         <div className="absolute bottom-3 left-3">
-                          <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-lg">
+                          <Badge className="bg-gradient-to-r from-amber-500 to-red-500 text-white border-0 shadow-lg">
                             <Heart className="w-3 h-3 mr-1" />
                             Popular
                           </Badge>
@@ -971,18 +509,18 @@ export default function MenuPublico() {
                     <CardContent className="p-6">
                       <div className="space-y-4">
                         <div>
-                          <h3 className="font-black text-xl text-gray-800 group-hover:text-orange-600 transition-colors duration-300 mb-2">
+                          <h3 className="font-black text-xl text-amber-900 group-hover:text-amber-600 transition-colors duration-300 mb-2">
                             {item.nome}
                           </h3>
                           {item.categoria_nome && (
-                            <Badge variant="outline" className="text-sm text-orange-600 border-orange-300 bg-orange-50 font-semibold">
+                            <Badge variant="outline" className="text-sm text-amber-600 border-amber-300 bg-amber-50 font-semibold">
                               {item.categoria_nome}
                             </Badge>
                           )}
                         </div>
                         
                         {item.descricao && (
-                          <p className="text-sm text-gray-600 overflow-hidden leading-relaxed" style={{
+                          <p className="text-sm text-amber-700 overflow-hidden leading-relaxed" style={{
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical'
@@ -992,15 +530,14 @@ export default function MenuPublico() {
                         )}
                         
                         <div className="flex items-center justify-between pt-4">
-                          <div className="text-3xl font-black bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent drop-shadow-sm">
+                          <div className="text-3xl font-black bg-gradient-to-r from-amber-600 via-red-600 to-amber-600 bg-clip-text text-transparent drop-shadow-sm">
                             {formatCurrency(item.preco)}
                           </div>
                           <Button 
                             onClick={() => openAdicionaisDialog(item)}
-                            className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-600 hover:via-red-600 hover:to-pink-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl px-8 py-3 font-bold hover:scale-105"
-                            size="sm"
+                            className="bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-bold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                           >
-                            <Plus className="w-5 h-5 mr-2" />
+                            <Plus className="w-4 h-4 mr-2" />
                             Adicionar
                           </Button>
                         </div>
@@ -1014,271 +551,257 @@ export default function MenuPublico() {
         ) : (
           // Show items by category
           <div className="space-y-8">
-            {categories.map((category) => {
-              const categoryItems = filteredItems.filter(item => item.categoria_id === category.id);
-              
-              if (categoryItems.length === 0) return null;
-
-              return (
-                <div key={category.id} className="space-y-6">
-                  <div className="text-center">
-                    <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-2">
-                      {category.nome}
-                    </h2>
-                    <div className="w-24 h-1 bg-gradient-to-r from-orange-500 to-red-500 mx-auto rounded-full"></div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {categoryItems.map((item) => (
-                      <Card key={item.id} className="group border-orange-200 shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden bg-white/80 backdrop-blur-sm">
-                        {item.foto_url && (
-                          <div className="relative h-40 overflow-hidden">
-                            <img 
-                              src={item.foto_url} 
-                              alt={item.nome}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            />
-                            <div className="absolute top-2 right-2">
-                              {item.total_ratings > 0 && (
-                                <Badge className="bg-yellow-400 text-yellow-900 border-0 shadow-lg">
-                                  <Star className="w-3 h-3 mr-1 fill-current" />
-                                  {item.average_rating?.toFixed(1)}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-red-600 bg-clip-text text-transparent mb-2">
+                {categories.find(cat => cat.id === selectedCategory)?.nome || 'Categoria'}
+              </h2>
+              <p className="text-amber-700">Deliciosos sabores esperando por você</p>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {filteredItems.map((item, index) => (
+                <Card key={item.id} className="group border-0 shadow-2xl hover:shadow-3xl transition-all duration-500 overflow-hidden bg-white/90 backdrop-blur-sm transform hover:-translate-y-2 hover:scale-105" style={{animationDelay: `${index * 0.1}s`}}>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-red-400 to-amber-400 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                  <div className="relative">
+                    {item.foto_url && (
+                      <div className="relative h-48 overflow-hidden">
+                        <img 
+                          src={item.foto_url} 
+                          alt={item.nome}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                        <div className="absolute top-3 right-3">
+                          {item.total_ratings > 0 && (
+                            <Badge className="bg-gradient-to-r from-yellow-400 to-amber-400 text-amber-900 border-0 shadow-xl backdrop-blur-sm">
+                              <Star className="w-4 h-4 mr-1 fill-current" />
+                              {item.average_rating?.toFixed(1)}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="absolute bottom-3 left-3">
+                          <Badge className="bg-gradient-to-r from-amber-500 to-red-500 text-white border-0 shadow-lg">
+                            <Heart className="w-3 h-3 mr-1" />
+                            Popular
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="font-black text-xl text-amber-900 group-hover:text-amber-600 transition-colors duration-300 mb-2">
+                            {item.nome}
+                          </h3>
+                          {item.categoria_nome && (
+                            <Badge variant="outline" className="text-sm text-amber-600 border-amber-300 bg-amber-50 font-semibold">
+                              {item.categoria_nome}
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {item.descricao && (
+                          <p className="text-sm text-amber-700 overflow-hidden leading-relaxed" style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical'
+                          }}>
+                            {item.descricao}
+                          </p>
                         )}
                         
-                        <CardContent className="p-4">
-                          <div className="space-y-3">
-                            <div>
-                              <h3 className="font-bold text-lg text-gray-800 group-hover:text-orange-600 transition-colors">
-                                {item.nome}
-                              </h3>
-                            </div>
-                            
-                            {item.descricao && (
-                              <p className="text-sm text-gray-600 overflow-hidden" style={{
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical'
-                              }}>
-                                {item.descricao}
-                              </p>
-                            )}
-                            
-                            <div className="flex items-center justify-between pt-2">
-                              <div className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                                {formatCurrency(item.preco)}
-                              </div>
-                              <Button 
-                                onClick={() => openAdicionaisDialog(item)}
-                                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 rounded-full px-6"
-                                size="sm"
-                              >
-                                <Plus className="w-4 h-4 mr-1" />
-                                Adicionar
-                              </Button>
-                            </div>
+                        <div className="flex items-center justify-between pt-4">
+                          <div className="text-3xl font-black bg-gradient-to-r from-amber-600 via-red-600 to-amber-600 bg-clip-text text-transparent drop-shadow-sm">
+                            {formatCurrency(item.preco)}
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          <Button 
+                            onClick={() => openAdicionaisDialog(item)}
+                            className="bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-bold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Adicionar
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {filteredItems.length === 0 && (
-          <div className="text-center py-16">
-            <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">Nenhum item encontrado</h3>
-            <p className="text-gray-500">Tente ajustar os filtros de busca</p>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Footer */}
-      <footer className="relative bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 text-white mt-20 overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] animate-pulse"></div>
-        </div>
-        
-        <div className="relative container mx-auto px-4 py-16 text-center">
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <h3 className="text-4xl font-black drop-shadow-lg">🍔 Veneza's Lanches</h3>
-              <p className="text-xl text-orange-100 font-semibold">✨ Sabor que conquista, qualidade que encanta ✨</p>
-            </div>
-            
-            <div className="flex flex-wrap justify-center gap-8 text-orange-100">
-              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-2xl shadow-lg hover:bg-white/20 transition-all duration-300 group">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <Phone className="w-5 h-5" />
-                </div>
-                <span className="font-bold text-lg">{restaurantConfig?.telefone || '(31) 99549-2713'}</span>
-              </div>
-              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-2xl shadow-lg hover:bg-white/20 transition-all duration-300 group">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <span className="font-bold text-lg">{restaurantConfig?.endereco || 'Rua Laguna, 145A - Veneza'}</span>
-              </div>
-            </div>
-            
-            <div className="pt-8 border-t border-orange-400/30">
-              <p className="text-orange-200 font-medium">
-                © 2024 Veneza's Lanches. Todos os direitos reservados. 🎉
-              </p>
-              <p className="text-orange-300 text-sm mt-2">
-                Feito com ❤️ para os amantes da boa comida
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Modal de Adicionais */}
-      <Dialog open={isAdicionaisDialogOpen} onOpenChange={setIsAdicionaisDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      {/* Adicionais Dialog */}
+      <Dialog open={showAdicionaisDialog} onOpenChange={setShowAdicionaisDialog}>
+        <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-sm border-0 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Personalizar {selectedItemForAdicionais?.nome}
+            <DialogTitle className="text-2xl font-bold text-amber-900 text-center">
+              {selectedItem?.nome}
             </DialogTitle>
           </DialogHeader>
           
-          {selectedItemForAdicionais && (
-            <div className="space-y-6">
-              {/* Informações do item */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-center gap-4">
-                  {selectedItemForAdicionais.foto_url && (
-                    <img 
-                      src={selectedItemForAdicionais.foto_url} 
-                      alt={selectedItemForAdicionais.nome}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                  )}
-                  <div>
-                    <h3 className="font-semibold text-lg">{selectedItemForAdicionais.nome}</h3>
-                    <p className="text-gray-600 text-sm">{selectedItemForAdicionais.descricao}</p>
-                    <p className="text-orange-600 font-bold text-lg">
-                      {formatCurrency(selectedItemForAdicionais.preco)}
-                    </p>
-                  </div>
+          <div className="space-y-6">
+            {selectedItem && (
+              <div className="text-center">
+                <div className="text-3xl font-black bg-gradient-to-r from-amber-600 to-red-600 bg-clip-text text-transparent">
+                  {formatCurrency(selectedItem.preco)}
                 </div>
+                <p className="text-amber-700 mt-2">{selectedItem.descricao}</p>
               </div>
+            )}
 
-              {/* Adicionais com preço */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-lg">
-                  Adicionais (Opcionais) 
-                  <span className="text-sm text-gray-500 ml-2">
-                    ({adicionais.filter(adicional => adicional.preco_extra > 0).length} disponíveis)
-                  </span>
-                </h4>
-                <div className="grid gap-3 max-h-60 overflow-y-auto">
-                  {adicionais.filter(adicional => adicional.preco_extra > 0).map((adicional) => (
-                    <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id={adicional.id}
-                          checked={selectedAdicionais.some(sel => sel.id === adicional.id)}
-                          onCheckedChange={() => toggleAdicional(adicional)}
-                        />
-                        <label htmlFor={adicional.id} className="font-medium cursor-pointer">
-                          {adicional.nome}
-                        </label>
-                      </div>
-                      <span className="text-orange-600 font-semibold">
-                        +{formatCurrency(adicional.preco_extra)}
-                      </span>
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-amber-900">Adicionais</h3>
+              {adicionais
+                .filter(adicional => adicional.item_id === selectedItem?.id)
+                .map(adicional => (
+                  <div key={adicional.id} className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-200">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        id={adicional.id}
+                        checked={selectedAdicionais[adicional.id] || false}
+                        onCheckedChange={(checked) => 
+                          setSelectedAdicionais(prev => ({
+                            ...prev,
+                            [adicional.id]: checked as boolean
+                          }))
+                        }
+                        className="border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                      />
+                      <Label htmlFor={adicional.id} className="text-amber-900 font-semibold cursor-pointer">
+                        {adicional.nome}
+                      </Label>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Opções de remoção */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-lg">
-                  Remover Ingredientes
-                  <span className="text-sm text-gray-500 ml-2">
-                    ({adicionais.filter(adicional => adicional.preco_extra === 0).length} opções)
-                  </span>
-                </h4>
-                <div className="grid gap-3 max-h-40 overflow-y-auto">
-                  {adicionais.filter(adicional => adicional.preco_extra === 0).map((adicional) => (
-                    <div key={adicional.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id={adicional.id}
-                          checked={selectedAdicionais.some(sel => sel.id === adicional.id)}
-                          onCheckedChange={() => toggleAdicional(adicional)}
-                        />
-                        <label htmlFor={adicional.id} className="font-medium cursor-pointer text-red-600">
-                          {adicional.nome}
-                        </label>
-                      </div>
-                      <span className="text-gray-500 text-sm">Grátis</span>
+                    <div className="text-amber-600 font-bold">
+                      +{formatCurrency(adicional.preco_extra)}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Observações */}
-              <div className="space-y-2">
-                <Label htmlFor="observacoes">Observações especiais</Label>
-                <Textarea
-                  id="observacoes"
-                  value={observacoes}
-                  onChange={(e) => setObservacoes(e.target.value)}
-                  placeholder="Ex: Bem assado, sem cebola, etc..."
-                  rows={3}
-                />
-              </div>
-
-              {/* Resumo do preço */}
-              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold">Preço base: {formatCurrency(selectedItemForAdicionais.preco)}</p>
-                    {selectedAdicionais.length > 0 && (
-                      <p className="text-sm text-gray-600">
-                        Adicionais: {formatCurrency(selectedAdicionais.reduce((total, adicional) => total + adicional.preco_extra, 0))}
-                      </p>
-                    )}
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-orange-600">
-                      {formatCurrency(selectedItemForAdicionais.preco + selectedAdicionais.reduce((total, adicional) => total + adicional.preco_extra, 0))}
-                    </p>
-                    <p className="text-sm text-gray-600">Total</p>
-                  </div>
-                </div>
-              </div>
+                ))}
+            </div>
 
-              {/* Botões de ação */}
-              <div className="flex gap-3 justify-end">
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-100 to-red-100 rounded-xl">
+              <Label className="text-amber-900 font-bold">Quantidade:</Label>
+              <div className="flex items-center space-x-3">
                 <Button
-                  onClick={() => setIsAdicionaisDialogOpen(false)}
                   variant="outline"
+                  size="sm"
+                  onClick={() => setQuantidade(Math.max(1, quantidade - 1))}
+                  className="border-amber-400 text-amber-600 hover:bg-amber-50"
                 >
-                  Cancelar
+                  <Minus className="w-4 h-4" />
                 </Button>
+                <span className="text-amber-900 font-bold text-lg w-8 text-center">{quantidade}</span>
                 <Button
-                  onClick={addToCartWithAdicionais}
-                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setQuantidade(quantidade + 1)}
+                  className="border-amber-400 text-amber-600 hover:bg-amber-50"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adicionar ao Carrinho
+                  <Plus className="w-4 h-4" />
                 </Button>
               </div>
             </div>
-          )}
+
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowAdicionaisDialog(false)}
+                className="flex-1 border-amber-400 text-amber-600 hover:bg-amber-50"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={addToCart}
+                className="flex-1 bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-bold"
+              >
+                Adicionar ao Carrinho
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cart Dialog */}
+      <Dialog open={showCart} onOpenChange={setShowCart}>
+        <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-sm border-0 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-amber-900 text-center">
+              Seu Pedido
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {cart.map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-200">
+                <div className="flex-1">
+                  <h3 className="font-bold text-amber-900">{item.nome}</h3>
+                  {item.adicionais.length > 0 && (
+                    <div className="text-sm text-amber-700 mt-1">
+                      + {item.adicionais.map(adicional => adicional.nome).join(', ')}
+                    </div>
+                  )}
+                  <div className="text-amber-600 font-bold">
+                    {formatCurrency(item.preco)} x {item.quantidade}
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateQuantity(index, item.quantidade - 1)}
+                    className="border-amber-400 text-amber-600 hover:bg-amber-50"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                  <span className="text-amber-900 font-bold w-8 text-center">{item.quantidade}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateQuantity(index, item.quantidade + 1)}
+                    className="border-amber-400 text-amber-600 hover:bg-amber-50"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeFromCart(index)}
+                    className="border-red-400 text-red-600 hover:bg-red-50"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-amber-200 pt-4">
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-xl font-bold text-amber-900">Total:</span>
+              <span className="text-2xl font-black bg-gradient-to-r from-amber-600 to-red-600 bg-clip-text text-transparent">
+                {formatCurrency(getTotalPrice())}
+              </span>
+            </div>
+            
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowCart(false)}
+                className="flex-1 border-amber-400 text-amber-600 hover:bg-amber-50"
+              >
+                Continuar Comprando
+              </Button>
+              <Button
+                onClick={submitOrder}
+                disabled={isSubmitting}
+                className="flex-1 bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-bold"
+              >
+                {isSubmitting ? "Processando..." : "Finalizar Pedido"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

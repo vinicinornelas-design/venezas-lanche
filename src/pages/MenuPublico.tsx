@@ -373,9 +373,10 @@ export default function MenuPublico() {
     setIsSubmitting(true);
     
     // Criar pedido com estrutura compatível com o sistema de gestão
+    const codigoPedido = Math.floor(Math.random() * 9000) + 1000; // Código entre 1000-9999
     const pedido = {
-      id: `pedido_${Date.now()}`,
-      codigo: Math.floor(Math.random() * 1000) + 100, // Código numérico como no sistema
+      id: `cardapio_publico_${Date.now()}`,
+      codigo: codigoPedido,
       itens: cart,
       origem: 'DELIVERY',
       observacoes: checkoutForm.observacoes || '',
@@ -389,8 +390,8 @@ export default function MenuPublico() {
       subtotal: getTotalPrice(),
       total: getTotalComTaxas(),
       status: 'PENDENTE',
-      pago: false, // Adicionar campo pago
-      tipo_pedido: 'DELIVERY', // Tipo do pedido
+      pago: false,
+      tipo_pedido: 'DELIVERY',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -426,6 +427,26 @@ export default function MenuPublico() {
         console.log('🆔 ID do pedido:', data?.[0]?.id);
         console.log('🔢 Código do pedido:', data?.[0]?.codigo);
         pedidoEnviado = true;
+        
+        // Verificar se o pedido aparece no sistema
+        setTimeout(async () => {
+          try {
+            const { data: verificacao } = await supabase
+              .from('pedidos_unificados')
+              .select('codigo, cliente_nome, status, origem')
+              .eq('codigo', codigoPedido)
+              .single();
+            
+            if (verificacao) {
+              console.log('✅ CONFIRMAÇÃO: Pedido encontrado no sistema!');
+              console.log('📋 Pedido no sistema:', verificacao);
+            } else {
+              console.log('⚠️ ATENÇÃO: Pedido não encontrado no sistema');
+            }
+          } catch (error) {
+            console.log('⚠️ Erro ao verificar pedido no sistema:', error);
+          }
+        }, 2000);
         
         // Salvar também no localStorage como backup
         const pedidosLocais = JSON.parse(localStorage.getItem('pedidos_locais') || '[]');

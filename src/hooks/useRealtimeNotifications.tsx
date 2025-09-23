@@ -71,12 +71,86 @@ export function useRealtimeNotifications(enabled: boolean = true) {
   const audioSystem = useRef<AudioNotificationSystem>(new AudioNotificationSystem());
 
   useEffect(() => {
-    // Sistema de notificações simplificado - sem autenticação
-    console.log('Sistema de notificações inicializado (modo simplificado)');
-    
-    // Não fazer subscribe no Supabase para evitar erros de autenticação
+    if (!enabled) return;
+
+    console.log('🔔 Sistema de notificações de pedidos inicializado');
+
+    // Subscribe para novos pedidos na tabela pedidos_unificados
+    const channel = supabase
+      .channel('pedidos_notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'pedidos_unificados'
+        },
+        (payload) => {
+          console.log('🔔 Novo pedido detectado:', payload);
+          
+          const novoPedido = payload.new;
+          
+          // Tocar som de notificação
+          audioSystem.current.playNotificationSound();
+          
+          // Mostrar toast de notificação
+          toast({
+            title: "🆕 Novo Pedido!",
+            description: `Pedido #${novoPedido.numero_pedido} - ${novoPedido.cliente_nome || 'Cliente não informado'}`,
+            duration: 8000,
+            action: (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    // Marcar como visto
+                    console.log('Pedido marcado como visto');
+                  }}
+                  className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"
+                >
+                  Marcar como visto
+                </button>
+                <button
+                  onClick={() => {
+                    // Abrir página de pedidos
+                    window.location.href = '/pedidos';
+                  }}
+                  className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded"
+                >
+                  Conferir pedido
+                </button>
+              </div>
+            ),
+          });
+
+          // Salvar notificação no localStorage para persistência
+          const notificacao = {
+            id: `pedido_${novoPedido.id}`,
+            type: 'NEW_ORDER',
+            title: 'Novo Pedido',
+            message: `Pedido #${novoPedido.numero_pedido} - ${novoPedido.cliente_nome || 'Cliente não informado'}`,
+            data: {
+              pedido_id: novoPedido.id,
+              numero_pedido: novoPedido.numero_pedido,
+              cliente_nome: novoPedido.cliente_nome,
+              origem: novoPedido.origem,
+              total: novoPedido.total
+            },
+            read: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          // Salvar no localStorage
+          const notificacoesExistentes = JSON.parse(localStorage.getItem('pedidos_notifications') || '[]');
+          notificacoesExistentes.unshift(notificacao);
+          localStorage.setItem('pedidos_notifications', JSON.stringify(notificacoesExistentes));
+        }
+      )
+      .subscribe();
+
     return () => {
-      // Cleanup vazio
+      console.log('🔔 Limpando subscription de notificações');
+      supabase.removeChannel(channel);
     };
   }, [enabled, toast]);
 

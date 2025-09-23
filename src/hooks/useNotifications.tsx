@@ -17,11 +17,36 @@ export function useNotifications() {
   });
   const { toast } = useToast();
 
-  // Carregar notificações iniciais - simplificado sem autenticação
+  // Carregar notificações iniciais - incluindo notificações de pedidos
   useEffect(() => {
-    // Simular notificações vazias para evitar erros
-    setNotifications([]);
-    setLoading(false);
+    const loadNotifications = () => {
+      try {
+        // Carregar notificações de pedidos do localStorage
+        const pedidosNotifications = JSON.parse(localStorage.getItem('pedidos_notifications') || '[]');
+        
+        // Converter para formato AppNotification
+        const notificationsFormatted: AppNotification[] = pedidosNotifications.map((notif: any) => ({
+          id: notif.id,
+          type: notif.type,
+          title: notif.title,
+          message: notif.message,
+          data: notif.data,
+          read: notif.read,
+          created_at: notif.created_at,
+          updated_at: notif.updated_at
+        }));
+
+        setNotifications(notificationsFormatted);
+        console.log('📱 Notificações carregadas:', notificationsFormatted.length);
+      } catch (error) {
+        console.error('Erro ao carregar notificações:', error);
+        setNotifications([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadNotifications();
   }, []);
 
   // Atualizar contador de não lidas
@@ -151,10 +176,19 @@ export function useNotifications() {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      // Simular marcação como lida localmente
+      // Marcar como lida localmente
       setNotifications(prev =>
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       );
+
+      // Salvar no localStorage
+      const pedidosNotifications = JSON.parse(localStorage.getItem('pedidos_notifications') || '[]');
+      const updatedNotifications = pedidosNotifications.map((notif: any) => 
+        notif.id === notificationId ? { ...notif, read: true } : notif
+      );
+      localStorage.setItem('pedidos_notifications', JSON.stringify(updatedNotifications));
+
+      console.log('✅ Notificação marcada como lida:', notificationId);
     } catch (error) {
       console.error('Erro ao marcar notificação como lida:', error);
     }
@@ -162,10 +196,17 @@ export function useNotifications() {
 
   const markAllAsRead = async () => {
     try {
-      // Simular marcação de todas como lidas localmente
+      // Marcar todas como lidas localmente
       setNotifications(prev =>
         prev.map(n => ({ ...n, read: true }))
       );
+
+      // Salvar no localStorage
+      const pedidosNotifications = JSON.parse(localStorage.getItem('pedidos_notifications') || '[]');
+      const updatedNotifications = pedidosNotifications.map((notif: any) => ({ ...notif, read: true }));
+      localStorage.setItem('pedidos_notifications', JSON.stringify(updatedNotifications));
+
+      console.log('✅ Todas as notificações marcadas como lidas');
     } catch (error) {
       console.error('Erro ao marcar todas as notificações como lidas:', error);
     }
@@ -173,8 +214,15 @@ export function useNotifications() {
 
   const deleteNotification = async (notificationId: string) => {
     try {
-      // Simular deleção localmente
+      // Deletar localmente
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
+
+      // Salvar no localStorage
+      const pedidosNotifications = JSON.parse(localStorage.getItem('pedidos_notifications') || '[]');
+      const updatedNotifications = pedidosNotifications.filter((notif: any) => notif.id !== notificationId);
+      localStorage.setItem('pedidos_notifications', JSON.stringify(updatedNotifications));
+
+      console.log('🗑️ Notificação deletada:', notificationId);
     } catch (error) {
       console.error('Erro ao deletar notificação:', error);
     }

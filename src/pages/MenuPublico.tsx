@@ -240,11 +240,15 @@ export default function MenuPublico() {
   const addToCart = () => {
     if (!selectedItem) return;
 
+    // Buscar adicionais selecionados (tanto específicos do item quanto globais)
     const itemAdicionais = adicionais.filter(adicional => 
-      selectedAdicionais[adicional.id] && adicional.item_id === selectedItem.id
+      selectedAdicionais[adicional.id] && 
+      (adicional.item_id === selectedItem.id || adicional.item_id === null)
     );
 
-    const totalPreco = selectedItem.preco + itemAdicionais.reduce((sum, adicional) => sum + adicional.preco_extra, 0);
+    // Calcular preço total incluindo adicionais
+    const precoAdicionais = itemAdicionais.reduce((sum, adicional) => sum + adicional.preco_extra, 0);
+    const totalPreco = selectedItem.preco + precoAdicionais;
 
     const cartItem: PedidoItem = {
       nome: selectedItem.nome,
@@ -260,6 +264,9 @@ export default function MenuPublico() {
 
     setCart(prev => [...prev, cartItem]);
     setShowAdicionaisDialog(false);
+
+    // Reset dos adicionais selecionados
+    setSelectedAdicionais({});
 
     toast({
       title: "Adicionado ao carrinho!",
@@ -721,6 +728,19 @@ export default function MenuPublico() {
                   {formatCurrency(selectedItem.preco)}
                   </div>
                 <p className="text-amber-700 mt-2">{selectedItem.descricao}</p>
+                
+                {/* Mostrar preço total com adicionais selecionados */}
+                {Object.keys(selectedAdicionais).length > 0 && (
+                  <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="text-sm text-green-700 mb-1">Preço com adicionais:</div>
+                    <div className="text-xl font-bold text-green-800">
+                      {formatCurrency(selectedItem.preco + adicionais
+                        .filter(adicional => selectedAdicionais[adicional.id] && 
+                          (adicional.item_id === selectedItem.id || adicional.item_id === null))
+                        .reduce((sum, adicional) => sum + adicional.preco_extra, 0))}
+                    </div>
+                  </div>
+                )}
                 </div>
             )}
 
@@ -855,11 +875,16 @@ export default function MenuPublico() {
                 <div className="flex-1">
                   <h3 className="font-bold text-amber-900">{item.nome}</h3>
                   {item.adicionais.length > 0 && (
-                    <div className="text-sm text-amber-700 mt-1">
-                      + {item.adicionais.map(adicional => adicional.nome).join(', ')}
+                    <div className="text-sm mt-1 space-y-1">
+                      {item.adicionais.map((adicional, idx) => (
+                        <div key={idx} className={`${adicional.preco > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {adicional.preco > 0 ? '+' : '-'} {adicional.nome}
+                          {adicional.preco > 0 && ` (+${formatCurrency(adicional.preco)})`}
+                        </div>
+                      ))}
                     </div>
                   )}
-                  <div className="text-amber-600 font-bold">
+                  <div className="text-amber-600 font-bold mt-2">
                     {formatCurrency(item.preco_unitario)} x {item.quantidade}
                   </div>
                   </div>
@@ -940,8 +965,13 @@ export default function MenuPublico() {
                   <div>
                     <span className="font-medium text-amber-800">{item.nome}</span>
                     {item.adicionais.length > 0 && (
-                      <div className="text-sm text-amber-600">
-                        + {item.adicionais.map(adicional => adicional.nome).join(', ')}
+                      <div className="text-sm mt-1 space-y-1">
+                        {item.adicionais.map((adicional, idx) => (
+                          <div key={idx} className={`${adicional.preco > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {adicional.preco > 0 ? '+' : '-'} {adicional.nome}
+                            {adicional.preco > 0 && ` (+${formatCurrency(adicional.preco)})`}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>

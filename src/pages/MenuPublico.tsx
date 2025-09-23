@@ -661,7 +661,7 @@ export default function MenuPublico() {
                 </div>
             )}
 
-              <div className="space-y-4">
+            <div className="space-y-4">
               <h3 className="text-lg font-bold text-amber-900">Adicionais</h3>
               
               {/* Debug info */}
@@ -733,7 +733,7 @@ export default function MenuPublico() {
 
             <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-100 to-red-100 rounded-xl">
               <Label className="text-amber-900 font-bold">Quantidade:</Label>
-                      <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3">
                 <Button
                   variant="outline"
                   size="sm"
@@ -751,8 +751,8 @@ export default function MenuPublico() {
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
-                      </div>
-                    </div>
+              </div>
+            </div>
 
             </div>
           </div>

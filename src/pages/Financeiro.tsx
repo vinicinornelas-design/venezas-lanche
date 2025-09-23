@@ -30,11 +30,26 @@ interface PaymentMethod {
   ativo: boolean;
 }
 
+interface PaymentMethodData {
+  total: number;
+  count: number;
+  percentage: number;
+}
+
 interface FinancialSummary {
   totalRevenue: number;
   totalOrders: number;
   averageTicket: number;
-  paymentMethodsBreakdown: { [key: string]: { total: number; count: number } };
+  paymentMethodsBreakdown: {
+    dinheiro: PaymentMethodData;
+    debito: PaymentMethodData;
+    credito: PaymentMethodData;
+    vr: PaymentMethodData;
+    sodexo: PaymentMethodData;
+    ticket: PaymentMethodData;
+    alelo: PaymentMethodData;
+    outros: PaymentMethodData;
+  };
 }
 
 export default function Financeiro() {
@@ -121,16 +136,54 @@ export default function Financeiro() {
         const totalOrders = orders.length;
         const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-        // Payment methods breakdown
-        const paymentMethodsBreakdown: { [key: string]: { total: number; count: number } } = {};
+        // Payment methods breakdown - categorizar por métodos específicos
+        const paymentMethodsBreakdown = {
+          dinheiro: { total: 0, count: 0, percentage: 0 },
+          debito: { total: 0, count: 0, percentage: 0 },
+          credito: { total: 0, count: 0, percentage: 0 },
+          vr: { total: 0, count: 0, percentage: 0 },
+          sodexo: { total: 0, count: 0, percentage: 0 },
+          ticket: { total: 0, count: 0, percentage: 0 },
+          alelo: { total: 0, count: 0, percentage: 0 },
+          outros: { total: 0, count: 0, percentage: 0 }
+        };
         
         paidOrders.forEach(order => {
-          const method = order.metodo_pagamento || 'Não informado';
-          if (!paymentMethodsBreakdown[method]) {
-            paymentMethodsBreakdown[method] = { total: 0, count: 0 };
+          const method = (order.metodo_pagamento || '').toLowerCase().trim();
+          const orderTotal = order.total || 0;
+          
+          // Categorizar por método específico
+          if (method.includes('dinheiro') || method.includes('cash')) {
+            paymentMethodsBreakdown.dinheiro.total += orderTotal;
+            paymentMethodsBreakdown.dinheiro.count += 1;
+          } else if (method.includes('débito') || method.includes('debito') || method.includes('débito')) {
+            paymentMethodsBreakdown.debito.total += orderTotal;
+            paymentMethodsBreakdown.debito.count += 1;
+          } else if (method.includes('crédito') || method.includes('credito') || method.includes('crédito')) {
+            paymentMethodsBreakdown.credito.total += orderTotal;
+            paymentMethodsBreakdown.credito.count += 1;
+          } else if (method.includes('vr') || method.includes('vale refeição')) {
+            paymentMethodsBreakdown.vr.total += orderTotal;
+            paymentMethodsBreakdown.vr.count += 1;
+          } else if (method.includes('sodexo')) {
+            paymentMethodsBreakdown.sodexo.total += orderTotal;
+            paymentMethodsBreakdown.sodexo.count += 1;
+          } else if (method.includes('ticket')) {
+            paymentMethodsBreakdown.ticket.total += orderTotal;
+            paymentMethodsBreakdown.ticket.count += 1;
+          } else if (method.includes('alelo')) {
+            paymentMethodsBreakdown.alelo.total += orderTotal;
+            paymentMethodsBreakdown.alelo.count += 1;
+          } else {
+            paymentMethodsBreakdown.outros.total += orderTotal;
+            paymentMethodsBreakdown.outros.count += 1;
           }
-          paymentMethodsBreakdown[method].total += order.total || 0;
-          paymentMethodsBreakdown[method].count += 1;
+        });
+
+        // Calcular percentuais
+        Object.keys(paymentMethodsBreakdown).forEach(key => {
+          const methodData = paymentMethodsBreakdown[key as keyof typeof paymentMethodsBreakdown];
+          methodData.percentage = totalRevenue > 0 ? (methodData.total / totalRevenue) * 100 : 0;
         });
 
         setFinancialSummary({
@@ -597,7 +650,7 @@ export default function Financeiro() {
       )}
 
       {/* Payment Methods Breakdown */}
-      {financialSummary && Object.keys(financialSummary.paymentMethodsBreakdown).length > 0 && (
+      {financialSummary && (
         <Card>
           <CardHeader>
             <CardTitle>
@@ -609,23 +662,37 @@ export default function Financeiro() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Object.entries(financialSummary.paymentMethodsBreakdown).map(([method, data]) => (
-                <div key={method} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">{method}</p>
-                      <p className="text-sm text-muted-foreground">{data.count} pedidos</p>
+              {[
+                { key: 'dinheiro', label: 'Dinheiro', icon: PiggyBank },
+                { key: 'debito', label: 'Débito', icon: CreditCard },
+                { key: 'credito', label: 'Crédito', icon: CreditCard },
+                { key: 'vr', label: 'VR', icon: CreditCard },
+                { key: 'sodexo', label: 'Sodexo', icon: CreditCard },
+                { key: 'ticket', label: 'Ticket', icon: CreditCard },
+                { key: 'alelo', label: 'Alelo', icon: CreditCard },
+                { key: 'outros', label: 'Outros', icon: CreditCard }
+              ].map(({ key, label, icon: Icon }) => {
+                const data = financialSummary.paymentMethodsBreakdown[key as keyof typeof financialSummary.paymentMethodsBreakdown];
+                if (data.count === 0) return null;
+                
+                return (
+                  <div key={key} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">{label}</p>
+                        <p className="text-sm text-muted-foreground">{data.count} pedidos</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">{formatCurrency(data.total)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {data.percentage.toFixed(1)}% do total
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{formatCurrency(data.total)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {((data.total / financialSummary.totalRevenue) * 100).toFixed(1)}% do total
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

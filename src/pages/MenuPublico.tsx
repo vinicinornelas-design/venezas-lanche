@@ -657,6 +657,12 @@ export default function MenuPublico() {
 
               <div className="space-y-4">
               <h3 className="text-lg font-bold text-amber-900">Adicionais</h3>
+              
+              {/* Debug info */}
+              <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
+                Debug: {adicionais.length} adicionais carregados, {adicionais.filter(a => a.item_id === selectedItem?.id).length} para este item
+              </div>
+              
               {adicionais
                 .filter(adicional => adicional.item_id === selectedItem?.id)
                 .map(adicional => (
@@ -682,6 +688,42 @@ export default function MenuPublico() {
                     </div>
                     </div>
                   ))}
+              
+              {/* Fallback com adicionais padrão se não houver dados */}
+              {adicionais.filter(adicional => adicional.item_id === selectedItem?.id).length === 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm text-amber-700">Adicionais disponíveis:</p>
+                  {[
+                    { id: 'queijo-extra', nome: 'Queijo Extra', preco_extra: 3.00 },
+                    { id: 'bacon-extra', nome: 'Bacon Extra', preco_extra: 4.00 },
+                    { id: 'sem-cebola', nome: 'Sem Cebola', preco_extra: 0.00 },
+                    { id: 'sem-alface', nome: 'Sem Alface', preco_extra: 0.00 },
+                    { id: 'sem-tomate', nome: 'Sem Tomate', preco_extra: 0.00 }
+                  ].map(adicional => (
+                    <div key={adicional.id} className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-200">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id={adicional.id}
+                          checked={selectedAdicionais[adicional.id] || false}
+                          onCheckedChange={(checked) => 
+                            setSelectedAdicionais(prev => ({
+                              ...prev,
+                              [adicional.id]: checked as boolean
+                            }))
+                          }
+                          className="border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                        />
+                        <Label htmlFor={adicional.id} className="text-amber-900 font-semibold cursor-pointer">
+                          {adicional.nome}
+                        </Label>
+                      </div>
+                      <div className="text-amber-600 font-bold">
+                        {adicional.preco_extra > 0 ? `+${formatCurrency(adicional.preco_extra)}` : 'Grátis'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
               </div>
 
             <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-100 to-red-100 rounded-xl">

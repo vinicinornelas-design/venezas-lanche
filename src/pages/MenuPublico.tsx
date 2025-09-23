@@ -836,8 +836,6 @@ export default function MenuPublico() {
                 </Button>
               </div>
             </div>
-
-            </div>
           </div>
           
           <div className="flex-shrink-0 border-t border-amber-200 pt-4">

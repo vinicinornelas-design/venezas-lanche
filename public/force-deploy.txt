@@ -1,0 +1,14 @@
+FORCE VERCEL DEPLOY
+Timestamp: 2024-12-19
+Version: 1.0.2
+Status: Deploy forçado
+Commit: 70bb29ff
+
+Funcionalidades implementadas:
+- Popup de adicionais com fallback
+- Métodos de pagamento separados por categorias
+- Checkout final funcionando
+- Debug info implementado
+- FileUpload com localStorage fallback
+
+Este arquivo força o Vercel a fazer deploy.

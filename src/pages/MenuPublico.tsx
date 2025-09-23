@@ -644,14 +644,14 @@ export default function MenuPublico() {
 
       {/* Adicionais Dialog */}
       <Dialog open={showAdicionaisDialog} onOpenChange={setShowAdicionaisDialog}>
-        <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-sm border-0 shadow-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] bg-white/95 backdrop-blur-sm border-0 shadow-2xl overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-2xl font-bold text-amber-900 text-center">
               {selectedItem?.nome}
             </DialogTitle>
           </DialogHeader>
           
-            <div className="space-y-6">
+          <div className="flex-1 overflow-y-auto space-y-6 px-1">
             {selectedItem && (
               <div className="text-center">
                 <div className="text-3xl font-black bg-gradient-to-r from-amber-600 to-red-600 bg-clip-text text-transparent">
@@ -669,8 +669,9 @@ export default function MenuPublico() {
                 Debug: {adicionais.length} adicionais carregados, {adicionais.filter(a => a.item_id === selectedItem?.id || a.item_id === null).length} disponíveis para este item
               </div>
               
+              {/* Adicionais com preço */}
               {adicionais
-                .filter(adicional => adicional.item_id === selectedItem?.id || adicional.item_id === null)
+                .filter(adicional => (adicional.item_id === selectedItem?.id || adicional.item_id === null) && adicional.preco_extra > 0)
                 .map(adicional => (
                   <div key={adicional.id} className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-200">
                       <div className="flex items-center space-x-3">
@@ -691,6 +692,33 @@ export default function MenuPublico() {
                       </div>
                     <div className="text-amber-600 font-bold">
                         +{formatCurrency(adicional.preco_extra)}
+                    </div>
+                    </div>
+                  ))}
+
+              {/* Opções de remoção (sem custo) */}
+              {adicionais
+                .filter(adicional => (adicional.item_id === selectedItem?.id || adicional.item_id === null) && adicional.preco_extra === 0)
+                .map(adicional => (
+                  <div key={adicional.id} className="flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-200">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id={adicional.id}
+                        checked={selectedAdicionais[adicional.id] || false}
+                        onCheckedChange={(checked) => 
+                          setSelectedAdicionais(prev => ({
+                            ...prev,
+                            [adicional.id]: checked as boolean
+                          }))
+                        }
+                        className="border-red-400 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                      />
+                      <Label htmlFor={adicional.id} className="text-red-900 font-semibold cursor-pointer">
+                          {adicional.nome}
+                      </Label>
+                      </div>
+                    <div className="text-red-600 font-bold">
+                        Grátis
                     </div>
                     </div>
                   ))}
@@ -726,6 +754,10 @@ export default function MenuPublico() {
                       </div>
                     </div>
 
+            </div>
+          </div>
+          
+          <div className="flex-shrink-0 border-t border-amber-200 pt-4">
             <div className="flex gap-4">
               <Button
                 variant="outline"
@@ -740,21 +772,21 @@ export default function MenuPublico() {
               >
                 Adicionar ao Carrinho
               </Button>
-                </div>
-              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Cart Dialog */}
       <Dialog open={showCart} onOpenChange={setShowCart}>
-        <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-sm border-0 shadow-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] bg-white/95 backdrop-blur-sm border-0 shadow-2xl overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-2xl font-bold text-amber-900 text-center">
               Seu Pedido
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 max-h-96 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto space-y-4 px-1">
             {cart.map((item, index) => (
               <div key={index} className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-200">
                 <div className="flex-1">
@@ -797,9 +829,9 @@ export default function MenuPublico() {
                 </div>
               </div>
             ))}
-              </div>
+          </div>
 
-          <div className="border-t border-amber-200 pt-4">
+          <div className="flex-shrink-0 border-t border-amber-200 pt-4 bg-white">
             <div className="flex justify-between items-center mb-4">
               <span className="text-xl font-bold text-amber-900">Total:</span>
               <span className="text-2xl font-black bg-gradient-to-r from-amber-600 to-red-600 bg-clip-text text-transparent">
@@ -817,10 +849,10 @@ export default function MenuPublico() {
                 </Button>
                 <Button
                 onClick={submitOrder}
-                disabled={isSubmitting}
-                className="flex-1 bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-bold"
+                disabled={isSubmitting || cart.length === 0}
+                className="flex-1 bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-bold text-lg py-3"
                 >
-                {isSubmitting ? "Processando..." : "Finalizar Pedido"}
+                {isSubmitting ? "Processando..." : "🚀 Finalizar Pedido"}
                 </Button>
               </div>
             </div>

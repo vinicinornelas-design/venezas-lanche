@@ -35,7 +35,13 @@ INSERT INTO opcionais (nome, preco_extra, multi_selecao, obrigatorio, item_id) V
 ('Sem Mussarela', 0.00, false, false, null),
 ('Sem maionese', 0.00, false, false, null),
 ('Sem ketchup', 0.00, false, false, null),
-('Sem molho verde', 0.00, false, false, null);
+('Sem molho verde', 0.00, false, false, null),
+('Sem cebola', 0.00, false, false, null),
+('Sem tomate', 0.00, false, false, null),
+('Sem alface', 0.00, false, false, null),
+('Sem picles', 0.00, false, false, null),
+('Sem batata palha', 0.00, false, false, null),
+('Sem milho', 0.00, false, false, null);
 
 -- Verificar se os adicionais foram inseridos
 SELECT 

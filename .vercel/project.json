@@ -1,11 +1,10 @@
 {
-  "orgId": "vercel",
+  "orgId": "vinicinornelas-design",
   "projectId": "venezas-lanche",
   "settings": {
-    "buildCommand": "npm run build:vercel",
+    "buildCommand": "npm run build",
     "outputDirectory": "dist",
-    "installCommand": "npm install",
-    "framework": "vite",
-    "nodeVersion": "18.x"
+    "installCommand": "npm ci",
+    "framework": "vite"
   }
 }

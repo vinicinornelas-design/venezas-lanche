@@ -30,43 +30,17 @@ export default function VenezaBannerCustom({ className = "" }: VenezaBannerCusto
       <div className="relative z-10 flex items-center justify-center h-full px-6 py-12">
         <div className="max-w-6xl mx-auto flex flex-col items-center space-y-8">
           
-          {/* Hambúrguer real centralizado */}
-          <div className="flex justify-center mb-8">
-            <div className="relative">
-              {/* Imagem do hambúrguer real */}
-              <div className="relative w-80 h-80 lg:w-96 lg:h-96 rounded-3xl overflow-hidden shadow-2xl border-4 border-amber-300">
-                <img 
-                  src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
-                  alt="Hambúrguer Veneza's Lanches" 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    // Fallback para imagem local se a URL falhar
-                    e.currentTarget.src = "/hamburger-fallback.jpg";
-                  }}
-                />
-                {/* Overlay sutil */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                
-                {/* Efeitos decorativos ao redor do hambúrguer */}
-                <div className="absolute -top-4 -right-4 w-8 h-8 bg-yellow-400 rounded-full animate-bounce opacity-80"></div>
-                <div className="absolute -bottom-4 -left-4 w-6 h-6 bg-amber-400 rounded-full animate-pulse opacity-80"></div>
-                <div className="absolute top-1/2 -left-8 w-4 h-4 bg-red-400 rounded-full animate-bounce opacity-60" style={{animationDelay: '0.5s'}}></div>
-                <div className="absolute top-1/4 -right-8 w-5 h-5 bg-yellow-300 rounded-full animate-pulse opacity-60" style={{animationDelay: '1s'}}></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Banner "SABOR AUTÊNTICO" */}
+          {/* Banner "SABOR AUTÊNTICO" centralizado */}
           <div className="relative">
-            <div className="inline-block transform -rotate-2 bg-gradient-to-r from-yellow-400 to-amber-400 px-12 py-6 shadow-2xl rounded-2xl border-4 border-amber-500">
-              <p className="text-3xl md:text-4xl font-black text-amber-900 tracking-wide">
+            <div className="inline-block transform -rotate-2 bg-gradient-to-r from-yellow-400 to-amber-400 px-16 py-8 shadow-2xl rounded-2xl border-4 border-amber-500">
+              <p className="text-4xl md:text-5xl lg:text-6xl font-black text-amber-900 tracking-wide">
                 SABOR AUTÊNTICO
               </p>
             </div>
           </div>
 
           {/* Ícones de menu abaixo */}
-          <div className="flex justify-center items-center gap-8 md:gap-12 flex-wrap mt-8">
+          <div className="flex justify-center items-center gap-8 md:gap-12 flex-wrap mt-12">
             {/* Churrasco */}
             <div className="flex flex-col items-center group">
               <div className="w-20 h-20 bg-gradient-to-br from-amber-800 to-red-800 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">

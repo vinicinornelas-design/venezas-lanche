@@ -26,6 +26,7 @@ import PainelColaborador from "@/pages/PainelColaborador";
 import AtendimentoMesas from "@/pages/AtendimentoMesas";
 import Notificacoes from "@/pages/Notificacoes";
 import TestUploadPage from "@/pages/TestUploadPage";
+import DebugNotificacoes from "@/pages/DebugNotificacoes";
 import TestColors from "@/pages/TestColors";
 import TestBanner from "@/pages/TestBanner";
 import NotFound from "@/pages/NotFound";
@@ -130,6 +131,11 @@ const App = () => (
         <Route path="/test-upload" element={
           <ProtectedRoute allowedRoles={['ADMIN']}>
             <AppLayout><TestUploadPage /></AppLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/debug-notificacoes" element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <AppLayout><DebugNotificacoes /></AppLayout>
           </ProtectedRoute>
         } />
         <Route path="/test-colors" element={<TestColors />} />

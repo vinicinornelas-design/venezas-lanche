@@ -71,9 +71,14 @@ export function useRealtimeNotifications(enabled: boolean = true) {
   const audioSystem = useRef<AudioNotificationSystem>(new AudioNotificationSystem());
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) {
+      console.log('🔔 Sistema de notificações desabilitado');
+      return;
+    }
 
     console.log('🔔 Sistema de notificações de pedidos inicializado');
+    console.log('🔔 Supabase client:', supabase);
+    console.log('🔔 Audio system:', audioSystem.current);
 
     // Subscribe para novos pedidos na tabela pedidos_unificados
     const channel = supabase
@@ -86,14 +91,18 @@ export function useRealtimeNotifications(enabled: boolean = true) {
           table: 'pedidos_unificados'
         },
         (payload) => {
-          console.log('🔔 Novo pedido detectado:', payload);
+          console.log('🔔 NOVO PEDIDO DETECTADO!');
+          console.log('🔔 Payload completo:', payload);
+          console.log('🔔 Novo pedido:', payload.new);
           
           const novoPedido = payload.new;
           
           // Tocar som de notificação
+          console.log('🔔 Tocando som de notificação...');
           audioSystem.current.playNotificationSound();
           
           // Mostrar toast de notificação
+          console.log('🔔 Mostrando toast de notificação...');
           toast({
             title: "🆕 Novo Pedido!",
             description: `Pedido #${novoPedido.numero_pedido} - ${novoPedido.cliente_nome || 'Cliente não informado'}`,
@@ -102,8 +111,7 @@ export function useRealtimeNotifications(enabled: boolean = true) {
               <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    // Marcar como visto
-                    console.log('Pedido marcado como visto');
+                    console.log('🔔 Pedido marcado como visto');
                   }}
                   className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"
                 >
@@ -111,7 +119,7 @@ export function useRealtimeNotifications(enabled: boolean = true) {
                 </button>
                 <button
                   onClick={() => {
-                    // Abrir página de pedidos
+                    console.log('🔔 Abrindo página de pedidos');
                     window.location.href = '/pedidos';
                   }}
                   className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded"
@@ -140,13 +148,28 @@ export function useRealtimeNotifications(enabled: boolean = true) {
             updated_at: new Date().toISOString()
           };
 
+          console.log('🔔 Salvando notificação no localStorage:', notificacao);
+
           // Salvar no localStorage
           const notificacoesExistentes = JSON.parse(localStorage.getItem('pedidos_notifications') || '[]');
           notificacoesExistentes.unshift(notificacao);
           localStorage.setItem('pedidos_notifications', JSON.stringify(notificacoesExistentes));
+          
+          console.log('🔔 Notificação salva com sucesso!');
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🔔 Status da subscription:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('🔔 ✅ Subscription ativa! Aguardando novos pedidos...');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.log('🔔 ❌ Erro no canal de notificações');
+        } else if (status === 'TIMED_OUT') {
+          console.log('🔔 ⏰ Timeout na conexão');
+        } else if (status === 'CLOSED') {
+          console.log('🔔 🔒 Canal fechado');
+        }
+      });
 
     return () => {
       console.log('🔔 Limpando subscription de notificações');

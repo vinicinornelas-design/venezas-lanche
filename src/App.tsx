@@ -27,6 +27,7 @@ import AtendimentoMesas from "@/pages/AtendimentoMesas";
 import Notificacoes from "@/pages/Notificacoes";
 import TestUploadPage from "@/pages/TestUploadPage";
 import TestColors from "@/pages/TestColors";
+import TestBanner from "@/pages/TestBanner";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -132,6 +133,7 @@ const App = () => (
           </ProtectedRoute>
         } />
         <Route path="/test-colors" element={<TestColors />} />
+        <Route path="/test-banner" element={<TestBanner />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

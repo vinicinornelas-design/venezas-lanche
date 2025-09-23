@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import VenezaBanner from "@/components/VenezaBanner";
+import VenezaBannerCustom from "@/components/VenezaBannerCustom";
 import { 
   ShoppingCart, 
   Plus, 
@@ -65,13 +66,16 @@ interface RestaurantConfig {
   endereco: string;
   logo_url: string;
   banner_url: string;
-  taxa_entrega: number;
-  tempo_entrega: number;
-  formas_pagamento: string[];
-  bairros_entrega: Array<{
+  taxa_entrega?: number;
+  tempo_entrega?: number;
+  formas_pagamento?: string[];
+  bairros_entrega?: Array<{
     nome: string;
     valor: number;
   }>;
+  created_at?: string;
+  updated_at?: string;
+  horario_funcionamento?: any;
 }
 
 export default function MenuPublico() {
@@ -86,7 +90,7 @@ export default function MenuPublico() {
   const [showCart, setShowCart] = useState(false);
   const [showAdicionaisDialog, setShowAdicionaisDialog] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const [selectedAdicionais, setSelectedAdicionais] = useState<{ [key: string]: boolean }>({});
+  const [selectedAdicionais, setSelectedAdicionais] = useState<Record<string, boolean>>({});
   const [quantidade, setQuantidade] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -128,7 +132,7 @@ export default function MenuPublico() {
       if (error) throw error;
 
       const items = data?.map(item => ({
-        ...item,
+              ...item,
         categoria_nome: item.categorias?.nome
       })) || [];
 
@@ -225,20 +229,20 @@ export default function MenuPublico() {
     const totalPreco = selectedItem.preco + itemAdicionais.reduce((sum, adicional) => sum + adicional.preco_extra, 0);
 
     const cartItem: PedidoItem = {
-      item_id: selectedItem.id,
       nome: selectedItem.nome,
-      preco: totalPreco,
+      preco_unitario: totalPreco,
       quantidade: quantidade,
+      categoria: selectedItem.categoria_nome || 'Geral',
       adicionais: itemAdicionais.map(adicional => ({
-        id: adicional.id,
         nome: adicional.nome,
-        preco_extra: adicional.preco_extra
+        preco: adicional.preco_extra,
+        quantidade: 1
       }))
     };
 
     setCart(prev => [...prev, cartItem]);
     setShowAdicionaisDialog(false);
-    
+
     toast({
       title: "Adicionado ao carrinho!",
       description: `${selectedItem.nome} foi adicionado ao seu pedido.`,
@@ -260,7 +264,7 @@ export default function MenuPublico() {
   };
 
   const getTotalPrice = () => {
-    return cart.reduce((total, item) => total + (item.preco * item.quantidade), 0);
+    return cart.reduce((total, item) => total + (item.preco_unitario * item.quantidade), 0);
   };
 
   const formatCurrency = (value: number) => {
@@ -275,14 +279,11 @@ export default function MenuPublico() {
 
     setIsSubmitting(true);
     try {
-      const pedido: CriarPedidoUnificado = {
-        itens: cart,
-        total: getTotalPrice(),
+      const pedido = {
+        itens: cart as any, // Converter para Json
+        origem: 'BALCAO',
         observacoes: "",
-        forma_pagamento: "dinheiro",
-        endereco_entrega: "",
-        telefone: "",
-        nome_cliente: ""
+        metodo_pagamento: "dinheiro"
       };
 
       const { data, error } = await supabase
@@ -322,9 +323,9 @@ export default function MenuPublico() {
     );
   }
 
-  return (
+    return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-red-50 to-amber-100" data-theme="venezian" style={{colorScheme: 'light'}} data-version="2.0">
-      {/* Header */}
+        {/* Header */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-amber-900 via-red-900 to-amber-800"></div>
         <div className="relative z-10 container mx-auto px-4 py-12">
@@ -333,8 +334,8 @@ export default function MenuPublico() {
               <div className="relative inline-block group">
                 <div className="absolute -inset-4 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
                 <div className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-6 shadow-2xl border border-amber-300/30">
-                  <img
-                    src={restaurantConfig?.logo_url || "/restaurant-logo.jpg"}
+                  <img 
+                    src={restaurantConfig?.logo_url || "/restaurant-logo.jpg"} 
                     alt="Logo" 
                     className="w-28 h-28 object-contain rounded-3xl mx-auto shadow-2xl border-4 border-amber-200 transform group-hover:scale-105 transition-transform duration-300"
                     onLoad={() => console.log('Logo carregada com sucesso:', restaurantConfig?.logo_url)}
@@ -346,33 +347,33 @@ export default function MenuPublico() {
                   <div className="absolute -bottom-2 -left-2 w-8 h-8 bg-gradient-to-r from-amber-400 to-red-400 rounded-full flex items-center justify-center shadow-lg animate-pulse">
                     <Zap className="w-4 h-4 text-white" />
                   </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="space-y-4">
-              <h1 className="text-5xl font-black bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-300 bg-clip-text text-transparent drop-shadow-lg animate-pulse">
-                {restaurantConfig?.nome_restaurante || 'Veneza\'s Lanches'}
-              </h1>
-              <p className="text-xl text-amber-100 font-semibold">🍔 Sabor que conquista, qualidade que encanta ✨</p>
               
-              <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
-                {restaurantConfig?.telefone && (
+              <div className="space-y-4">
+              <h1 className="text-5xl font-black bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-300 bg-clip-text text-transparent drop-shadow-lg animate-pulse">
+                  {restaurantConfig?.nome_restaurante || 'Veneza\'s Lanches'}
+                </h1>
+              <p className="text-xl text-amber-100 font-semibold">🍔 Sabor que conquista, qualidade que encanta ✨</p>
+                
+                <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
+                  {restaurantConfig?.telefone && (
                   <div className="flex items-center gap-3 bg-gradient-to-r from-amber-100/20 to-red-100/20 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group border border-amber-300/30">
                     <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-red-500 rounded-full flex items-center justify-center">
-                      <Phone className="w-5 h-5 text-white" />
-                    </div>
+                        <Phone className="w-5 h-5 text-white" />
+                      </div>
                     <span className="font-bold text-amber-100 group-hover:text-amber-200 transition-colors">{restaurantConfig.telefone}</span>
-                  </div>
-                )}
-                {restaurantConfig?.endereco && (
+                    </div>
+                  )}
+                  {restaurantConfig?.endereco && (
                   <div className="flex items-center gap-3 bg-gradient-to-r from-red-100/20 to-amber-100/20 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group border border-red-300/30">
                     <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-amber-500 rounded-full flex items-center justify-center">
-                      <MapPin className="w-5 h-5 text-white" />
-                    </div>
+                        <MapPin className="w-5 h-5 text-white" />
+                      </div>
                     <span className="font-bold text-amber-100 group-hover:text-amber-200 transition-colors">{restaurantConfig.endereco}</span>
-                  </div>
-                )}
+                    </div>
+                  )}
               </div>
             </div>
           </div>
@@ -380,9 +381,8 @@ export default function MenuPublico() {
       </div>
 
       {/* Banner Personalizado Veneza's Lanches */}
-      <VenezaBanner 
-        className="h-80 md:h-96" 
-        bannerUrl={restaurantConfig?.banner_url}
+      <VenezaBannerCustom 
+        className="h-96 md:h-[500px]" 
       />
 
       {/* Search and Filter Bar */}
@@ -554,81 +554,81 @@ export default function MenuPublico() {
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-red-600 bg-clip-text text-transparent mb-2">
                 {categories.find(cat => cat.id === selectedCategory)?.nome || 'Categoria'}
-              </h2>
+                    </h2>
               <p className="text-amber-700">Deliciosos sabores esperando por você</p>
-            </div>
-            
+                  </div>
+                  
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {filteredItems.map((item, index) => (
                 <Card key={item.id} className="group border-0 shadow-2xl hover:shadow-3xl transition-all duration-500 overflow-hidden bg-white/90 backdrop-blur-sm transform hover:-translate-y-2 hover:scale-105" style={{animationDelay: `${index * 0.1}s`}}>
                   <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-red-400 to-amber-400 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
                   <div className="relative">
-                    {item.foto_url && (
+                        {item.foto_url && (
                       <div className="relative h-48 overflow-hidden">
-                        <img 
-                          src={item.foto_url} 
-                          alt={item.nome}
+                            <img 
+                              src={item.foto_url} 
+                              alt={item.nome}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                        />
+                            />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                         <div className="absolute top-3 right-3">
-                          {item.total_ratings > 0 && (
+                              {item.total_ratings > 0 && (
                             <Badge className="bg-gradient-to-r from-yellow-400 to-amber-400 text-amber-900 border-0 shadow-xl backdrop-blur-sm">
                               <Star className="w-4 h-4 mr-1 fill-current" />
-                              {item.average_rating?.toFixed(1)}
-                            </Badge>
-                          )}
-                        </div>
+                                  {item.average_rating?.toFixed(1)}
+                                </Badge>
+                              )}
+                            </div>
                         <div className="absolute bottom-3 left-3">
                           <Badge className="bg-gradient-to-r from-amber-500 to-red-500 text-white border-0 shadow-lg">
                             <Heart className="w-3 h-3 mr-1" />
                             Popular
                           </Badge>
-                        </div>
-                      </div>
-                    )}
-                    
+                            </div>
+                          </div>
+                        )}
+                        
                     <CardContent className="p-6">
                       <div className="space-y-4">
-                        <div>
+                            <div>
                           <h3 className="font-black text-xl text-amber-900 group-hover:text-amber-600 transition-colors duration-300 mb-2">
-                            {item.nome}
-                          </h3>
+                                {item.nome}
+                              </h3>
                           {item.categoria_nome && (
                             <Badge variant="outline" className="text-sm text-amber-600 border-amber-300 bg-amber-50 font-semibold">
                               {item.categoria_nome}
                             </Badge>
                           )}
-                        </div>
-                        
-                        {item.descricao && (
+                            </div>
+                            
+                            {item.descricao && (
                           <p className="text-sm text-amber-700 overflow-hidden leading-relaxed" style={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical'
-                          }}>
-                            {item.descricao}
-                          </p>
-                        )}
-                        
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical'
+                              }}>
+                                {item.descricao}
+                              </p>
+                            )}
+                            
                         <div className="flex items-center justify-between pt-4">
                           <div className="text-3xl font-black bg-gradient-to-r from-amber-600 via-red-600 to-amber-600 bg-clip-text text-transparent drop-shadow-sm">
-                            {formatCurrency(item.preco)}
-                          </div>
-                          <Button 
-                            onClick={() => openAdicionaisDialog(item)}
+                                {formatCurrency(item.preco)}
+                              </div>
+                              <Button 
+                                onClick={() => openAdicionaisDialog(item)}
                             className="bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-bold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                          >
+                              >
                             <Plus className="w-4 h-4 mr-2" />
-                            Adicionar
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
+                                Adicionar
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
                   </div>
-                </Card>
-              ))}
-            </div>
+                      </Card>
+                    ))}
+                  </div>
           </div>
         )}
       </div>
@@ -642,25 +642,25 @@ export default function MenuPublico() {
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-6">
+            <div className="space-y-6">
             {selectedItem && (
               <div className="text-center">
                 <div className="text-3xl font-black bg-gradient-to-r from-amber-600 to-red-600 bg-clip-text text-transparent">
                   {formatCurrency(selectedItem.preco)}
-                </div>
+                  </div>
                 <p className="text-amber-700 mt-2">{selectedItem.descricao}</p>
-              </div>
+                </div>
             )}
 
-            <div className="space-y-4">
+              <div className="space-y-4">
               <h3 className="text-lg font-bold text-amber-900">Adicionais</h3>
               {adicionais
                 .filter(adicional => adicional.item_id === selectedItem?.id)
                 .map(adicional => (
                   <div key={adicional.id} className="flex items-center justify-between p-4 bg-amber-50 rounded-xl border border-amber-200">
-                    <div className="flex items-center space-x-3">
-                      <Checkbox
-                        id={adicional.id}
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id={adicional.id}
                         checked={selectedAdicionais[adicional.id] || false}
                         onCheckedChange={(checked) => 
                           setSelectedAdicionais(prev => ({
@@ -671,19 +671,19 @@ export default function MenuPublico() {
                         className="border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
                       />
                       <Label htmlFor={adicional.id} className="text-amber-900 font-semibold cursor-pointer">
-                        {adicional.nome}
+                          {adicional.nome}
                       </Label>
-                    </div>
+                      </div>
                     <div className="text-amber-600 font-bold">
-                      +{formatCurrency(adicional.preco_extra)}
+                        +{formatCurrency(adicional.preco_extra)}
                     </div>
-                  </div>
-                ))}
-            </div>
+                    </div>
+                  ))}
+              </div>
 
             <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-100 to-red-100 rounded-xl">
               <Label className="text-amber-900 font-bold">Quantidade:</Label>
-              <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-3">
                 <Button
                   variant="outline"
                   size="sm"
@@ -701,8 +701,8 @@ export default function MenuPublico() {
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
-              </div>
-            </div>
+                      </div>
+                    </div>
 
             <div className="flex gap-4">
               <Button
@@ -718,8 +718,8 @@ export default function MenuPublico() {
               >
                 Adicionar ao Carrinho
               </Button>
-            </div>
-          </div>
+                </div>
+              </div>
         </DialogContent>
       </Dialog>
 
@@ -743,9 +743,9 @@ export default function MenuPublico() {
                     </div>
                   )}
                   <div className="text-amber-600 font-bold">
-                    {formatCurrency(item.preco)} x {item.quantidade}
+                    {formatCurrency(item.preco_unitario)} x {item.quantidade}
                   </div>
-                </div>
+                  </div>
                 <div className="flex items-center space-x-2">
                   <Button
                     variant="outline"
@@ -775,7 +775,7 @@ export default function MenuPublico() {
                 </div>
               </div>
             ))}
-          </div>
+              </div>
 
           <div className="border-t border-amber-200 pt-4">
             <div className="flex justify-between items-center mb-4">
@@ -786,22 +786,22 @@ export default function MenuPublico() {
             </div>
             
             <div className="flex gap-4">
-              <Button
-                variant="outline"
+                <Button
+                  variant="outline"
                 onClick={() => setShowCart(false)}
                 className="flex-1 border-amber-400 text-amber-600 hover:bg-amber-50"
-              >
+                >
                 Continuar Comprando
-              </Button>
-              <Button
+                </Button>
+                <Button
                 onClick={submitOrder}
                 disabled={isSubmitting}
                 className="flex-1 bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-bold"
-              >
+                >
                 {isSubmitting ? "Processando..." : "Finalizar Pedido"}
-              </Button>
+                </Button>
+              </div>
             </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

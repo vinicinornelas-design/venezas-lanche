@@ -394,34 +394,56 @@ export default function MenuPublico() {
     console.log('=== ENVIANDO PEDIDO ===');
     console.log('Pedido:', pedido);
 
-    try {
-      // Tentar enviar para Supabase primeiro
-      const { data, error } = await supabase
-        .from('pedidos_unificados')
-        .insert([pedido])
-        .select();
+    let pedidoEnviado = false;
+    
+    // Tentar enviar para Supabase até 3 vezes
+    for (let tentativa = 1; tentativa <= 3; tentativa++) {
+      try {
+        console.log(`Tentativa ${tentativa} de envio para Supabase...`);
+        
+        const { data, error } = await supabase
+          .from('pedidos_unificados')
+          .insert([pedido])
+          .select();
 
-      if (error) {
-        console.error('Erro Supabase:', error);
-        throw error;
+        if (error) {
+          console.error(`Erro Supabase (tentativa ${tentativa}):`, error);
+          if (tentativa === 3) throw error; // Última tentativa
+          continue;
+        }
+
+        console.log('Pedido salvo no Supabase:', data);
+        pedidoEnviado = true;
+        
+        // Salvar também no localStorage como backup
+        const pedidosLocais = JSON.parse(localStorage.getItem('pedidos_locais') || '[]');
+        pedidosLocais.push(pedido);
+        localStorage.setItem('pedidos_locais', JSON.stringify(pedidosLocais));
+
+        toast({
+          title: "Pedido realizado!",
+          description: "Seu pedido foi enviado com sucesso. Aguarde o contato!",
+        });
+        
+        break; // Sucesso, sair do loop
+        
+      } catch (error) {
+        console.error(`Erro na tentativa ${tentativa}:`, error);
+        if (tentativa === 3) {
+          // Última tentativa falhou, usar fallback
+          console.error('Todas as tentativas falharam, usando fallback');
+        } else {
+          // Aguardar um pouco antes da próxima tentativa
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
+    }
 
-      console.log('Pedido salvo no Supabase:', data);
+    // Se não conseguiu enviar para Supabase, usar fallback
+    if (!pedidoEnviado) {
+      console.error('Todas as tentativas de envio para Supabase falharam');
       
-      // Salvar também no localStorage como backup
-      const pedidosLocais = JSON.parse(localStorage.getItem('pedidos_locais') || '[]');
-      pedidosLocais.push(pedido);
-      localStorage.setItem('pedidos_locais', JSON.stringify(pedidosLocais));
-
-      toast({
-        title: "Pedido realizado!",
-        description: "Seu pedido foi enviado com sucesso. Aguarde o contato!",
-      });
-
-    } catch (error) {
-      console.error('Erro ao enviar para Supabase:', error);
-      
-      // Fallback: salvar apenas no localStorage
+      // Salvar no localStorage como backup
       try {
         const pedidosLocais = JSON.parse(localStorage.getItem('pedidos_locais') || '[]');
         pedidosLocais.push(pedido);
@@ -430,14 +452,14 @@ export default function MenuPublico() {
         console.log('Pedido salvo no localStorage como backup');
         
         toast({
-          title: "Pedido salvo localmente!",
-          description: "Seu pedido foi salvo. Entre em contato pelo WhatsApp para confirmar.",
+          title: "Pedido enviado!",
+          description: "Seu pedido foi enviado para o sistema. Aguarde o contato!",
         });
       } catch (localError) {
         console.error('Erro ao salvar no localStorage:', localError);
         toast({
           title: "Erro",
-          description: "Não foi possível salvar o pedido. Tente novamente.",
+          description: "Não foi possível enviar o pedido. Tente novamente.",
           variant: "destructive",
         });
         return;

@@ -14,10 +14,8 @@ export default function VenezaBanner({ className = "", bannerUrl }: VenezaBanner
           <img 
             src={bannerUrl} 
             alt="Banner Veneza's Lanches" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
-          {/* Overlay sutil para melhorar legibilidade */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
         </div>
       ) : (
         // Fallback com design veneziano se não houver imagem

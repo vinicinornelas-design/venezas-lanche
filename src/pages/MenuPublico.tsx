@@ -146,11 +146,10 @@ export default function MenuPublico() {
     try {
       const { data, error } = await supabase
         .from('opcionais')
-        .select('*')
-        .eq('ativo', true);
+        .select('*');
 
       if (error) throw error;
-      setAdicionais(data || []);
+      setAdicionais((data as Adicional[]) || []);
     } catch (error) {
       console.error('Error fetching adicionais:', error);
     }

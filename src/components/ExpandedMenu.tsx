@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { usePdfExport } from "@/hooks/usePdfExport";
+import MinimalFileUpload from "@/components/MinimalFileUpload";
 import { Plus, Edit, Trash2, Upload, Star, FileText, Image, X, FolderPlus, Settings } from "lucide-react";
 
 interface MenuItem {
@@ -1190,11 +1191,11 @@ export default function ExpandedMenu() {
                 </div>
                 
                 <div>
-                  <Label>URL da Foto</Label>
-                  <Input
+                  <MinimalFileUpload
+                    label="Foto do Item"
                     value={formData.foto_url}
-                    onChange={(e) => setFormData({...formData, foto_url: e.target.value})}
-                    placeholder="https://exemplo.com/foto.jpg"
+                    onChange={(url) => setFormData({...formData, foto_url: url})}
+                    maxSize={5}
                   />
                 </div>
                 

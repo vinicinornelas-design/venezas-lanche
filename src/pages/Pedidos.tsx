@@ -10,7 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
-import { PedidoUnificado, formatarStatusPedido, formatarOrigemPedido } from "@/types/pedidos-unificados";
+import { formatarStatusPedido, formatarOrigemPedido } from "@/types/pedidos-unificados";
+import type { Database } from "@/integrations/supabase/types";
+
+type PedidoUnificado = Database['public']['Tables']['pedidos_unificados']['Row'];
 import { 
   Truck, 
   Utensils, 
@@ -691,16 +694,17 @@ export default function Pedidos() {
     }
   };
 
-  const formatarItens = (itens: any[]): string => {
+  const formatarItens = (itens: any): string => {
     try {
-      if (!Array.isArray(itens) || itens.length === 0) {
+      // itens é do tipo Json, pode ser um array ou null
+      if (!itens || !Array.isArray(itens) || itens.length === 0) {
         return 'Nenhum item';
       }
       
-      return itens.map(item => {
-        const quantidade = item.quantidade || item.quantidade || 1;
-        const nome = item.nome || item.nome || 'Item';
-        const observacoes = item.observacoes || item.observacoes || '';
+      return itens.map((item: any) => {
+        const quantidade = item.quantidade || 1;
+        const nome = item.nome || 'Item';
+        const observacoes = item.observacoes || '';
         return `${quantidade}x ${nome}${observacoes ? ` (${observacoes})` : ''}`;
       }).join(', ');
     } catch (error) {
@@ -1098,7 +1102,7 @@ export default function Pedidos() {
             </DialogTitle>
           </DialogHeader>
           
-          {selectedPedido && selectedPedido.itens && (
+          {selectedPedido && (
             <div className="space-y-6">
               {/* Informações do pedido */}
               <div className="grid grid-cols-2 gap-4">
@@ -1139,7 +1143,7 @@ export default function Pedidos() {
                 <div>
                   <Label className="text-sm font-medium">Origem</Label>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {formatarOrigemPedido(selectedPedido.origem)}
+                    {formatarOrigemPedido(selectedPedido.origem || 'BALCAO')}
                   </p>
                 </div>
                 {selectedPedido.mesa_numero && (
@@ -1156,7 +1160,7 @@ export default function Pedidos() {
               <div>
                 <Label className="text-sm font-medium">Itens do Pedido</Label>
                 <div className="mt-2 space-y-2">
-                  {selectedPedido.itens && Array.isArray(selectedPedido.itens) ? selectedPedido.itens.map((item, index) => (
+                  {selectedPedido.itens && Array.isArray(selectedPedido.itens) ? selectedPedido.itens.map((item: any, index: number) => (
                     <div key={index} className="flex justify-between items-start p-3 border rounded-lg">
                       <div className="flex-1">
                         <p className="font-medium">{item.quantidade || 1}x {item.nome || 'Item'}</p>
@@ -1167,8 +1171,8 @@ export default function Pedidos() {
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">R$ {((item.preco || 0) * (item.quantidade || 1)).toFixed(2)}</p>
-                        <p className="text-sm text-muted-foreground">R$ {(item.preco || 0).toFixed(2)} cada</p>
+                        <p className="font-medium">R$ {((item.preco || item.preco_unitario || 0) * (item.quantidade || 1)).toFixed(2)}</p>
+                        <p className="text-sm text-muted-foreground">R$ {(item.preco || item.preco_unitario || 0).toFixed(2)} cada</p>
                       </div>
                     </div>
                   )) : (

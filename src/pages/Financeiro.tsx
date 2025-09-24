@@ -524,7 +524,7 @@ export default function Financeiro() {
       {/* Filtros */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div className="space-y-2">
               <Label htmlFor="paymentMethod">Formas de pagamento</Label>
               <Input
@@ -556,6 +556,9 @@ export default function Financeiro() {
                 onChange={(e) => setCouponFilter(e.target.value)}
               />
             </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div className="space-y-2">
               <Label htmlFor="promotion">Promoções</Label>
               <Input
@@ -565,6 +568,69 @@ export default function Financeiro() {
                 onChange={(e) => setPromotionFilter(e.target.value)}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Data de Início</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="endDate">Data de Fim</Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="startTime">Horário de Início (opcional)</Label>
+              <Input
+                id="startTime"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="space-y-2">
+              <Label htmlFor="endTime">Horário de Fim (opcional)</Label>
+              <Input
+                id="endTime"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+              />
+            </div>
+            <div className="flex items-end gap-2">
+              <Button 
+                onClick={handleFilterPeriod}
+                disabled={filterLoading || !startDate || !endDate}
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                {filterLoading ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Filter className="h-4 w-4 mr-2" />
+                )}
+                {filterLoading ? 'Filtrando...' : 'Filtrar Período'}
+              </Button>
+              {isFiltered && (
+                <Button 
+                  variant="outline"
+                  onClick={handleResetFilter}
+                  disabled={filterLoading}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Resetar
+                </Button>
+              )}
+            </div>
           </div>
           
           {/* Tags de filtros ativos */}
@@ -573,6 +639,11 @@ export default function Financeiro() {
             <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Delivery</span>
             <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Mesa</span>
             <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Balcao</span>
+            {isFiltered && (
+              <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">
+                Período: {formatDate(startDate)} a {formatDate(endDate)}
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>

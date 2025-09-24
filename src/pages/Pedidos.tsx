@@ -181,13 +181,18 @@ export default function Pedidos() {
     try {
       setUpdating(prev => ({ ...prev, [pedidoId]: true }));
       
+      console.log(`Atualizando pedido ${pedidoId} para status ${newStatus}`);
+      
       // Buscar dados atuais do pedido para obter o valor total
       const pedidoAtual = pedidos.find(p => p.id === pedidoId);
       if (!pedidoAtual) {
         throw new Error('Pedido não encontrado');
       }
       
-      const updateData: any = { status: newStatus };
+      const updateData: any = { 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      };
       
       // Adicionar timestamps específicos baseado no status
       const now = new Date().toISOString();
@@ -202,9 +207,11 @@ export default function Pedidos() {
           updateData.entregue_em = now;
           // Quando entregue, considerar pagamento realizado
           updateData.pago = true;
-          updateData.valor_pago = pedidoAtual.total; // Usar o valor total do pedido atual
+          updateData.valor_pago = pedidoAtual.total || 0;
           break;
       }
+
+      console.log('Dados para atualização:', updateData);
 
       const { error } = await supabase
         .from('pedidos_unificados')
@@ -212,16 +219,19 @@ export default function Pedidos() {
         .eq('id', pedidoId);
 
       if (error) {
-        throw error;
+        console.error('Erro do Supabase:', error);
+        throw new Error(`Erro ao atualizar pedido: ${error.message}`);
       }
+
+      console.log(`Pedido ${pedidoId} atualizado com sucesso para ${newStatus}`);
 
       // Recarregar pedidos para aplicar nova ordenação
       await fetchPedidos();
       
-      console.log(`Pedido ${pedidoId} atualizado para ${newStatus}${newStatus === 'ENTREGUE' ? ' e marcado como pago' : ''}`);
     } catch (error) {
       console.error('Erro ao atualizar pedido:', error);
-      setError('Erro ao atualizar pedido');
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      setError(`Erro ao atualizar pedido: ${errorMessage}`);
     } finally {
       setUpdating(prev => ({ ...prev, [pedidoId]: false }));
     }
@@ -344,13 +354,45 @@ export default function Pedidos() {
     }
 
     try {
-      // Atualizar status dos pedidos selecionados para FINALIZADO
-      const { error } = await supabase
+      console.log('Iniciando finalização de pedidos:', selectedPedidos);
+      
+      // Verificar se os pedidos existem primeiro
+      const { data: pedidosExistentes, error: checkError } = await supabase
         .from('pedidos_unificados')
-        .update({ status: 'FINALIZADO' })
+        .select('id, status')
         .in('id', selectedPedidos);
 
-      if (error) throw error;
+      if (checkError) {
+        console.error('Erro ao verificar pedidos:', checkError);
+        throw new Error(`Erro ao verificar pedidos: ${checkError.message}`);
+      }
+
+      if (!pedidosExistentes || pedidosExistentes.length === 0) {
+        throw new Error('Nenhum pedido encontrado com os IDs selecionados');
+      }
+
+      console.log('Pedidos encontrados:', pedidosExistentes);
+
+      // Atualizar status dos pedidos selecionados para ENTREGUE (que é o status final)
+      const { error } = await supabase
+        .from('pedidos_unificados')
+        .update({ 
+          status: 'ENTREGUE',
+          entregue_em: new Date().toISOString(),
+          pago: true,
+          valor_pago: pedidosExistentes.reduce((total, pedido) => {
+            const pedidoCompleto = pedidos.find(p => p.id === pedido.id);
+            return total + (pedidoCompleto?.total || 0);
+          }, 0)
+        })
+        .in('id', selectedPedidos);
+
+      if (error) {
+        console.error('Erro ao atualizar pedidos:', error);
+        throw new Error(`Erro ao atualizar pedidos: ${error.message}`);
+      }
+
+      console.log('Pedidos atualizados com sucesso');
 
       // Recarregar pedidos
       await fetchPedidos();
@@ -361,7 +403,8 @@ export default function Pedidos() {
       alert(`${selectedPedidos.length} pedido(s) finalizado(s) com sucesso!`);
     } catch (error) {
       console.error('Erro ao finalizar pedidos:', error);
-      alert('Erro ao finalizar pedidos. Tente novamente.');
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      alert(`Erro ao finalizar pedidos: ${errorMessage}`);
     }
   };
 

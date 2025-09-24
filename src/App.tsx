@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Pedidos from "./pages/Pedidos";
+import PedidosSimplificado from "./pages/PedidosSimplificado";
 import Mesas from "./pages/Mesas";
 import Funcionarios from "./pages/Funcionarios";
 import Configuracoes from "@/pages/Configuracoes";
@@ -72,7 +73,7 @@ const App = () => (
             } />
             <Route path="/pedidos" element={
               <ProtectedRoute allowedRoles={['ADMIN', 'CAIXA']}>
-                <AppLayout><Pedidos /></AppLayout>
+                <AppLayout><PedidosSimplificado /></AppLayout>
               </ProtectedRoute>
             } />
             <Route path="/mesas" element={
@@ -145,7 +146,7 @@ const App = () => (
             <AppLayout><TesteRealtime /></AppLayout>
           </ProtectedRoute>
         } />
-        <Route path="/teste-tabela-pedidos" element={
+        <Route path="ww/teste-tabela-pedidos" element={
           <ProtectedRoute allowedRoles={['ADMIN']}>
             <AppLayout><TesteTabelaPedidos /></AppLayout>
           </ProtectedRoute>

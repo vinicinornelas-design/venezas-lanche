@@ -75,41 +75,55 @@ export default function Pedidos() {
       setLoading(true);
       setError(null);
       
+      console.log('Iniciando busca de pedidos...');
+      
       const { data, error } = await supabase
         .from('pedidos_unificados')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
 
+      console.log('Dados recebidos:', data);
+      console.log('Erro recebido:', error);
+
       if (error) {
         throw error;
       }
 
-      // Ordenação personalizada: PENDENTE > PREPARANDO > PRONTO > ENTREGUE > CANCELADO
-      const sortedPedidos = (data || []).sort((a, b) => {
-        const statusOrder = {
-          'PENDENTE': 1,
-          'PREPARANDO': 2,
-          'PRONTO': 3,
-          'ENTREGUE': 4,
-          'CANCELADO': 5
-        };
+      // Verificar se os dados têm a estrutura esperada
+      if (data && Array.isArray(data)) {
+        console.log('Dados válidos, processando...');
         
-        const aOrder = statusOrder[a.status as keyof typeof statusOrder] || 6;
-        const bOrder = statusOrder[b.status as keyof typeof statusOrder] || 6;
-        
-        // Se o status for igual, ordenar por data de criação (mais recente primeiro)
-        if (aOrder === bOrder) {
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        }
-        
-        return aOrder - bOrder;
-      });
+        // Ordenação personalizada: PENDENTE > PREPARANDO > PRONTO > ENTREGUE > CANCELADO
+        const sortedPedidos = data.sort((a, b) => {
+          const statusOrder = {
+            'PENDENTE': 1,
+            'PREPARANDO': 2,
+            'PRONTO': 3,
+            'ENTREGUE': 4,
+            'CANCELADO': 5
+          };
+          
+          const aOrder = statusOrder[a.status as keyof typeof statusOrder] || 6;
+          const bOrder = statusOrder[b.status as keyof typeof statusOrder] || 6;
+          
+          // Se o status for igual, ordenar por data de criação (mais recente primeiro)
+          if (aOrder === bOrder) {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          }
+          
+          return aOrder - bOrder;
+        });
 
-      setPedidos(sortedPedidos);
+        console.log('Pedidos ordenados:', sortedPedidos);
+        setPedidos(sortedPedidos);
+      } else {
+        console.log('Nenhum dado recebido ou dados inválidos');
+        setPedidos([]);
+      }
     } catch (err) {
       console.error('Erro ao buscar pedidos:', err);
-      setError('Erro ao carregar pedidos');
+      setError('Erro ao carregar pedidos: ' + (err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -678,13 +692,21 @@ export default function Pedidos() {
   };
 
   const formatarItens = (itens: any[]): string => {
-    if (!Array.isArray(itens) || itens.length === 0) {
-      return 'Nenhum item';
+    try {
+      if (!Array.isArray(itens) || itens.length === 0) {
+        return 'Nenhum item';
+      }
+      
+      return itens.map(item => {
+        const quantidade = item.quantidade || item.quantidade || 1;
+        const nome = item.nome || item.nome || 'Item';
+        const observacoes = item.observacoes || item.observacoes || '';
+        return `${quantidade}x ${nome}${observacoes ? ` (${observacoes})` : ''}`;
+      }).join(', ');
+    } catch (error) {
+      console.error('Erro ao formatar itens:', error, itens);
+      return 'Erro ao carregar itens';
     }
-    
-    return itens.map(item => 
-      `${item.quantidade}x ${item.nome}${item.observacoes ? ` (${item.observacoes})` : ''}`
-    ).join(', ');
   };
 
 

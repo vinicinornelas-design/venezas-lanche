@@ -11,7 +11,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { usePdfExport } from "@/hooks/usePdfExport";
 import MinimalFileUpload from "@/components/MinimalFileUpload";
-import { Plus, Edit, Trash2, Upload, Star, FileText, Image, X, FolderPlus, Settings } from "lucide-react";
+import { Plus, Edit, Trash2, Upload, Star, FileText, Image, X, FolderPlus, Settings, GripVertical, Eye, EyeOff } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface MenuItem {
   id: string;
@@ -40,6 +59,88 @@ interface Adicional {
   item_id?: string;
   multi_selecao?: boolean;
   obrigatorio?: boolean;
+}
+
+// Componente para item de categoria arrastável
+function SortableCategoryItem({ 
+  category, 
+  onEdit, 
+  onDelete, 
+  onToggleStatus 
+}: { 
+  category: Category; 
+  onEdit: (category: Category) => void;
+  onDelete: (id: string) => void;
+  onToggleStatus: (id: string, currentStatus: boolean) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center justify-between p-4 border rounded-lg bg-white hover:shadow-md transition-all ${
+        isDragging ? 'opacity-50 shadow-lg' : ''
+      }`}
+    >
+      <div className="flex items-center gap-3 flex-1">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab hover:cursor-grabbing p-1 hover:bg-gray-100 rounded"
+        >
+          <GripVertical className="h-4 w-4 text-gray-400" />
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <Badge 
+            variant={category.ativo ? "default" : "secondary"}
+            className="cursor-pointer hover:opacity-80 flex items-center gap-1"
+            onClick={() => onToggleStatus(category.id, category.ativo)}
+          >
+            {category.ativo ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+            {category.ativo ? "Ativa" : "Inativa"}
+          </Badge>
+          
+          <div>
+            <span className="font-medium text-lg">{category.nome}</span>
+            <span className="text-sm text-gray-500 ml-2">(Ordem: {category.ordem || 0})</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex gap-2">
+        <Button
+          onClick={() => onEdit(category)}
+          variant="outline"
+          size="sm"
+          className="hover:bg-blue-50"
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+          onClick={() => onDelete(category.id)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export default function ExpandedMenu() {
@@ -87,6 +188,14 @@ export default function ExpandedMenu() {
   const { toast } = useToast();
   const { exportMenuToPdf, isExporting } = usePdfExport();
   const [error, setError] = useState<string | null>(null);
+
+  // Sensores para drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     const initializeComponent = async () => {
@@ -585,6 +694,47 @@ export default function ExpandedMenu() {
         description: "Erro ao alterar status da categoria",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = categories.findIndex((category) => category.id === active.id);
+      const newIndex = categories.findIndex((category) => category.id === over.id);
+
+      const newCategories = arrayMove(categories, oldIndex, newIndex);
+      setCategories(newCategories);
+
+      // Atualizar ordens no banco de dados
+      try {
+        const updates = newCategories.map((category, index) => ({
+          id: category.id,
+          ordem: index + 1
+        }));
+
+        for (const update of updates) {
+          await supabase
+            .from('categorias')
+            .update({ ordem: update.ordem })
+            .eq('id', update.id);
+        }
+
+        toast({
+          title: "Sucesso",
+          description: "Ordem das categorias atualizada",
+        });
+      } catch (error) {
+        console.error('Error updating category order:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao atualizar ordem das categorias",
+          variant: "destructive",
+        });
+        // Reverter mudanças locais em caso de erro
+        fetchCategories();
+      }
     }
   };
 
@@ -1315,44 +1465,41 @@ export default function ExpandedMenu() {
                   </div>
                 </div>
 
-                {/* Lista de Categorias */}
+                {/* Lista de Categorias com Drag and Drop */}
                 <div className="space-y-4">
-                  <h3 className="font-semibold">Categorias Existentes</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Categorias Existentes</h3>
+                    <Badge variant="outline">
+                      {categories.length} categorias
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Arraste e solte para reordenar as categorias. Clique no ícone de olho para ativar/desativar.
+                  </p>
+                  
                   {categories.length > 0 ? (
-                    <div className="grid gap-3">
-                      {categories.map((category) => (
-                        <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <Badge 
-                              variant={category.ativo ? "default" : "secondary"}
-                              className="cursor-pointer hover:opacity-80"
-                              onClick={() => handleToggleCategoryStatus(category.id, category.ativo)}
-                            >
-                              {category.ativo ? "Ativa" : "Inativa"}
-                            </Badge>
-                            <span className="font-medium">{category.nome}</span>
-                            <span className="text-sm text-gray-500">(Ordem: {category.ordem || 0})</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => editCategory(category)}
-                              variant="outline"
-                              size="sm"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-600 hover:text-red-700"
-                              onClick={() => handleDeleteCategory(category.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <SortableContext
+                        items={categories.map(cat => cat.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-3">
+                          {categories.map((category) => (
+                            <SortableCategoryItem
+                              key={category.id}
+                              category={category}
+                              onEdit={editCategory}
+                              onDelete={handleDeleteCategory}
+                              onToggleStatus={handleToggleCategoryStatus}
+                            />
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </SortableContext>
+                    </DndContext>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <FolderPlus className="h-12 w-12 mx-auto mb-4 opacity-50" />

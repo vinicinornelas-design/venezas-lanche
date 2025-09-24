@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import QRCode from 'qrcode';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -100,35 +99,28 @@ export default function PIXQRCode({
     return emvCode;
   };
 
-  // Função para gerar QR Code
+  // Função para gerar QR Code usando API externa
   const generateQRCode = async (pixCode: string) => {
-    if (!canvasRef.current) return;
-
     try {
       setIsGenerating(true);
       
-      const canvas = canvasRef.current;
-      const qrCodeDataURL = await QRCode.toDataURL(pixCode, {
-        width: 300,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        },
-        errorCorrectionLevel: 'M'
-      });
-
-      setQrCodeDataURL(qrCodeDataURL);
+      // Usar API externa para gerar QR Code
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pixCode)}`;
+      setQrCodeDataURL(qrCodeUrl);
       
       // Desenhar no canvas
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        const img = new Image();
-        img.onload = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        };
-        img.src = qrCodeDataURL;
+      if (canvasRef.current) {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          };
+          img.src = qrCodeUrl;
+        }
       }
     } catch (error) {
       console.error('Erro ao gerar QR Code:', error);
@@ -189,20 +181,35 @@ export default function PIXQRCode({
   };
 
   // Função para baixar QR Code
-  const handleDownloadQRCode = () => {
+  const handleDownloadQRCode = async () => {
     if (!qrCodeDataURL) return;
 
-    const link = document.createElement('a');
-    link.download = `pix-qr-${valor}-${Date.now()}.png`;
-    link.href = qrCodeDataURL;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const response = await fetch(qrCodeDataURL);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.download = `pix-qr-${valor}-${Date.now()}.png`;
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      window.URL.revokeObjectURL(url);
 
-    toast({
-      title: "QR Code baixado",
-      description: "O QR Code foi baixado com sucesso.",
-    });
+      toast({
+        title: "QR Code baixado",
+        description: "O QR Code foi baixado com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao baixar QR Code:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao baixar QR Code. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Gerar QR Code inicial quando o componente monta

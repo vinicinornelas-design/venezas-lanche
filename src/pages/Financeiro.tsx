@@ -387,6 +387,7 @@ export default function Financeiro() {
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
@@ -639,7 +640,7 @@ export default function Financeiro() {
             <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Delivery</span>
             <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Mesa</span>
             <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Balcao</span>
-            {isFiltered && (
+            {isFiltered && startDate && endDate && (
               <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">
                 Período: {formatDate(startDate)} a {formatDate(endDate)}
               </span>
@@ -676,7 +677,7 @@ export default function Financeiro() {
               </div>
               <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600 mb-1">Total Produtos</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(financialSummary.totalRevenue - 6)}</p>
+                <p className="text-2xl font-bold text-green-600">{formatCurrency(Math.max(0, financialSummary.totalRevenue - 6))}</p>
               </div>
               <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600 mb-1">Qtde. Pedidos</p>
@@ -772,11 +773,11 @@ export default function Financeiro() {
                   <tbody>
                     <tr className="border-b hover:bg-gray-50">
                       <td className="p-3">23/09/2025</td>
-                      <td className="p-3">{financialSummary.totalOrders}</td>
-                      <td className="p-3 text-green-600 font-semibold">{formatCurrency(financialSummary.totalRevenue)}</td>
+                      <td className="p-3">{financialSummary?.totalOrders || 0}</td>
+                      <td className="p-3 text-green-600 font-semibold">{formatCurrency(financialSummary?.totalRevenue || 0)}</td>
                       <td className="p-3 text-green-600 font-semibold">R$ 6,00</td>
-                      <td className="p-3 text-green-600 font-semibold">{formatCurrency(financialSummary.totalRevenue - 6)}</td>
-                      <td className="p-3 text-green-600 font-semibold">{formatCurrency(financialSummary.averageTicket)}</td>
+                      <td className="p-3 text-green-600 font-semibold">{formatCurrency(Math.max(0, (financialSummary?.totalRevenue || 0) - 6))}</td>
+                      <td className="p-3 text-green-600 font-semibold">{formatCurrency(financialSummary?.averageTicket || 0)}</td>
                     </tr>
                   </tbody>
                 </table>

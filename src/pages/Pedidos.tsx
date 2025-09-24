@@ -32,7 +32,7 @@ import {
   MoreHorizontal,
   QrCode
 } from "lucide-react";
-import PIXQRCode from "@/components/PIXQRCode";
+// import PIXQRCode from "@/components/PIXQRCode";
 
 export default function Pedidos() {
   const [pedidos, setPedidos] = useState<PedidoUnificado[]>([]);
@@ -711,32 +711,8 @@ export default function Pedidos() {
     );
   }
 
-
   const stats = getStats();
   const filteredPedidos = getFilteredPedidosByTab();
-
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="text-center">
-          <p>Carregando pedidos...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="text-center text-red-600">
-          <p>Erro: {error}</p>
-          <Button onClick={fetchPedidos} className="mt-2">
-            Tentar Novamente
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-6 space-y-6">
@@ -1311,12 +1287,20 @@ export default function Pedidos() {
                 </div>
               </div>
 
-              {/* Componente PIX QR Code */}
-              <PIXQRCode
-                valor={pixPedido.total}
-                descricao={`Pedido #${pixPedido.numero_pedido} - Veneza's Lanche`}
-                onPaymentConfirmed={handlePixPaymentConfirmed}
-              />
+              {/* Componente PIX QR Code - Temporariamente desabilitado */}
+              <div className="p-8 text-center border-2 border-dashed border-gray-300 rounded-lg">
+                <QrCode className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-600 mb-2">QR Code PIX</p>
+                <p className="text-sm text-gray-500">
+                  Funcionalidade temporariamente indisponível
+                </p>
+                <Button 
+                  onClick={handlePixPaymentConfirmed}
+                  className="mt-4"
+                >
+                  Confirmar Pagamento Manual
+                </Button>
+              </div>
 
               {/* Botões de ação */}
               <div className="flex gap-3 pt-4 border-t">

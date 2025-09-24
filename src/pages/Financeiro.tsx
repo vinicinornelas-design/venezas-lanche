@@ -803,8 +803,8 @@ export default function Financeiro() {
                   if (data.count === 0) return null;
                   
                   return (
-                    <div key={key} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center gap-3">
+                    <div key={key} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-2">
                         <Icon className="h-5 w-5 text-primary" />
                         <div>
                           <p className="font-medium">{label}</p>
@@ -813,9 +813,6 @@ export default function Financeiro() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold">{formatCurrency(data.total)}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {data.percentage.toFixed(1)}% do total
-                        </p>
                       </div>
                     </div>
                   );

@@ -30,6 +30,7 @@ interface Category {
   id: string;
   nome: string;
   ativo: boolean;
+  ordem?: number;
 }
 
 interface Adicional {
@@ -68,7 +69,8 @@ export default function ExpandedMenu() {
   });
   const [categoryFormData, setCategoryFormData] = useState({
     nome: "",
-    ativo: true
+    ativo: true,
+    ordem: 0
   });
   const [adicionalFormData, setAdicionalFormData] = useState({
     nome: "",
@@ -155,7 +157,8 @@ export default function ExpandedMenu() {
       const { data, error } = await supabase
         .from('categorias')
         .select('*')
-        .order('nome');
+        .order('ordem', { ascending: true })
+        .order('nome', { ascending: true });
 
       if (error) throw error;
       setCategories(data || []);
@@ -407,7 +410,8 @@ export default function ExpandedMenu() {
   const resetCategoryForm = () => {
     setCategoryFormData({
       nome: "",
-      ativo: true
+      ativo: true,
+      ordem: 0
     });
     setSelectedCategory(null);
     setIsCategoryDialogOpen(false);
@@ -447,10 +451,141 @@ export default function ExpandedMenu() {
     setSelectedCategory(category);
     setCategoryFormData({
       nome: category.nome,
-      ativo: category.ativo
+      ativo: category.ativo,
+      ordem: category.ordem || 0
     });
 
     setIsCategoryDialogOpen(true);
+  };
+
+  const handleSaveCategory = async () => {
+    try {
+      if (!categoryFormData.nome.trim()) {
+        toast({
+          title: "Erro",
+          description: "Nome da categoria é obrigatório",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (selectedCategory) {
+        // Atualizar categoria existente
+        const { error } = await supabase
+          .from('categorias')
+          .update({
+            nome: categoryFormData.nome.trim(),
+            ativo: categoryFormData.ativo,
+            ordem: categoryFormData.ordem
+          })
+          .eq('id', selectedCategory.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Categoria atualizada com sucesso",
+        });
+      } else {
+        // Criar nova categoria - definir ordem automaticamente se não especificada
+        const ordem = categoryFormData.ordem || (categories.length + 1);
+        
+        const { error } = await supabase
+          .from('categorias')
+          .insert({
+            nome: categoryFormData.nome.trim(),
+            ativo: categoryFormData.ativo,
+            ordem: ordem
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso",
+          description: "Categoria criada com sucesso",
+        });
+      }
+
+      resetCategoryForm();
+      fetchCategories();
+    } catch (error) {
+      console.error('Error saving category:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar categoria",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    try {
+      // Verificar se há itens nesta categoria
+      const { data: itemsInCategory } = await supabase
+        .from('cardapio')
+        .select('id')
+        .eq('categoria_id', categoryId)
+        .limit(1);
+
+      if (itemsInCategory && itemsInCategory.length > 0) {
+        toast({
+          title: "Erro",
+          description: "Não é possível excluir uma categoria que possui itens. Remova todos os itens primeiro.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!confirm('Tem certeza que deseja excluir esta categoria?')) {
+        return;
+      }
+
+      const { error } = await supabase
+        .from('categorias')
+        .delete()
+        .eq('id', categoryId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Categoria excluída com sucesso",
+      });
+
+      fetchCategories();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir categoria",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleCategoryStatus = async (categoryId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('categorias')
+        .update({ ativo: !currentStatus })
+        .eq('id', categoryId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `Categoria ${!currentStatus ? 'ativada' : 'desativada'} com sucesso`,
+      });
+
+      fetchCategories();
+    } catch (error) {
+      console.error('Error toggling category status:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao alterar status da categoria",
+        variant: "destructive",
+      });
+    }
   };
 
   const editItem = (item: MenuItem) => {
@@ -1130,13 +1265,24 @@ export default function ExpandedMenu() {
                     {selectedCategory ? "Editar Categoria" : "Nova Categoria"}
                   </h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label>Nome da Categoria</Label>
                       <Input
                         value={categoryFormData.nome}
                         onChange={(e) => setCategoryFormData({...categoryFormData, nome: e.target.value})}
                         placeholder="Ex: Lanches, Bebidas, Sobremesas"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Ordem de Exibição</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={categoryFormData.ordem}
+                        onChange={(e) => setCategoryFormData({...categoryFormData, ordem: parseInt(e.target.value) || 0})}
+                        placeholder="1, 2, 3..."
                       />
                     </div>
                     
@@ -1162,6 +1308,7 @@ export default function ExpandedMenu() {
                     </Button>
                     <Button 
                       className="flex-1 gradient-primary"
+                      onClick={handleSaveCategory}
                     >
                       {selectedCategory ? "Atualizar" : "Criar"} Categoria
                     </Button>
@@ -1176,10 +1323,15 @@ export default function ExpandedMenu() {
                       {categories.map((category) => (
                         <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <div className="flex items-center gap-3">
-                            <Badge variant={category.ativo ? "default" : "secondary"}>
+                            <Badge 
+                              variant={category.ativo ? "default" : "secondary"}
+                              className="cursor-pointer hover:opacity-80"
+                              onClick={() => handleToggleCategoryStatus(category.id, category.ativo)}
+                            >
                               {category.ativo ? "Ativa" : "Inativa"}
                             </Badge>
                             <span className="font-medium">{category.nome}</span>
+                            <span className="text-sm text-gray-500">(Ordem: {category.ordem || 0})</span>
                           </div>
                           <div className="flex gap-2">
                             <Button
@@ -1193,6 +1345,7 @@ export default function ExpandedMenu() {
                               variant="outline"
                               size="sm"
                               className="text-red-600 hover:text-red-700"
+                              onClick={() => handleDeleteCategory(category.id)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

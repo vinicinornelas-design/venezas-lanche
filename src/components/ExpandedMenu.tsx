@@ -1112,6 +1112,17 @@ export default function ExpandedMenu() {
         
         <div className="flex gap-3">
           <Button 
+            onClick={() => {
+              resetCategoryForm();
+              setIsCategoryDialogOpen(true);
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Categoria
+          </Button>
+          
+          <Button 
             onClick={handleExportPdf} 
             disabled={isExporting || items.length === 0}
             variant="outline"

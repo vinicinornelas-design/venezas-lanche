@@ -32,7 +32,7 @@ import {
   MoreHorizontal,
   QrCode
 } from "lucide-react";
-import PIXQRCode from "@/components/PIXQRCode";
+// import PIXQRCode from "@/components/PIXQRCode";
 
 export default function Pedidos() {
   const [pedidos, setPedidos] = useState<PedidoUnificado[]>([]);
@@ -43,8 +43,8 @@ export default function Pedidos() {
   const [selectedPedido, setSelectedPedido] = useState<PedidoUnificado | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>('');
-  const [isPixModalOpen, setIsPixModalOpen] = useState(false);
-  const [pixPedido, setPixPedido] = useState<PedidoUnificado | null>(null);
+  // const [isPixModalOpen, setIsPixModalOpen] = useState(false);
+  // const [pixPedido, setPixPedido] = useState<PedidoUnificado | null>(null);
   
   // Estados para filtros e busca
   const [searchTerm, setSearchTerm] = useState('');
@@ -440,45 +440,45 @@ export default function Pedidos() {
     setSelectedStatus('');
   };
 
-  const openPixModal = (pedido: PedidoUnificado) => {
-    setPixPedido(pedido);
-    setIsPixModalOpen(true);
-  };
+  // const openPixModal = (pedido: PedidoUnificado) => {
+  //   setPixPedido(pedido);
+  //   setIsPixModalOpen(true);
+  // };
 
-  const closePixModal = () => {
-    setIsPixModalOpen(false);
-    setPixPedido(null);
-  };
+  // const closePixModal = () => {
+  //   setIsPixModalOpen(false);
+  //   setPixPedido(null);
+  // };
 
-  const handlePixPaymentConfirmed = async () => {
-    if (!pixPedido) return;
+  // const handlePixPaymentConfirmed = async () => {
+  //   if (!pixPedido) return;
 
-    try {
-      // Marcar pedido como pago
-      const { error } = await supabase
-        .from('pedidos_unificados')
-        .update({ 
-          pago: true,
-          valor_pago: pixPedido.total,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', pixPedido.id);
+  //   try {
+  //     // Marcar pedido como pago
+  //     const { error } = await supabase
+  //       .from('pedidos_unificados')
+  //       .update({ 
+  //         pago: true,
+  //         valor_pago: pixPedido.total,
+  //         updated_at: new Date().toISOString()
+  //       })
+  //       .eq('id', pixPedido.id);
 
-      if (error) throw error;
+  //     if (error) throw error;
 
-      // Recarregar pedidos
-      await fetchPedidos();
+  //     // Recarregar pedidos
+  //     await fetchPedidos();
       
-      // Fechar modal
-      closePixModal();
+  //     // Fechar modal
+  //     closePixModal();
       
-      // Mostrar sucesso
-      alert('Pagamento PIX confirmado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao confirmar pagamento PIX:', error);
-      alert('Erro ao confirmar pagamento. Tente novamente.');
-    }
-  };
+  //     // Mostrar sucesso
+  //     alert('Pagamento PIX confirmado com sucesso!');
+  //   } catch (error) {
+  //     console.error('Erro ao confirmar pagamento PIX:', error);
+  //     alert('Erro ao confirmar pagamento. Tente novamente.');
+  //   }
+  // };
 
   const printComanda = (pedido?: PedidoUnificado) => {
     const pedidoToPrint = pedido || selectedPedido;
@@ -1044,7 +1044,7 @@ export default function Pedidos() {
                           >
                             <Printer className="h-4 w-4" />
                           </Button>
-                          {pedido.metodo_pagamento === 'PIX' && !pedido.pago && (
+                          {/* {pedido.metodo_pagamento === 'PIX' && !pedido.pago && (
                             <Button 
                               variant="ghost" 
                               size="sm" 
@@ -1054,7 +1054,7 @@ export default function Pedidos() {
                             >
                               <QrCode className="h-4 w-4" />
                             </Button>
-                          )}
+                          )} */}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1244,70 +1244,7 @@ export default function Pedidos() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal PIX QR Code */}
-      <Dialog open={isPixModalOpen} onOpenChange={setIsPixModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <QrCode className="h-5 w-5" />
-              Pagamento PIX - Pedido #{pixPedido?.numero_pedido}
-            </DialogTitle>
-            <DialogDescription>
-              Gere o QR Code PIX para o cliente realizar o pagamento
-            </DialogDescription>
-          </DialogHeader>
-          
-          {pixPedido && (
-            <div className="space-y-6">
-              {/* Informações do pedido */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <Label className="text-sm font-medium">Cliente</Label>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {pixPedido.cliente_nome || 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Telefone</Label>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {pixPedido.cliente_telefone || 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Valor Total</Label>
-                  <p className="text-lg font-bold text-green-600 mt-1">
-                    R$ {pixPedido.total.toFixed(2).replace('.', ',')}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Status</Label>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {formatarStatusPedido(pixPedido.status || 'PENDENTE')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Componente PIX QR Code */}
-              <PIXQRCode
-                valor={pixPedido.total}
-                descricao={`Pedido #${pixPedido.numero_pedido} - Veneza's Lanche`}
-                onPaymentConfirmed={handlePixPaymentConfirmed}
-              />
-
-              {/* Botões de ação */}
-              <div className="flex gap-3 pt-4 border-t">
-                <Button 
-                  onClick={closePixModal}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Fechar
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Modal PIX QR Code - Removido */}
     </div>
   );
 }

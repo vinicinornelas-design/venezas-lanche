@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import VenezaBanner from "@/components/VenezaBanner";
 import VenezaBannerCustom from "@/components/VenezaBannerCustom";
+import PIXQRCode from "@/components/PIXQRCode";
 import { 
   ShoppingCart, 
   Plus, 
@@ -28,7 +29,8 @@ import {
   Award,
   Sparkles,
   X,
-  Settings
+  Settings,
+  QrCode
 } from "lucide-react";
 import RatingSystem from "@/components/RatingSystem";
 import { CriarPedidoUnificado, PedidoItem } from "@/types/pedidos-unificados";
@@ -68,10 +70,13 @@ interface RestaurantConfig {
   banner_url: string;
   taxa_entrega?: number;
   tempo_entrega?: number;
-  formas_pagamento?: string[];
+  formas_pagamento?: Array<{
+    nome: string;
+    taxa: number;
+  }>;
   bairros_entrega?: Array<{
     nome: string;
-    valor: number;
+    taxa_entrega: number;
   }>;
   created_at?: string;
   updated_at?: string;
@@ -95,6 +100,7 @@ export default function MenuPublico() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showPixModal, setShowPixModal] = useState(false);
   const [checkoutForm, setCheckoutForm] = useState({
     nome: '',
     telefone: '',
@@ -201,8 +207,8 @@ export default function MenuPublico() {
       if (data) {
         console.log('Restaurant config carregado:', data);
         console.log('Logo URL:', data.logo_url);
-        console.log('Bairros de entrega:', data.bairros_entrega);
-        console.log('Formas de pagamento:', data.formas_pagamento);
+        console.log('Bairros de entrega:', (data as any).bairros_entrega);
+        console.log('Formas de pagamento:', (data as any).formas_pagamento);
         setRestaurantConfig(data);
       }
     } catch (error) {
@@ -298,8 +304,8 @@ export default function MenuPublico() {
     if (!checkoutForm.bairro) return 0;
     
     // Buscar no banco primeiro
-    if (restaurantConfig?.bairros_entrega?.length > 0) {
-      const bairro = restaurantConfig.bairros_entrega.find(b => b.nome === checkoutForm.bairro);
+    if ((restaurantConfig as any)?.bairros_entrega?.length > 0) {
+      const bairro = (restaurantConfig as any).bairros_entrega.find((b: any) => b.nome === checkoutForm.bairro);
       if (bairro) return bairro.taxa_entrega || 0;
     }
     
@@ -319,8 +325,8 @@ export default function MenuPublico() {
     if (!checkoutForm.metodoPagamento) return 0;
     
     // Buscar no banco primeiro
-    if (restaurantConfig?.formas_pagamento?.length > 0) {
-      const forma = restaurantConfig.formas_pagamento.find(f => f.nome === checkoutForm.metodoPagamento);
+    if ((restaurantConfig as any)?.formas_pagamento?.length > 0) {
+      const forma = (restaurantConfig as any).formas_pagamento.find((f: any) => f.nome === checkoutForm.metodoPagamento);
       if (forma) return forma.taxa || 0;
     }
     
@@ -390,10 +396,10 @@ export default function MenuPublico() {
       cliente_telefone: checkoutForm.telefone,
       cliente_endereco: checkoutForm.endereco,
       cliente_bairro: checkoutForm.bairro,
-      taxa_entrega: getTaxaEntrega().toString(),
-      desconto: "0.00",
-      subtotal: getTotalPrice().toString(),
-      total: getTotalComTaxas().toString(),
+      taxa_entrega: getTaxaEntrega(),
+      desconto: 0.00,
+      subtotal: getTotalPrice(),
+      total: getTotalComTaxas(),
       status: 'PENDENTE',
       pago: false,
       troco_para: null,
@@ -435,7 +441,7 @@ export default function MenuPublico() {
         
         const { data, error } = await supabase
           .from('pedidos_unificados')
-          .insert([pedido])
+          .insert([pedido as any])
           .select();
 
         console.log(`📥 Resposta do Supabase (tentativa ${tentativa}):`);
@@ -1294,20 +1300,96 @@ export default function MenuPublico() {
           </div>
           
           <div className="flex-shrink-0 border-t border-amber-200 pt-4 bg-white">
-            <div className="flex gap-4">
-              <Button
+            <div className="space-y-3">
+              {/* Botão PIX */}
+              {checkoutForm.metodoPagamento === 'PIX' && (
+                <Button
+                  onClick={() => setShowPixModal(true)}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-lg py-3"
+                >
+                  <QrCode className="h-5 w-5 mr-2" />
+                  Gerar QR Code PIX
+                </Button>
+              )}
+              
+              <div className="flex gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCheckout(false)}
+                  className="flex-1 border-amber-400 text-amber-600 hover:bg-amber-50"
+                >
+                  Voltar ao Carrinho
+                </Button>
+                <Button
+                  onClick={submitOrder}
+                  disabled={isSubmitting}
+                  className="flex-1 bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-bold text-lg py-3"
+                >
+                  {isSubmitting ? "Processando..." : "🚀 Confirmar Pedido"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal PIX QR Code */}
+      <Dialog open={showPixModal} onOpenChange={setShowPixModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              Pagamento via PIX
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Informações do pedido */}
+            <div className="grid grid-cols-2 gap-4 p-4 bg-amber-50 rounded-lg">
+              <div>
+                <Label className="text-sm font-medium">Cliente</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {checkoutForm.nome || 'N/A'}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Telefone</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {checkoutForm.telefone || 'N/A'}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Valor Total</Label>
+                <p className="text-lg font-bold text-green-600 mt-1">
+                  R$ {getTotalComTaxas().toFixed(2).replace('.', ',')}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Método</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  PIX
+                </p>
+              </div>
+            </div>
+
+            {/* Componente PIX QR Code */}
+            <PIXQRCode
+              valor={getTotalComTaxas()}
+              descricao={`Pedido Veneza's Lanche - ${checkoutForm.nome}`}
+              onPaymentConfirmed={() => {
+                setShowPixModal(false);
+                submitOrder();
+              }}
+            />
+
+            {/* Botões de ação */}
+            <div className="flex gap-3 pt-4 border-t">
+              <Button 
+                onClick={() => setShowPixModal(false)}
                 variant="outline"
-                onClick={() => setShowCheckout(false)}
-                className="flex-1 border-amber-400 text-amber-600 hover:bg-amber-50"
+                className="flex-1"
               >
-                Voltar ao Carrinho
-              </Button>
-              <Button
-                onClick={submitOrder}
-                disabled={isSubmitting}
-                className="flex-1 bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-bold text-lg py-3"
-              >
-                {isSubmitting ? "Processando..." : "🚀 Confirmar Pedido"}
+                Fechar
               </Button>
             </div>
           </div>

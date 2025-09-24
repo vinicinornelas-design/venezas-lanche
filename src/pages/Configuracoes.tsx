@@ -18,7 +18,8 @@ import {
   Plus,
   Edit,
   Trash2,
-  MapPin
+  MapPin,
+  QrCode
 } from "lucide-react";
 
 interface Configuracao {
@@ -43,6 +44,8 @@ interface ConfiguracoesData {
   tempo_preparo_padrao: number;
   aceita_dinheiro_troco: boolean;
   limite_tempo_cancelamento: number;
+  chave_pix: string;
+  nome_beneficiario_pix: string;
   bairros_entrega?: BairroEntrega[];
 }
 
@@ -56,6 +59,8 @@ const DEFAULT_CONFIG: ConfiguracoesData = {
   tempo_preparo_padrao: 30,
   aceita_dinheiro_troco: true,
   limite_tempo_cancelamento: 10,
+  chave_pix: "",
+  nome_beneficiario_pix: "Veneza's Lanche",
   bairros_entrega: []
 };
 
@@ -537,6 +542,62 @@ export default function Configuracoes() {
               onCheckedChange={(checked) => updateConfig('aceita_dinheiro_troco', checked)}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Configurações PIX */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <QrCode className="h-5 w-5" />
+            Configurações PIX
+          </CardTitle>
+          <CardDescription>
+            Configure a chave PIX e dados do beneficiário para geração de QR Codes
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="chave_pix">Chave PIX *</Label>
+              <Input
+                id="chave_pix"
+                type="text"
+                placeholder="Ex: 11999999999, email@exemplo.com, ou chave aleatória"
+                value={config.chave_pix}
+                onChange={(e) => updateConfig('chave_pix', e.target.value)}
+              />
+              <p className="text-sm text-muted-foreground">
+                Informe sua chave PIX (CPF, CNPJ, telefone, email ou chave aleatória)
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="nome_beneficiario_pix">Nome do Beneficiário</Label>
+              <Input
+                id="nome_beneficiario_pix"
+                type="text"
+                placeholder="Nome da empresa ou pessoa"
+                value={config.nome_beneficiario_pix}
+                onChange={(e) => updateConfig('nome_beneficiario_pix', e.target.value)}
+              />
+              <p className="text-sm text-muted-foreground">
+                Nome que aparecerá no QR Code PIX
+              </p>
+            </div>
+          </div>
+          
+          {config.chave_pix && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 text-green-800">
+                <QrCode className="h-4 w-4" />
+                <span className="font-medium">PIX Configurado</span>
+              </div>
+              <p className="text-sm text-green-700 mt-1">
+                Chave: {config.chave_pix} | Beneficiário: {config.nome_beneficiario_pix}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

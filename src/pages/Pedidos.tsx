@@ -10,10 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
-import { formatarStatusPedido, formatarOrigemPedido } from "@/types/pedidos-unificados";
-import type { Database } from "@/integrations/supabase/types";
-
-type PedidoUnificado = Database['public']['Tables']['pedidos_unificados']['Row'];
+import { PedidoUnificado, formatarStatusPedido, formatarOrigemPedido } from "@/types/pedidos-unificados";
 import { 
   Truck, 
   Utensils, 
@@ -35,7 +32,7 @@ import {
   MoreHorizontal,
   QrCode
 } from "lucide-react";
-// import PIXQRCode from "@/components/PIXQRCode";
+import PIXQRCode from "@/components/PIXQRCode";
 
 export default function Pedidos() {
   const [pedidos, setPedidos] = useState<PedidoUnificado[]>([]);
@@ -78,55 +75,41 @@ export default function Pedidos() {
       setLoading(true);
       setError(null);
       
-      console.log('Iniciando busca de pedidos...');
-      
       const { data, error } = await supabase
         .from('pedidos_unificados')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
 
-      console.log('Dados recebidos:', data);
-      console.log('Erro recebido:', error);
-
       if (error) {
         throw error;
       }
 
-      // Verificar se os dados têm a estrutura esperada
-      if (data && Array.isArray(data)) {
-        console.log('Dados válidos, processando...');
+      // Ordenação personalizada: PENDENTE > PREPARANDO > PRONTO > ENTREGUE > CANCELADO
+      const sortedPedidos = (data || []).sort((a, b) => {
+        const statusOrder = {
+          'PENDENTE': 1,
+          'PREPARANDO': 2,
+          'PRONTO': 3,
+          'ENTREGUE': 4,
+          'CANCELADO': 5
+        };
         
-        // Ordenação personalizada: PENDENTE > PREPARANDO > PRONTO > ENTREGUE > CANCELADO
-        const sortedPedidos = data.sort((a, b) => {
-          const statusOrder = {
-            'PENDENTE': 1,
-            'PREPARANDO': 2,
-            'PRONTO': 3,
-            'ENTREGUE': 4,
-            'CANCELADO': 5
-          };
-          
-          const aOrder = statusOrder[a.status as keyof typeof statusOrder] || 6;
-          const bOrder = statusOrder[b.status as keyof typeof statusOrder] || 6;
-          
-          // Se o status for igual, ordenar por data de criação (mais recente primeiro)
-          if (aOrder === bOrder) {
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-          }
-          
-          return aOrder - bOrder;
-        });
+        const aOrder = statusOrder[a.status as keyof typeof statusOrder] || 6;
+        const bOrder = statusOrder[b.status as keyof typeof statusOrder] || 6;
+        
+        // Se o status for igual, ordenar por data de criação (mais recente primeiro)
+        if (aOrder === bOrder) {
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+        
+        return aOrder - bOrder;
+      });
 
-        console.log('Pedidos ordenados:', sortedPedidos);
-        setPedidos(sortedPedidos);
-      } else {
-        console.log('Nenhum dado recebido ou dados inválidos');
-        setPedidos([]);
-      }
+      setPedidos(sortedPedidos);
     } catch (err) {
       console.error('Erro ao buscar pedidos:', err);
-      setError('Erro ao carregar pedidos: ' + (err as Error).message);
+      setError('Erro ao carregar pedidos');
     } finally {
       setLoading(false);
     }
@@ -694,23 +677,14 @@ export default function Pedidos() {
     }
   };
 
-  const formatarItens = (itens: any): string => {
-    try {
-      // itens é do tipo Json, pode ser um array ou null
-      if (!itens || !Array.isArray(itens) || itens.length === 0) {
-        return 'Nenhum item';
-      }
-      
-      return itens.map((item: any) => {
-        const quantidade = item.quantidade || 1;
-        const nome = item.nome || 'Item';
-        const observacoes = item.observacoes || '';
-        return `${quantidade}x ${nome}${observacoes ? ` (${observacoes})` : ''}`;
-      }).join(', ');
-    } catch (error) {
-      console.error('Erro ao formatar itens:', error, itens);
-      return 'Erro ao carregar itens';
+  const formatarItens = (itens: any[]): string => {
+    if (!Array.isArray(itens) || itens.length === 0) {
+      return 'Nenhum item';
     }
+    
+    return itens.map(item => 
+      `${item.quantidade}x ${item.nome}${item.observacoes ? ` (${item.observacoes})` : ''}`
+    ).join(', ');
   };
 
 
@@ -1102,7 +1076,7 @@ export default function Pedidos() {
             </DialogTitle>
           </DialogHeader>
           
-          {selectedPedido && (
+          {selectedPedido && selectedPedido.itens && (
             <div className="space-y-6">
               {/* Informações do pedido */}
               <div className="grid grid-cols-2 gap-4">
@@ -1143,7 +1117,7 @@ export default function Pedidos() {
                 <div>
                   <Label className="text-sm font-medium">Origem</Label>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {formatarOrigemPedido(selectedPedido.origem || 'BALCAO')}
+                    {formatarOrigemPedido(selectedPedido.origem)}
                   </p>
                 </div>
                 {selectedPedido.mesa_numero && (
@@ -1160,7 +1134,7 @@ export default function Pedidos() {
               <div>
                 <Label className="text-sm font-medium">Itens do Pedido</Label>
                 <div className="mt-2 space-y-2">
-                  {selectedPedido.itens && Array.isArray(selectedPedido.itens) ? selectedPedido.itens.map((item: any, index: number) => (
+                  {selectedPedido.itens && Array.isArray(selectedPedido.itens) ? selectedPedido.itens.map((item, index) => (
                     <div key={index} className="flex justify-between items-start p-3 border rounded-lg">
                       <div className="flex-1">
                         <p className="font-medium">{item.quantidade || 1}x {item.nome || 'Item'}</p>
@@ -1171,8 +1145,8 @@ export default function Pedidos() {
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">R$ {((item.preco || item.preco_unitario || 0) * (item.quantidade || 1)).toFixed(2)}</p>
-                        <p className="text-sm text-muted-foreground">R$ {(item.preco || item.preco_unitario || 0).toFixed(2)} cada</p>
+                        <p className="font-medium">R$ {((item.preco || 0) * (item.quantidade || 1)).toFixed(2)}</p>
+                        <p className="text-sm text-muted-foreground">R$ {(item.preco || 0).toFixed(2)} cada</p>
                       </div>
                     </div>
                   )) : (
@@ -1313,20 +1287,12 @@ export default function Pedidos() {
                 </div>
               </div>
 
-              {/* Componente PIX QR Code - Temporariamente desabilitado */}
-              <div className="p-8 text-center border-2 border-dashed border-gray-300 rounded-lg">
-                <QrCode className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-600 mb-2">QR Code PIX</p>
-                <p className="text-sm text-gray-500">
-                  Funcionalidade temporariamente indisponível
-                </p>
-                <Button 
-                  onClick={handlePixPaymentConfirmed}
-                  className="mt-4"
-                >
-                  Confirmar Pagamento Manual
-                </Button>
-              </div>
+              {/* Componente PIX QR Code */}
+              <PIXQRCode
+                valor={pixPedido.total}
+                descricao={`Pedido #${pixPedido.numero_pedido} - Veneza's Lanche`}
+                onPaymentConfirmed={handlePixPaymentConfirmed}
+              />
 
               {/* Botões de ação */}
               <div className="flex gap-3 pt-4 border-t">

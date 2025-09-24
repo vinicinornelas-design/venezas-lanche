@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import QRCode from 'qrcode';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -21,7 +22,7 @@ interface PIXQRCodeProps {
   chavePix?: string;
   descricao?: string;
   beneficiario?: string;
-  onPaymentConfirmed?: () => void;
+  onPaymentConfirmed: () => void;
   className?: string;
 }
 
@@ -34,10 +35,10 @@ interface PIXData {
   identificador: string;
 }
 
-export default function PIXQRCode({ 
-  valor, 
-  chavePix = '', 
-  descricao = 'Pagamento via PIX', 
+export default function PIXQRCode({
+  valor,
+  chavePix = '',
+  descricao = 'Pagamento via PIX',
   beneficiario = 'Veneza\'s Lanche',
   onPaymentConfirmed,
   className = ''
@@ -64,7 +65,7 @@ export default function PIXQRCode({
           .single();
 
         if (error) throw error;
-        
+
         if (data) {
           setPixConfig(data);
           if (data.chave_pix) {
@@ -82,45 +83,51 @@ export default function PIXQRCode({
     fetchPixConfig();
   }, []);
 
-  // Função para gerar o código PIX
+  // Função para gerar código PIX EMV
   const generatePixCode = (pixData: PIXData): string => {
     const pixPayload = {
       pixKey: pixData.chave,
-      description: pixData.descricao,
+      amount: pixData.valor,
       merchantName: pixData.beneficiario,
       merchantCity: pixData.cidade,
-      amount: pixData.valor,
+      description: pixData.descricao,
       txid: pixData.identificador
     };
 
-    // Gerar código PIX no formato EMV
     const emvCode = `00020126${pixPayload.pixKey.length.toString().padStart(2, '0')}${pixPayload.pixKey}52040000530398654${pixPayload.amount.toFixed(2)}5802BR59${pixPayload.merchantName.length.toString().padStart(2, '0')}${pixPayload.merchantName}60${pixPayload.merchantCity.length.toString().padStart(2, '0')}${pixPayload.merchantCity}62070503***6304`;
 
     return emvCode;
   };
 
-  // Função para gerar QR Code usando API externa
+  // Função para gerar QR Code
   const generateQRCode = async (pixCode: string) => {
+    if (!canvasRef.current) return;
+
     try {
       setIsGenerating(true);
       
-      // Usar API externa para gerar QR Code
-      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pixCode)}`;
-      setQrCodeDataURL(qrCodeUrl);
+      const canvas = canvasRef.current;
+      const qrCodeDataURL = await QRCode.toDataURL(pixCode, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        },
+        errorCorrectionLevel: 'M'
+      });
+
+      setQrCodeDataURL(qrCodeDataURL);
       
       // Desenhar no canvas
-      if (canvasRef.current) {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.onload = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          };
-          img.src = qrCodeUrl;
-        }
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const img = new Image();
+        img.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = qrCodeDataURL;
       }
     } catch (error) {
       console.error('Erro ao gerar QR Code:', error);
@@ -138,8 +145,8 @@ export default function PIXQRCode({
   const handleGenerateQRCode = () => {
     if (!customChavePix) {
       toast({
-        title: "Chave PIX obrigatória",
-        description: "Por favor, informe a chave PIX para gerar o QR Code.",
+        title: "Erro",
+        description: "Chave PIX é obrigatória para gerar o QR Code.",
         variant: "destructive",
       });
       return;
@@ -154,13 +161,15 @@ export default function PIXQRCode({
       identificador: `VEN${Date.now()}`
     };
 
-    const newPixCode = generatePixCode(pixData);
-    setPixCode(newPixCode);
-    generateQRCode(newPixCode);
+    const emvCode = generatePixCode(pixData);
+    setPixCode(emvCode);
+    generateQRCode(emvCode);
   };
 
   // Função para copiar código PIX
   const handleCopyPixCode = async () => {
+    if (!pixCode) return;
+
     try {
       await navigator.clipboard.writeText(pixCode);
       setCopied(true);
@@ -181,35 +190,20 @@ export default function PIXQRCode({
   };
 
   // Função para baixar QR Code
-  const handleDownloadQRCode = async () => {
+  const handleDownloadQRCode = () => {
     if (!qrCodeDataURL) return;
 
-    try {
-      const response = await fetch(qrCodeDataURL);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.download = `pix-qr-${valor}-${Date.now()}.png`;
-      link.href = url;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      window.URL.revokeObjectURL(url);
+    const link = document.createElement('a');
+    link.download = `pix-qr-${valor}-${Date.now()}.png`;
+    link.href = qrCodeDataURL;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-      toast({
-        title: "QR Code baixado",
-        description: "O QR Code foi baixado com sucesso.",
-      });
-    } catch (error) {
-      console.error('Erro ao baixar QR Code:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao baixar QR Code. Tente novamente.",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "QR Code baixado",
+      description: "O QR Code foi baixado com sucesso.",
+    });
   };
 
   // Gerar QR Code inicial quando o componente monta
@@ -217,196 +211,173 @@ export default function PIXQRCode({
     if (chavePix && valor > 0) {
       handleGenerateQRCode();
     }
-  }, [valor, chavePix]);
+  }, [chavePix, valor]);
 
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div className={`space-y-6 ${className}`}>
+      {/* Card principal */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5" />
-            Pagamento via PIX
+            Pagamento PIX
           </CardTitle>
           <CardDescription>
-            Escaneie o QR Code com seu aplicativo de pagamento
+            Escaneie o QR Code ou copie o código PIX para realizar o pagamento
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Valor do pagamento */}
-          <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-            <p className="text-sm text-green-600 mb-1">Valor a pagar</p>
-            <p className="text-2xl font-bold text-green-800">
-              R$ {valor.toFixed(2).replace('.', ',')}
-            </p>
+        <CardContent className="space-y-6">
+          {/* Informações do pagamento */}
+          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+            <div>
+              <Label className="text-sm font-medium">Valor</Label>
+              <p className="text-2xl font-bold text-green-600">
+                R$ {valor.toFixed(2).replace('.', ',')}
+              </p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Beneficiário</Label>
+              <p className="text-sm text-gray-600">{customBeneficiario}</p>
+            </div>
           </div>
 
           {/* QR Code */}
-          <div className="flex justify-center">
-            <div className="relative">
+          <div className="text-center">
+            <div className="inline-block p-4 bg-white border-2 border-gray-200 rounded-lg">
               <canvas
                 ref={canvasRef}
                 width={300}
                 height={300}
-                className="border rounded-lg bg-white"
+                className="border border-gray-300"
               />
-              {isGenerating && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-lg">
-                  <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
-                </div>
-              )}
             </div>
+            {isGenerating && (
+              <div className="mt-2 flex items-center justify-center gap-2 text-sm text-gray-500">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                Gerando QR Code...
+              </div>
+            )}
           </div>
 
-          {/* Informações do pagamento */}
-          <div className="space-y-2 text-sm text-gray-600">
-            <div className="flex justify-between">
-              <span>Beneficiário:</span>
-              <span className="font-medium">{customBeneficiario}</span>
+          {/* Código PIX */}
+          {pixCode && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Código PIX</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={pixCode}
+                  readOnly
+                  className="font-mono text-xs"
+                />
+                <Button
+                  onClick={handleCopyPixCode}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  {copied ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                  {copied ? 'Copiado!' : 'Copiar'}
+                </Button>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span>Chave PIX:</span>
-              <span className="font-medium text-xs break-all">{customChavePix}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Descrição:</span>
-              <span className="font-medium">{customDescricao}</span>
-            </div>
-          </div>
+          )}
 
           {/* Botões de ação */}
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button
-              onClick={handleCopyPixCode}
-              variant="outline"
+              onClick={handleGenerateQRCode}
+              disabled={isGenerating || !customChavePix}
               className="flex-1"
-              disabled={!pixCode}
             >
-              {copied ? (
-                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-              ) : (
-                <Copy className="h-4 w-4 mr-2" />
-              )}
-              {copied ? 'Copiado!' : 'Copiar Código'}
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Gerar Novo QR Code
             </Button>
             
-            <Button
-              onClick={handleDownloadQRCode}
-              variant="outline"
-              className="flex-1"
-              disabled={!qrCodeDataURL}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Baixar QR
-            </Button>
-          </div>
-
-          {/* Botão para configurar PIX */}
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full">
-                <CreditCard className="h-4 w-4 mr-2" />
-                Configurar PIX
+            {qrCodeDataURL && (
+              <Button
+                onClick={handleDownloadQRCode}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Baixar QR Code
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Configurar Pagamento PIX</DialogTitle>
-                <DialogDescription>
-                  Configure os dados para geração do QR Code PIX
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="chave-pix">Chave PIX *</Label>
-                  <Input
-                    id="chave-pix"
-                    placeholder="Ex: 11999999999 ou email@exemplo.com"
-                    value={customChavePix}
-                    onChange={(e) => setCustomChavePix(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="beneficiario">Nome do Beneficiário</Label>
-                  <Input
-                    id="beneficiario"
-                    placeholder="Nome da empresa"
-                    value={customBeneficiario}
-                    onChange={(e) => setCustomBeneficiario(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="descricao">Descrição</Label>
-                  <Input
-                    id="descricao"
-                    placeholder="Descrição do pagamento"
-                    value={customDescricao}
-                    onChange={(e) => setCustomDescricao(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Valor</Label>
-                  <div className="p-3 bg-gray-50 rounded-lg text-center">
-                    <span className="text-lg font-semibold">
-                      R$ {valor.toFixed(2).replace('.', ',')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-2 pt-4">
-                <Button
-                  onClick={() => setIsDialogOpen(false)}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={() => {
-                    handleGenerateQRCode();
-                    setIsDialogOpen(false);
-                  }}
-                  className="flex-1"
-                  disabled={!customChavePix}
-                >
-                  <QrCode className="h-4 w-4 mr-2" />
-                  Gerar QR Code
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+            )}
+          </div>
 
           {/* Instruções */}
-          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-            <div className="flex items-start gap-2">
-              <Smartphone className="h-4 w-4 text-blue-600 mt-0.5" />
-              <div className="text-sm text-blue-800">
-                <p className="font-medium mb-1">Como pagar:</p>
-                <ol className="list-decimal list-inside space-y-1 text-xs">
-                  <li>Abra o app do seu banco</li>
-                  <li>Escaneie o QR Code ou cole o código PIX</li>
-                  <li>Confirme o pagamento</li>
-                </ol>
-              </div>
-            </div>
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h4 className="font-medium text-blue-900 mb-2">Como pagar:</h4>
+            <ol className="text-sm text-blue-800 space-y-1">
+              <li>1. Abra o app do seu banco</li>
+              <li>2. Escaneie o QR Code ou cole o código PIX</li>
+              <li>3. Confirme o pagamento</li>
+              <li>4. Clique em "Confirmar Pagamento" abaixo</li>
+            </ol>
           </div>
 
-          {/* Botão de confirmação de pagamento */}
-          {onPaymentConfirmed && (
-            <Button
-              onClick={onPaymentConfirmed}
-              className="w-full bg-green-600 hover:bg-green-700"
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Confirmar Pagamento
-            </Button>
-          )}
+          {/* Botão de confirmação */}
+          <Button
+            onClick={onPaymentConfirmed}
+            className="w-full bg-green-600 hover:bg-green-700"
+            size="lg"
+          >
+            <CheckCircle className="h-5 w-5 mr-2" />
+            Confirmar Pagamento
+          </Button>
         </CardContent>
       </Card>
+
+      {/* Modal para configurações avançadas */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="w-full">
+            <Settings className="h-4 w-4 mr-2" />
+            Configurações PIX
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Configurações PIX</DialogTitle>
+            <DialogDescription>
+              Personalize as informações do pagamento PIX
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="chave-pix">Chave PIX</Label>
+              <Input
+                id="chave-pix"
+                value={customChavePix}
+                onChange={(e) => setCustomChavePix(e.target.value)}
+                placeholder="Digite a chave PIX"
+              />
+            </div>
+            <div>
+              <Label htmlFor="descricao">Descrição</Label>
+              <Input
+                id="descricao"
+                value={customDescricao}
+                onChange={(e) => setCustomDescricao(e.target.value)}
+                placeholder="Descrição do pagamento"
+              />
+            </div>
+            <div>
+              <Label htmlFor="beneficiario">Beneficiário</Label>
+              <Input
+                id="beneficiario"
+                value={customBeneficiario}
+                onChange={(e) => setCustomBeneficiario(e.target.value)}
+                placeholder="Nome do beneficiário"
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

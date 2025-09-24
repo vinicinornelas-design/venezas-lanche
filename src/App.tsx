@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Pedidos from "./pages/Pedidos";
+import PedidosMinimo from "./pages/PedidosMinimo";
 import Mesas from "./pages/Mesas";
 import Funcionarios from "./pages/Funcionarios";
 import Configuracoes from "@/pages/Configuracoes";
@@ -72,7 +73,7 @@ const App = () => (
             } />
             <Route path="/pedidos" element={
               <ProtectedRoute allowedRoles={['ADMIN', 'CAIXA']}>
-                <AppLayout><Pedidos /></AppLayout>
+                <AppLayout><PedidosMinimo /></AppLayout>
               </ProtectedRoute>
             } />
             <Route path="/mesas" element={

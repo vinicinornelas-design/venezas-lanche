@@ -30,8 +30,10 @@ import {
   Download,
   Filter,
   MoreHorizontal,
-  QrCode
+  QrCode,
+  MessageSquare
 } from "lucide-react";
+import { whatsappService, OrderNotification } from "@/services/whatsappService";
 // import PIXQRCode from "@/components/PIXQRCode";
 
 export default function Pedidos() {
@@ -225,6 +227,9 @@ export default function Pedidos() {
 
       console.log(`Pedido ${pedidoId} atualizado com sucesso para ${newStatus}`);
 
+      // Enviar notificação via WhatsApp se disponível
+      await sendWhatsAppNotification(pedidoAtual, newStatus);
+
       // Recarregar pedidos para aplicar nova ordenação
       await fetchPedidos();
       
@@ -234,6 +239,68 @@ export default function Pedidos() {
       setError(`Erro ao atualizar pedido: ${errorMessage}`);
     } finally {
       setUpdating(prev => ({ ...prev, [pedidoId]: false }));
+    }
+  };
+
+  const sendWhatsAppNotification = async (pedido: PedidoUnificado, status: string) => {
+    try {
+      // Verificar se o WhatsApp está configurado
+      const { data: restaurant } = await supabase
+        .from('restaurant_config')
+        .select('id')
+        .single();
+
+      if (!restaurant) return;
+
+      const { data: whatsappConfig } = await supabase
+        .from('whatsapp_config')
+        .select('*')
+        .eq('restaurant_id', restaurant.id)
+        .eq('enabled', true)
+        .single();
+
+      if (!whatsappConfig) {
+        console.log('WhatsApp não configurado ou desabilitado');
+        return;
+      }
+
+      // Inicializar o serviço WhatsApp
+      await whatsappService.initializeConfig(restaurant.id);
+
+      // Se for um novo pedido (status PENDENTE -> CONFIRMADO)
+      if (status === 'CONFIRMADO' && pedido.status === 'PENDENTE') {
+        const orderNotification: OrderNotification = {
+          orderId: pedido.id,
+          customerName: pedido.cliente_nome || 'Cliente',
+          customerPhone: pedido.cliente_telefone || '',
+          total: pedido.total || 0,
+          items: Array.isArray(pedido.itens) 
+            ? pedido.itens.map((item: any) => ({
+                name: item.nome || item.name || 'Item',
+                quantity: item.quantidade || item.quantity || 1,
+                price: item.preco || item.price || 0
+              }))
+            : [],
+          deliveryMethod: pedido.tipo_entrega || 'Não especificado',
+          paymentMethod: pedido.metodo_pagamento || 'Não especificado',
+          address: pedido.endereco_entrega || undefined,
+          notes: pedido.observacoes || undefined
+        };
+
+        await whatsappService.sendOrderNotification(orderNotification);
+      }
+
+      // Enviar atualização de status para o cliente
+      if (pedido.cliente_telefone && status !== 'PENDENTE') {
+        await whatsappService.sendOrderStatusUpdate(
+          pedido.cliente_telefone,
+          pedido.id,
+          status
+        );
+      }
+
+    } catch (error) {
+      console.error('Erro ao enviar notificação WhatsApp:', error);
     }
   };
 

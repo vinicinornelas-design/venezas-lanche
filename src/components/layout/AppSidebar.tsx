@@ -12,7 +12,8 @@ import {
   Building2,
   DollarSign,
   UserCog,
-  Bell
+  Bell,
+  Smartphone
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -112,6 +113,12 @@ const navigationItems: NavigationItem[] = [
     title: "Remarketing",
     url: "/remarketing",
     icon: MessageSquare,
+    roles: ['ADMIN']
+  },
+  {
+    title: "WhatsApp",
+    url: "/whatsapp-config",
+    icon: Smartphone,
     roles: ['ADMIN']
   },
   {

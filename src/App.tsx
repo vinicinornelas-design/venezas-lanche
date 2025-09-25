@@ -31,6 +31,7 @@ import TesteRealtime from "@/pages/TesteRealtime";
 import TesteTabelaPedidos from "@/pages/TesteTabelaPedidos";
 import TestColors from "@/pages/TestColors";
 import TestBanner from "@/pages/TestBanner";
+import WhatsAppConfig from "@/pages/WhatsAppConfig";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -128,6 +129,11 @@ const App = () => (
             <Route path="/notificacoes" element={
               <ProtectedRoute allowedRoles={['ADMIN', 'CAIXA']}>
                 <AppLayout><Notificacoes /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/whatsapp-config" element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AppLayout><WhatsAppConfig /></AppLayout>
               </ProtectedRoute>
             } />
         <Route path="/test-upload" element={

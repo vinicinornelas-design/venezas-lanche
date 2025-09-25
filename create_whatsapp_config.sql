@@ -51,49 +51,31 @@ ALTER TABLE whatsapp_templates ENABLE ROW LEVEL SECURITY;
 
 -- Criar políticas de segurança
 CREATE POLICY "Users can view their own whatsapp config" ON whatsapp_config
-    FOR SELECT USING (auth.uid() IN (
-        SELECT user_id FROM restaurant_config WHERE id = restaurant_id
-    ));
+    FOR SELECT USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Users can update their own whatsapp config" ON whatsapp_config
-    FOR UPDATE USING (auth.uid() IN (
-        SELECT user_id FROM restaurant_config WHERE id = restaurant_id
-    ));
+    FOR UPDATE USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Users can insert their own whatsapp config" ON whatsapp_config
-    FOR INSERT WITH CHECK (auth.uid() IN (
-        SELECT user_id FROM restaurant_config WHERE id = restaurant_id
-    ));
+    FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Users can view their own whatsapp messages" ON whatsapp_messages_log
-    FOR SELECT USING (auth.uid() IN (
-        SELECT user_id FROM restaurant_config WHERE id = restaurant_id
-    ));
+    FOR SELECT USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Users can insert their own whatsapp messages" ON whatsapp_messages_log
-    FOR INSERT WITH CHECK (auth.uid() IN (
-        SELECT user_id FROM restaurant_config WHERE id = restaurant_id
-    ));
+    FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Users can view their own whatsapp templates" ON whatsapp_templates
-    FOR SELECT USING (auth.uid() IN (
-        SELECT user_id FROM restaurant_config WHERE id = restaurant_id
-    ));
+    FOR SELECT USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Users can update their own whatsapp templates" ON whatsapp_templates
-    FOR UPDATE USING (auth.uid() IN (
-        SELECT user_id FROM restaurant_config WHERE id = restaurant_id
-    ));
+    FOR UPDATE USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Users can insert their own whatsapp templates" ON whatsapp_templates
-    FOR INSERT WITH CHECK (auth.uid() IN (
-        SELECT user_id FROM restaurant_config WHERE id = restaurant_id
-    ));
+    FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Users can delete their own whatsapp templates" ON whatsapp_templates
-    FOR DELETE USING (auth.uid() IN (
-        SELECT user_id FROM restaurant_config WHERE id = restaurant_id
-    ));
+    FOR DELETE USING (auth.uid() IS NOT NULL);
 
 -- Inserir templates padrão
 INSERT INTO whatsapp_templates (restaurant_id, template_name, template_type, content, variables) 
